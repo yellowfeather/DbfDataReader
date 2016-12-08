@@ -14,7 +14,7 @@ namespace DbfReader
         public override void Read(BinaryReader binaryReader)
         {
             var value = new string(binaryReader.ReadChars(Length));
-            Value = value.TrimEnd((char)0);
+            Value = value.TrimEnd('\0', ' ');
         }
     }
 }

@@ -11,8 +11,6 @@ namespace DbfReader
             var value = new string(binaryReader.ReadChars(8));
             value = value.TrimEnd((char)0);
 
-            Console.WriteLine($"DbfValueDate: {value}");
-
             if (string.IsNullOrWhiteSpace(value))
             {
                 Value = null;
@@ -21,6 +19,11 @@ namespace DbfReader
             {
                 Value = DateTime.ParseExact(value, "yyyyMMdd", null, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite);
             }
+        }
+
+        public override string ToString()
+        {
+            return Value?.ToString("yyyyMMdd") ?? string.Empty;
         }
     }
 }

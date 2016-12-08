@@ -6,6 +6,8 @@ namespace DbfReader
 {
     public class DbfRecord
     {
+        private const byte EndOfFile = 0x1a;
+
         public DbfRecord(DbfTable dbfTable)
         {
             Values = new List<IDbfValue>();
@@ -26,11 +28,11 @@ namespace DbfReader
                 case DbfColumnType.Number:
                     if (dbfColumn.DecimalCount == 0)
                     {
-                        value = new DbfValueInt();
+                        value = new DbfValueInt(dbfColumn.Length);
                     }
                     else
                     {
-                        value = new DbfValueDecimal();
+                        value = new DbfValueDecimal(dbfColumn.Length, dbfColumn.DecimalCount);
                     }
                     break;
                 case DbfColumnType.Signedlong:
@@ -70,14 +72,31 @@ namespace DbfReader
 
         public bool Read(BinaryReader binaryReader)
         {
-            IsDeleted = binaryReader.ReadBoolean();
-
-            foreach (var dbfValue in Values)
+            if (binaryReader.BaseStream.Position == binaryReader.BaseStream.Length)
             {
-                dbfValue.Read(binaryReader);
+                return false;
             }
 
-            return true;
+            try
+            {
+                var value = binaryReader.ReadByte();
+                if (value == EndOfFile)
+                {
+                    return false;
+                }
+
+                IsDeleted = (value == 0x2A);
+
+                foreach (var dbfValue in Values)
+                {
+                    dbfValue.Read(binaryReader);
+                }
+                return true;
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
+            }
         }
 
         public bool IsDeleted { get; private set; }
