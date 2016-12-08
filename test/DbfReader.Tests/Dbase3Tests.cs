@@ -86,12 +86,13 @@ namespace DbfReader.Tests
         [Fact]
         public void Should_have_correct_row_values()
         {
+            var dbfRecord = new DbfRecord(DbfTable);
+
             using (var stream = new FileStream("./test/fixtures/dbase_03.csv", FileMode.Open))
             using (var csvFile = new StreamReader(stream)) {
                  // skip the header row
                 csvFile.ReadLine();
-                
-                var dbfRecord = new DbfRecord(DbfTable);
+
                 while (DbfTable.Read(dbfRecord))
                 {
                     var csvLine = csvFile.ReadLine();
