@@ -13,7 +13,8 @@ namespace DbfReader
 
         public void Read(BinaryReader binaryReader)
         {
-            Value = new string(binaryReader.ReadChars(Length));
+            var value = new string(binaryReader.ReadChars(Length));
+            Value = value.TrimEnd((char)0);
         }
 
         public string Value { get; private set; }
