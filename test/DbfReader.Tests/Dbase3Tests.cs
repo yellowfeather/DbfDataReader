@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Shouldly;
 using Xunit;
 
@@ -80,6 +81,29 @@ namespace DbfReader.Tests
             ValidateColumn(DbfTable.Columns[28], "Northing",     DbfColumnType.Number,    16, 3);         
             ValidateColumn(DbfTable.Columns[29], "Easting",      DbfColumnType.Number,    16, 3);         
             ValidateColumn(DbfTable.Columns[30], "Point_ID",     DbfColumnType.Number,     9, 0);         
+        }
+
+        [Fact]
+        public void Should_have_correct_row_values()
+        {
+            using (var stream = new FileStream("./test/fixtures/dbase_03.csv", FileMode.Open))
+            using (var csvFile = new StreamReader(stream)) {
+                 // skip the header row
+                csvFile.ReadLine();
+                
+                var dbfRecord = new DbfRecord(DbfTable);
+                while (DbfTable.Read(dbfRecord))
+                {
+                    var csvLine = csvFile.ReadLine();
+                    var csvValues = csvLine.Split(',');
+
+                    var index = 0;
+                    foreach (var dbfValue in dbfRecord.Values)
+                    {
+                        dbfValue.ToString().ShouldBe(csvValues[index++]);
+                    }
+                }
+            }
         }
 
         public void ValidateColumn(DbfColumn dbfColumn, 
