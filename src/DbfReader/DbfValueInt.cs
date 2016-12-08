@@ -2,13 +2,19 @@
 
 namespace DbfReader
 {
-    public class DbfValueInt : IDbfValue
+    public class DbfValueInt : DbfValue<int?>
     {
-        public void Read(BinaryReader binaryReader)
+        public override void Read(BinaryReader binaryReader)
         {
-            Value = binaryReader.ReadInt16();
+            if (binaryReader.PeekChar() == '\0')
+            {
+                binaryReader.ReadBytes(2);
+                Value = null;
+            }
+            else
+            {
+                Value = binaryReader.ReadInt16();
+            }
         }
-
-        public int? Value { get; private set; }
     }
 }

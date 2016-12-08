@@ -2,15 +2,19 @@
 
 namespace DbfReader
 {
-    public class DbfValueLong : IDbfValue
+    public class DbfValueLong : DbfValue<long?>
     {
-        public void Read(BinaryReader binaryReader)
+        public override void Read(BinaryReader binaryReader)
         {
-            if (binaryReader.PeekChar() == '\0') return;
-
-            Value = binaryReader.ReadUInt32();
+            if (binaryReader.PeekChar() == '\0')
+            {
+                binaryReader.ReadBytes(4);
+                Value = null;
+            }
+            else
+            {
+                Value = binaryReader.ReadUInt32();
+            }
         }
-
-        public long? Value { get; private set; }
     }
 }

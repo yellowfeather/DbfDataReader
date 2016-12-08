@@ -2,7 +2,7 @@
 
 namespace DbfReader
 {
-    public class DbfValueString : IDbfValue
+    public class DbfValueString : DbfValue<string>
     {
         public DbfValueString(int length)
         {
@@ -11,12 +11,10 @@ namespace DbfReader
 
         public int Length { get; }
 
-        public void Read(BinaryReader binaryReader)
+        public override void Read(BinaryReader binaryReader)
         {
             var value = new string(binaryReader.ReadChars(Length));
             Value = value.TrimEnd((char)0);
         }
-
-        public string Value { get; private set; }
     }
 }

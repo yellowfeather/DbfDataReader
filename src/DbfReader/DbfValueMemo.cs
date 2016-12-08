@@ -2,22 +2,18 @@
 
 namespace DbfReader
 {
-    public class DbfValueMemo : IDbfValue
+    public class DbfValueMemo : DbfValueString
     {
         public DbfValueMemo(int length)
+            : base(length)
         {
-            Length = length;
         }
 
-        public int Length { get; }
-
-        public void Read(BinaryReader binaryReader)
+        public override void Read(BinaryReader binaryReader)
         {
             // TODO: read from memo file
             var value = new string(binaryReader.ReadChars(Length));
             Value = value.TrimEnd((char)0);
         }
-
-        public string Value { get; private set; }
     }
 }

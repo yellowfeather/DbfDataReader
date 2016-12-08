@@ -2,13 +2,19 @@ using System.IO;
 
 namespace DbfReader
 {
-    public class DbfValueDouble : IDbfValue
+    public class DbfValueDouble : DbfValue<double?>
     {
-        public void Read(BinaryReader binaryReader)
+        public override void Read(BinaryReader binaryReader)
         {
-            Value = binaryReader.ReadInt16();
+            if (binaryReader.PeekChar() == '\0')
+            {
+                binaryReader.ReadBytes(2);
+                Value = null;
+            }
+            else
+            {
+                Value = binaryReader.ReadInt16();
+            }
         }
-
-        public double? Value { get; private set; }
     }
 }
