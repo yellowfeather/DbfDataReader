@@ -4,16 +4,34 @@ namespace DbfReader
 {
     public class DbfValueMemo : DbfValueString
     {
-        public DbfValueMemo(int length)
+        private readonly DbfMemo _memo;
+
+        public DbfValueMemo(int length, DbfMemo memo)
             : base(length)
         {
+            _memo = memo;
         }
 
         public override void Read(BinaryReader binaryReader)
         {
-            // TODO: read from memo file
-            var value = new string(binaryReader.ReadChars(Length));
-            Value = value.TrimEnd((char)0);
+            if (Length == 4)
+            {
+                var startBlock = binaryReader.ReadUInt32();
+                Value = _memo.Get(startBlock);
+            }
+            else
+            {
+                var value = new string(binaryReader.ReadChars(Length));
+                if (string.IsNullOrEmpty(value))
+                {
+                    Value = string.Empty;
+                }
+                else
+                {
+                    var startBlock = long.Parse(value);
+                    Value = _memo.Get(startBlock);
+                }
+            }
         }
     }
 }

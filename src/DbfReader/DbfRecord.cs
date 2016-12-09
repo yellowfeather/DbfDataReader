@@ -14,12 +14,12 @@ namespace DbfReader
 
             foreach (var dbfColumn in dbfTable.Columns)
             {
-                var dbfValue = CreateDbfValue(dbfColumn);
+                var dbfValue = CreateDbfValue(dbfColumn, dbfTable.Memo);
                 Values.Add(dbfValue);
             }
         }
 
-        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn)
+        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo)
         {
             IDbfValue value;
 
@@ -54,7 +54,7 @@ namespace DbfReader
                     value = new DbfValueBoolean(dbfColumn.Length);
                     break;
                 case DbfColumnType.Memo:
-                    value = new DbfValueMemo(dbfColumn.Length);
+                    value = new DbfValueMemo(dbfColumn.Length, memo);
                     break;
                 case DbfColumnType.Double:
                     value = new DbfValueDouble(dbfColumn.Length);
