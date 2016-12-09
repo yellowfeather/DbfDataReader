@@ -1,8 +1,8 @@
 ﻿{
-  "version": "1.0.0-*",
   "testRunner":  "xunit", 
   "dependencies": {
-    "NETStandard.Library": "1.6.0",
+    "CsvHelper": "3.0.0-beta7",
+    "NETStandard.Library": "1.6.1",
     "DbfReader": { "target": "project" },
     "Shouldly": "2.7.0",
     "xunit": "2.2.0-beta2-build3300",
@@ -10,16 +10,11 @@
   },
 
   "frameworks": {
-    "net46": {
-      "dependencies": {
-        "Microsoft.NETCore.Platforms": "1.0.1"
-      }
-    },
-    "netcoreapp1.0": {
+    "netcoreapp1.1": {
       "dependencies": {
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.0.1"
+          "version": "1.1.0"
         }
       },
       "imports": [
