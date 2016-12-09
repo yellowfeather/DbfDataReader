@@ -4,6 +4,10 @@ namespace DbfReader
 {
     public class DbfValueLong : DbfValue<long?>
     {
+        public DbfValueLong(int length) : base(length)
+        {
+        }
+
         public override void Read(BinaryReader binaryReader)
         {
             if (binaryReader.PeekChar() == '\0')

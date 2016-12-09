@@ -4,12 +4,9 @@ namespace DbfReader
 {
     public class DbfValueString : DbfValue<string>
     {
-        public DbfValueString(int length)
+        public DbfValueString(int length) : base(length)
         {
-            Length = length;
         }
-
-        public int Length { get; }
 
         public override void Read(BinaryReader binaryReader)
         {

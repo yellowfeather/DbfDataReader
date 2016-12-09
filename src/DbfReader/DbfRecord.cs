@@ -36,35 +36,36 @@ namespace DbfReader
                     }
                     break;
                 case DbfColumnType.Signedlong:
-                    value = new DbfValueLong();
+                    value = new DbfValueLong(dbfColumn.Length);
                     break;
                 case DbfColumnType.Float:
-                    value = new DbfValueFloat();
+                    value = new DbfValueFloat(dbfColumn.Length);
                     break;
                 case DbfColumnType.Currency:
-                    value = new DbfValueCurrency();
+                    value = new DbfValueCurrency(dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.Date:
-                    value = new DbfValueDate();
+                    value = new DbfValueDate(dbfColumn.Length);
                     break;
                 case DbfColumnType.DateTime:
-                    value = new DbfValueDateTime();
+                    value = new DbfValueDateTime(dbfColumn.Length);
                     break;
                 case DbfColumnType.Boolean:
-                    value = new DbfValueBoolean();
+                    value = new DbfValueBoolean(dbfColumn.Length);
                     break;
                 case DbfColumnType.Memo:
                     value = new DbfValueMemo(dbfColumn.Length);
                     break;
                 case DbfColumnType.Double:
-                    value = new DbfValueDouble();
+                    value = new DbfValueDouble(dbfColumn.Length);
                     break;
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
                     value = new DbfValueString(dbfColumn.Length);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    value = new DbfValueNull(dbfColumn.Length);
+                    break;
             }
 
             return value;

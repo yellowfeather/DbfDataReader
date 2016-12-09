@@ -7,14 +7,12 @@ namespace DbfReader
     {
         private static readonly NumberFormatInfo DecimalNumberFormat = new NumberFormatInfo { NumberDecimalSeparator = "." };
 
-        public int Length { get; }
-        public int DecimalCount { get; }
-
-        public DbfValueDecimal(int length, int decimalCount)
+        public DbfValueDecimal(int length, int decimalCount) : base(length)
         {
-            Length = length;
             DecimalCount = decimalCount;
         }
+
+        public int DecimalCount { get; }
 
         public override void Read(BinaryReader binaryReader)
         {

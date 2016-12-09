@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DbfReader
+﻿namespace DbfReader
 {
     public enum DbfColumnType
     {

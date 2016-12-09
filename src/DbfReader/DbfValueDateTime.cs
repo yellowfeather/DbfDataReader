@@ -6,6 +6,10 @@ namespace DbfReader
 {
     public class DbfValueDateTime : DbfValue<DateTime?>
     {
+        public DbfValueDateTime(int length) : base(length)
+        {
+        }
+
         public override void Read(BinaryReader binaryReader)
         {
             var value = new string(binaryReader.ReadChars(8));
@@ -17,7 +21,8 @@ namespace DbfReader
             }
             else
             {
-                Value = DateTime.ParseExact(value, "yyyyMMdd", null, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite);
+                //Value = DateTime.ParseExact(value, "yyyyMMdd", null, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite);
+                Value = null;
             }
         }
     }

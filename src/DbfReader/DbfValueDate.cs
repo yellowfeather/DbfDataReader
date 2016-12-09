@@ -6,6 +6,10 @@ namespace DbfReader
 {
     public class DbfValueDate : DbfValue<DateTime?>
     {
+        public DbfValueDate(int length) : base(length)
+        {
+        }
+
         public override void Read(BinaryReader binaryReader)
         {
             var value = new string(binaryReader.ReadChars(8));

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO;
 
 namespace DbfReader
@@ -8,11 +7,8 @@ namespace DbfReader
     {
         private static readonly NumberFormatInfo IntNumberFormat = new NumberFormatInfo();
 
-        public int Length { get; }
-
-        public DbfValueInt(int length)
+        public DbfValueInt(int length) : base(length)
         {
-            Length = length;
         }
 
         public override void Read(BinaryReader binaryReader)

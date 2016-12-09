@@ -16,5 +16,9 @@ namespace DbfReader
                 Value = binaryReader.ReadInt16();
             }
         }
+
+        public DbfValueFloat(int length) : base(length)
+        {
+        }
     }
 }
