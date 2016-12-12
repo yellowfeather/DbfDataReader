@@ -32,14 +32,21 @@ namespace DbfReader
             return _dbfTable.ReadRecord();
         }
 
+        public T GetNullableValue<T>(int ordinal) where T : struct
+        {
+            var value = _dbfRecord.GetValue(ordinal);
+            var nullableValue = value as Nullable<T>;
+            return nullableValue.Value;
+        }
+
         public override bool GetBoolean(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<bool>(ordinal);
         }
 
         public override byte GetByte(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<byte>(ordinal);
         }
 
         public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
@@ -49,7 +56,7 @@ namespace DbfReader
 
         public override char GetChar(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<char>(ordinal);
         }
 
         public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
@@ -64,17 +71,17 @@ namespace DbfReader
 
         public override DateTime GetDateTime(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<DateTime>(ordinal);
         }
 
         public override decimal GetDecimal(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<decimal>(ordinal);
         }
 
         public override double GetDouble(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<double>(ordinal);
         }
 
         public override IEnumerator GetEnumerator()
@@ -106,12 +113,16 @@ namespace DbfReader
 
         public override object this[string name]
         {
-            get { throw new System.NotImplementedException(); }
+            get 
+            {
+                var ordinal = GetOrdinal(name);
+                return GetValue(ordinal); 
+            }
         }
 
         public override object this[int ordinal]
         {
-            get { throw new System.NotImplementedException(); }
+            get { return GetValue(ordinal); }
         }
 
         public override int FieldCount => _dbfTable.Columns.Count;
@@ -120,7 +131,8 @@ namespace DbfReader
 
         public override bool IsDBNull(int ordinal)
         {
-            throw new System.NotImplementedException();
+            var value = GetValue(ordinal);
+            return value == null;
         }
 
         public override int GetValues(object[] values)
@@ -130,37 +142,49 @@ namespace DbfReader
 
         public override object GetValue(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return _dbfRecord.GetValue(ordinal);
         }
 
         public override string GetString(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return _dbfRecord.GetValue<string>(ordinal);
         }
 
         public override int GetOrdinal(string name)
         {
-            throw new System.NotImplementedException();
+            int ordinal = 0;
+
+            foreach (var dbfColumn in _dbfTable.Columns)
+            {
+                if (dbfColumn.Name == name)
+                {
+                    return ordinal;
+                }
+                ordinal++;
+            }
+
+            return -1;
         }
 
         public override string GetName(int ordinal)
         {
-            throw new System.NotImplementedException();
+            var dbfColumn = _dbfTable.Columns[ordinal]; 
+            return dbfColumn.Name;
         }
 
         public override long GetInt64(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<long>(ordinal);
         }
 
         public override int GetInt32(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<int>(ordinal);
         }
 
         public override short GetInt16(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<short>(ordinal);
         }
 
         public override Guid GetGuid(int ordinal)
@@ -170,7 +194,7 @@ namespace DbfReader
 
         public override float GetFloat(int ordinal)
         {
-            throw new System.NotImplementedException();
+            return GetNullableValue<float>(ordinal);
         }
 
         public override Type GetFieldType(int ordinal)

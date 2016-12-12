@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace DbfReader
 {
@@ -10,6 +11,16 @@ namespace DbfReader
         }
 
         public int Length { get; }
+
+        public object GetValue()
+        {
+            return null;
+        }
+
+        public T GetValue<T>()
+        {
+            throw new NotImplementedException();
+        }
 
         public void Read(BinaryReader binaryReader)
         {

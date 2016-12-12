@@ -10,8 +10,14 @@ namespace DbfReader
 
         public override void Read(BinaryReader binaryReader)
         {
-            var value = new string(binaryReader.ReadChars(Length));
-            Value = value.TrimEnd('\0', ' ');
+            var chars = binaryReader.ReadChars(Length);
+            if (chars[0] == '\0') {
+                Value = null; 
+            }
+            else {
+                var value = new string(chars);
+                Value = value.TrimEnd('\0', ' ');
+            }
         }
     }
 }

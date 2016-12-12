@@ -103,5 +103,17 @@ namespace DbfReader
         public bool IsDeleted { get; private set; }
 
         public IList<IDbfValue> Values { get; set; }
+
+        public object GetValue(int ordinal)
+        {
+            var dbfValue = Values[ordinal];
+            return dbfValue.GetValue();
+        }
+
+        public T GetValue<T>(int ordinal)
+        {
+            var dbfValue = Values[ordinal] as DbfValue<T>;
+            return dbfValue.Value;
+        }
     }
 }

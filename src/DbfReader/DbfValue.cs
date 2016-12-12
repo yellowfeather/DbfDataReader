@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace DbfReader
@@ -17,6 +18,11 @@ namespace DbfReader
         public override string ToString()
         {
             return Value.ToString();
+        }
+
+        public object GetValue()
+        {
+            return Value;
         }
 
         public T Value { get; protected set; }
