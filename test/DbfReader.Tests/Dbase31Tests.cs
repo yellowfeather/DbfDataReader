@@ -3,6 +3,7 @@ using Xunit;
 
 namespace DbfReader.Tests
 {
+    [Collection("dbase_31")]
     public class Dbase31Tests : DbaseTests
     {
         private const string Dbase31FixturePath = "./test/fixtures/dbase_31.dbf";

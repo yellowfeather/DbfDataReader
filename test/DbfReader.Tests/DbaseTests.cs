@@ -16,11 +16,12 @@ namespace DbfReader.Tests
         public void Dispose()
         {
             DbfTable.Dispose();
+            DbfTable = null;
         }
 
         public string FixturePath { get; }
 
-        public DbfTable DbfTable { get; }
+        public DbfTable DbfTable { get; protected set; }
 
         public DbfHeader DbfHeader => DbfTable.Header;
 

@@ -1,10 +1,9 @@
-﻿using System;
-using System.IO;
-using Shouldly;
+﻿using Shouldly;
 using Xunit;
 
 namespace DbfReader.Tests
 {
+    [Collection("dbase_30")]
     public class Dbase30Tests : DbaseTests
     {
         private const string Dbase30FixturePath = "./test/fixtures/dbase_30.dbf";

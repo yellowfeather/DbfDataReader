@@ -4,6 +4,7 @@ using Xunit;
 
 namespace DbfReader.Tests
 {
+    [Collection("dbase_03")]
     public class DbfDataReaderTests : IDisposable
     {
         private const string FixturePath = "./test/fixtures/dbase_03.dbf";
@@ -16,12 +17,13 @@ namespace DbfReader.Tests
         public void Dispose()
         {
             DbfDataReader.Dispose();
+            DbfDataReader = null;
         }
 
-        public DbfDataReader DbfDataReader { get; }
-        
+        public DbfDataReader DbfDataReader { get; set; }
+
         [Fact]
-        public void ValidateFirstRowValues()
+        public void Should_have_valid_first_row_values()
         {
             DbfDataReader.Read().ShouldBeTrue();
 
