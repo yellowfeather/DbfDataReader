@@ -7,35 +7,54 @@ namespace DbfReader
 {
     public class DbfDataReader : DbDataReader
     {
-        private readonly DbfTable _dbfTable;
-        private readonly DbfRecord _dbfRecord;
-
         public DbfDataReader(string path)
         {
-            _dbfTable = new DbfTable(path);
-            _dbfRecord = new DbfRecord(_dbfTable);
+            DbfTable = new DbfTable(path);
+            DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfDataReader(string path, Encoding encoding)
         {
-            _dbfTable = new DbfTable(path, encoding);
-            _dbfRecord = new DbfRecord(_dbfTable);
+            DbfTable = new DbfTable(path, encoding);
+            DbfRecord = new DbfRecord(DbfTable);
         }
 
-        public new void Dispose()
+        public DbfTable DbfTable { get; private set; }
+
+        public DbfRecord DbfRecord { get; private set; }
+
+        public void Close()
         {
-            _dbfTable?.Dispose();
+            try
+            {
+                DbfTable.Close();
+            }
+            finally
+            {
+                DbfTable = null;
+                DbfRecord = null;
+            }
+        }
+
+        public void Dispose() => Dispose(true);
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Close();
+            }
         }
 
         public DbfRecord ReadRecord()
         {
-            return _dbfTable.ReadRecord();
+            return DbfTable.ReadRecord();
         }
 
         public T GetNullableValue<T>(int ordinal) where T : struct
         {
-            var value = _dbfRecord.GetValue(ordinal);
-            var nullableValue = value as Nullable<T>;
+            var value = DbfRecord.GetValue(ordinal);
+            var nullableValue = value as T?;
             return nullableValue.Value;
         }
 
@@ -96,7 +115,7 @@ namespace DbfReader
 
         public override bool Read()
         {
-            return _dbfTable.Read(_dbfRecord);
+            return DbfTable.Read(DbfRecord);
         }
 
         public override int Depth
@@ -104,7 +123,7 @@ namespace DbfReader
             get { throw new NotImplementedException(); }
         }
 
-        public override bool IsClosed => _dbfTable.IsClosed;
+        public override bool IsClosed => DbfTable.IsClosed;
 
         public override int RecordsAffected
         {
@@ -125,9 +144,9 @@ namespace DbfReader
             get { return GetValue(ordinal); }
         }
 
-        public override int FieldCount => _dbfTable.Columns.Count;
+        public override int FieldCount => DbfTable.Columns.Count;
 
-        public override bool HasRows => _dbfTable.Header.RecordCount > 0;
+        public override bool HasRows => DbfTable.Header.RecordCount > 0;
 
         public override bool IsDBNull(int ordinal)
         {
@@ -142,19 +161,19 @@ namespace DbfReader
 
         public override object GetValue(int ordinal)
         {
-            return _dbfRecord.GetValue(ordinal);
+            return DbfRecord.GetValue(ordinal);
         }
 
         public override string GetString(int ordinal)
         {
-            return _dbfRecord.GetValue<string>(ordinal);
+            return DbfRecord.GetValue<string>(ordinal);
         }
 
         public override int GetOrdinal(string name)
         {
             int ordinal = 0;
 
-            foreach (var dbfColumn in _dbfTable.Columns)
+            foreach (var dbfColumn in DbfTable.Columns)
             {
                 if (dbfColumn.Name == name)
                 {
@@ -168,7 +187,7 @@ namespace DbfReader
 
         public override string GetName(int ordinal)
         {
-            var dbfColumn = _dbfTable.Columns[ordinal]; 
+            var dbfColumn = DbfTable.Columns[ordinal]; 
             return dbfColumn.Name;
         }
 

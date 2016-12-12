@@ -4,12 +4,12 @@ using System.Text;
 
 namespace DbfReader
 {
-    public abstract class DbfMemo : IDisposable
+    public abstract class DbfMemo : Disposable
     {
         protected const int BlockHeaderSize = 8;
         protected const int DefaultBlockSize = 512;
 
-        protected readonly BinaryReader _binaryReader;
+        protected BinaryReader _binaryReader;
 
         protected DbfMemo(string path)
             : this(path, Encoding.UTF8)
@@ -40,9 +40,22 @@ namespace DbfReader
 
         public Encoding CurrentEncoding { get; set; }
 
-        public void Dispose()
+        public void Close()
         {
-            _binaryReader.Dispose();
+            Dispose(true);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            try
+            {
+                if (!disposing) return;
+                _binaryReader?.Dispose();
+            }
+            finally
+            {
+                _binaryReader = null;
+            }
         }
 
         public virtual int BlockSize => DefaultBlockSize;

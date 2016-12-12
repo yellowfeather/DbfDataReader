@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace DbfReader
 {
-    public class DbfTable : IDisposable
+    public class DbfTable : Disposable
     {
         private const byte Terminator = 0x0d;
         private const int HeaderMetaDataSize = 33;
         private const int ColumnMetaDataSize = 32;
-
-        private readonly BinaryReader _binaryReader;
 
         public DbfTable(string path)
             : this(path, Encoding.UTF8)
@@ -30,11 +27,11 @@ namespace DbfReader
             CurrentEncoding = encoding;
 
             var stream = new FileStream(path, FileMode.Open);
-            _binaryReader = new BinaryReader(stream, encoding);
+            BinaryReader = new BinaryReader(stream, encoding, false);
 
-            Header = new DbfHeader(_binaryReader);
-            Columns = ReadColumns(_binaryReader);
-            SkipToFirstRecord(_binaryReader);
+            Header = new DbfHeader(BinaryReader);
+            Columns = ReadColumns(BinaryReader);
+            SkipToFirstRecord(BinaryReader);
 
             var memoPath = MemoPath();
             if (!string.IsNullOrEmpty(memoPath))
@@ -48,17 +45,31 @@ namespace DbfReader
             Path = string.Empty;
             CurrentEncoding = encoding;
 
-            _binaryReader = new BinaryReader(stream, encoding);
+            BinaryReader = new BinaryReader(stream, encoding, true);
 
-            Header = new DbfHeader(_binaryReader);
-            Columns = ReadColumns(_binaryReader);
-            SkipToFirstRecord(_binaryReader);
+            Header = new DbfHeader(BinaryReader);
+            Columns = ReadColumns(BinaryReader);
+            SkipToFirstRecord(BinaryReader);
         }
 
-        public void Dispose()
+        public void Close()
         {
-            _binaryReader?.Dispose();
-            Memo?.Dispose();
+            Dispose(true);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            try
+            {
+                if (!disposing) return;
+                BinaryReader?.Dispose();
+                Memo?.Dispose();
+            }
+            finally
+            {
+                BinaryReader = null;
+                Memo = null;
+            }
         }
 
         public string Path { get; }
@@ -67,11 +78,13 @@ namespace DbfReader
 
         public DbfHeader Header { get; }
 
-        public DbfMemo Memo { get; }
+        public BinaryReader BinaryReader { get; private set; }
+
+        public DbfMemo Memo { get; private set; }
 
         public IList<DbfColumn> Columns { get; }
 
-        public bool IsClosed => _binaryReader != null;
+        public bool IsClosed => BinaryReader != null;
 
         public string MemoPath()
         {
@@ -140,19 +153,19 @@ namespace DbfReader
         public void SkipToFirstRecord(BinaryReader binaryReader)
         {
             var numBytesToSkip = Header.HeaderLength - (HeaderMetaDataSize + (ColumnMetaDataSize * Columns.Count));
-            _binaryReader.ReadBytes(numBytesToSkip);
+            BinaryReader.ReadBytes(numBytesToSkip);
         }
 
         public DbfRecord ReadRecord()
         {
             var dbfRecord = new DbfRecord(this);
-            dbfRecord.Read(_binaryReader);
+            dbfRecord.Read(BinaryReader);
             return dbfRecord;
         }
 
         public bool Read(DbfRecord dbfRecord)
         {
-            return dbfRecord.Read(_binaryReader);
+            return dbfRecord.Read(BinaryReader);
         }
     }
 }
