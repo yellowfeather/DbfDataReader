@@ -14,7 +14,7 @@ artifacts:
   name: NuGet
 deploy:
 - provider: NuGet
-  server: https://www.myget.org/F/dbfreader/api/v2/package
+  server: https://www.myget.org/F/dbfdatareader/api/v2/package
   api_key:
     secure: Txy0mqrnu+yAYmJUOeEEasYrBeueDP1aKIleayisMXTS3/8F9+scL0TnBCseWdyx
   skip_symbols: true
