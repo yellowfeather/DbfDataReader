@@ -40,3 +40,7 @@ _ReSharper*/
 $SSH_ENV
 Solutions/packages
 .vs
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/Properties/launchSettings.json
