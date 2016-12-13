@@ -14,15 +14,15 @@
   },
 
   "dependencies": {
+    "System.Data.Common": "4.3.0"
   },
 
   "frameworks": {
-    "net45": {},
+    "net452": {},
     "netstandard1.6": {
       "imports": "dnxcore50",
       "dependencies": {
-        "NETStandard.Library": "1.6.0",
-        "System.Data.Common": "4.3.0"
+        "NETStandard.Library": "1.6.0"
       }
     }
   }
