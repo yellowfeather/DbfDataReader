@@ -1,5 +1,6 @@
-# DbfReader
+# DbfDataReader
 
-[![Build status](https://ci.appveyor.com/api/projects/status/h3o3dvwl5m5d9i5r?svg=true)](https://ci.appveyor.com/project/chrisrichards/dbfreader)
+[![Build status](https://ci.appveyor.com/api/projects/status/pe6p1rhi3g305cpq?svg=true)](https://ci.appveyor.com/project/chrisrichards/dbfdatareader)
+[![MyGet Build Status](https://www.myget.org/BuildSource/Badge/dbfdatareader?identifier=54ae0096-55d5-418c-8eb9-54a35df720fb)](https://www.myget.org/)
 
-DBF is a small fast .Net Core library for reading dBase, xBase, Clipper and FoxPro database files
+DbfDataReader is a small fast .Net Core library for reading dBase, xBase, Clipper and FoxPro database files
