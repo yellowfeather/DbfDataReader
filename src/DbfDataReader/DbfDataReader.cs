@@ -23,7 +23,11 @@ namespace DbfDataReader
 
         public DbfRecord DbfRecord { get; private set; }
 
+#if NETSTANDARD1_6
         public void Close()
+#else
+        public override void Close()
+#endif
         {
             try
             {
@@ -36,15 +40,15 @@ namespace DbfDataReader
             }
         }
 
-        public void Dispose() => Dispose(true);
-
-        protected virtual void Dispose(bool disposing)
+#if NETSTANDARD1_6
+        protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
                 Close();
             }
         }
+#endif
 
         public DbfRecord ReadRecord()
         {
