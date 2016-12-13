@@ -8,14 +8,14 @@
     "tasks": [
         {
             "taskName": "build",
-            "args": [ "src/DbfReader", "test/DbfReader.Tests" ],
+            "args": [ "src/DbfDataReader", "test/DbfDataReader.Tests" ],
             "isBuildCommand": true,
             "showOutput": "silent",
             "problemMatcher": "$msCompile"
         },
         {
             "taskName": "test",
-            "args": [ "test/DbfReader.Tests" ],
+            "args": [ "test/DbfDataReader.Tests" ],
             "isTestCommand": true
         }
     ]
