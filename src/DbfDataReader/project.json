@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "authors": [ "Chris Richards" ],
   "copyright": "Copyright Chris Richards",
   "description": "DbfDataReader is a small fast .Net Core library for reading dBase, xBase, Clipper and FoxPro database files",
