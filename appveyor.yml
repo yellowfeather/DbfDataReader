@@ -12,3 +12,18 @@ test: off
 artifacts:
 - path: .\artifacts\**\*.nupkg
   name: NuGet
+deploy:
+- provider: NuGet
+  server: https://www.myget.org/F/dbfreader/api/v2/package
+  api_key:
+    secure: Txy0mqrnu+yAYmJUOeEEasYrBeueDP1aKIleayisMXTS3/8F9+scL0TnBCseWdyx
+  skip_symbols: true
+  on:
+    branch: master
+- provider: NuGet
+  name: production
+  api_key:
+    secure: DQhQFeMHWvmNMgwUfo0SVYOd7CtiK0Kciwmd8rLZ5Tv3oYAIvEaTaeODkAeb8GzU
+  on:
+    branch: master
+    appveyor_repo_tag: true
