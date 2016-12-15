@@ -58,6 +58,21 @@ namespace DbfDataReader.Tests
             DbfDataReader.GetDecimal(28).ShouldBe(557904.898m);
             DbfDataReader.GetDecimal(29).ShouldBe(2212577.192m);
             DbfDataReader.GetInt32(30).ShouldBe(401);
-        }        
+        }
+
+        [Fact]
+        public void Should_be_able_to_read_all_the_rows()
+        {
+            var rowCount = 0;
+            while (DbfDataReader.Read())
+            {
+                rowCount++;
+
+                var valueCol1 = DbfDataReader.GetString(0);
+                var valueCol2 = DbfDataReader.GetDecimal(10);
+            }
+
+            rowCount.ShouldBe(14);
+        }
     }
 }
