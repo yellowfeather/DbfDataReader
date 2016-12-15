@@ -93,9 +93,13 @@ using (var dbfDataReader = new DbfDataReader.DbfDataReader(dbfPath))
 Used by 
 
 - DbfBulkCopy
+
     Command line application to bulk copy from DBF files to MS SqlServer
+    
     https://github.com/yellowfeather/DbfBulkCopy
 
 - dbf
+
     Command line utility to display DBF info and contents
+    
     https://github.com/yellowfeather/dbf
