@@ -10,7 +10,7 @@ namespace DbfDataReader.Tests
         [Fact]
         public void Should_dispose_binary_reader()
         {
-            const string fixturePath = "./test/fixtures/dbase_30.dbf";
+            const string fixturePath = "../../../../fixtures/dbase_30.dbf";
 
             var dbfTable = new DbfTable(fixturePath);
 
@@ -24,7 +24,7 @@ namespace DbfDataReader.Tests
         [Fact]
         public void Should_dispose_memo()
         {
-            const string fixturePath = "./test/fixtures/dbase_30.dbf";
+            const string fixturePath = "../../../../fixtures/dbase_30.dbf";
 
             var dbfTable = new DbfTable(fixturePath);
 

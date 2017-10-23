@@ -7,7 +7,7 @@ namespace DbfDataReader.Tests
     [Collection("dbase_03")]
     public class DbfDataReaderTests : IDisposable
     {
-        private const string FixturePath = "./test/fixtures/dbase_03.dbf";
+        private const string FixturePath = "../../../../fixtures/dbase_03.dbf";
         
         public DbfDataReaderTests()
         {

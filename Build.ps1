@@ -1,29 +1,3 @@
-<#
-.SYNOPSIS
-    You can add this to you build script to ensure that psbuild is available before calling
-    Invoke-MSBuild. If psbuild is not available locally it will be downloaded automatically.
-#>
-function EnsurePsbuildInstalled{
-    [cmdletbinding()]
-    param(
-        [string]$psbuildInstallUri = 'https://raw.githubusercontent.com/ligershark/psbuild/master/src/GetPSBuild.ps1'
-    )
-    process{
-        if(-not (Get-Command "Invoke-MsBuild" -errorAction SilentlyContinue)){
-            'Installing psbuild from [{0}]' -f $psbuildInstallUri | Write-Verbose
-            (new-object Net.WebClient).DownloadString($psbuildInstallUri) | iex
-        }
-        else{
-            'psbuild already loaded, skipping download' | Write-Verbose
-        }
-
-        # make sure it's loaded and throw if not
-        if(-not (Get-Command "Invoke-MsBuild" -errorAction SilentlyContinue)){
-            throw ('Unable to install/load psbuild from [{0}]' -f $psbuildInstallUri)
-        }
-    }
-}
-
 # Taken from psake https://github.com/psake/psake
 
 <#
@@ -48,19 +22,22 @@ function Exec
     }
 }
 
-if(Test-Path .\artifacts) { Remove-Item .\artifacts -Force -Recurse }
-
-EnsurePsbuildInstalled
+if(Test-Path .\src\DbfDataReader\artifacts) { Remove-Item .\src\DbfDataReader\artifacts -Force -Recurse }
 
 exec { & dotnet restore }
 
-Invoke-MSBuild
+$tag = $(git tag -l --points-at HEAD)
+$revision = @{ $true = "{0:00000}" -f [convert]::ToInt32("0" + $env:APPVEYOR_BUILD_NUMBER, 10); $false = "local" }[$env:APPVEYOR_BUILD_NUMBER -ne $NULL];
+$suffix = @{ $true = ""; $false = "ci-$revision"}[$tag -ne $NULL -and $revision -ne "local"]
+$commitHash = $(git rev-parse --short HEAD)
+$buildSuffix = @{ $true = "$($suffix)-$($commitHash)"; $false = "$($branch)-$($commitHash)" }[$suffix -ne ""]
 
-$revision = @{ $true = $env:APPVEYOR_BUILD_NUMBER; $false = 1 }[$env:APPVEYOR_BUILD_NUMBER -ne $NULL];
-$revision = "{0:D4}" -f [convert]::ToInt32($revision, 10)
+exec { & dotnet build DbfDataReader.sln -c Release --version-suffix=$buildSuffix -v q /nologo }
 
-exec { & dotnet test .\test\DbfDataReader.Tests -c Release }
+Push-Location -Path .\test\DbfDataReader.Tests
 
-exec { & dotnet pack .\src\DbfDataReader -c Release -o .\artifacts --version-suffix=$revision }
+exec { & dotnet xunit -configuration Release }
 
+Pop-Location
 
+exec { & dotnet pack .\src\DbfDataReader\DbfDataReader.csproj -c Release -o .\artifacts --include-symbols --no-build --version-suffix=$suffix }
