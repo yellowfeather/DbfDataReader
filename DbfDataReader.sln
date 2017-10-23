@@ -1,20 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02A96866-FEA4-483E-A6FD-CB8660F51FD3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C65E3B7-6E4F-470A-9422-7B273FE6EBF6}"
-	ProjectSection(SolutionItems) = preProject
-		global.json = global.json
-	EndProjectSection
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DbfDataReader", "src\DbfDataReader\DbfDataReader.xproj", "{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}"
-EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "DbfDataReader.Tests", "test\DbfDataReader.Tests\DbfDataReader.Tests.xproj", "{A0D45C13-CE45-444C-B5D3-FF9425BE0635}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixtures", "fixtures", "{A58BB1E8-935E-4A73-B630-969EE5B4AF2F}"
 	ProjectSection(SolutionItems) = preProject
@@ -46,6 +39,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixtures", "fixtures", "{A5
 		test\fixtures\dbase_f5_summary.txt = test\fixtures\dbase_f5_summary.txt
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader", "src\DbfDataReader\DbfDataReader.csproj", "{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader.Tests", "test\DbfDataReader.Tests\DbfDataReader.Tests.csproj", "{A0D45C13-CE45-444C-B5D3-FF9425BE0635}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,8 +62,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{A58BB1E8-935E-4A73-B630-969EE5B4AF2F} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
 		{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1} = {02A96866-FEA4-483E-A6FD-CB8660F51FD3}
 		{A0D45C13-CE45-444C-B5D3-FF9425BE0635} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
-		{A58BB1E8-935E-4A73-B630-969EE5B4AF2F} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
 	EndGlobalSection
 EndGlobal
