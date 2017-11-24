@@ -84,7 +84,7 @@ namespace DbfDataReader
 
         public IList<DbfColumn> Columns { get; }
 
-        public bool IsClosed => BinaryReader != null;
+        public bool IsClosed => BinaryReader == null;
 
         public string MemoPath()
         {
