@@ -40,4 +40,10 @@ exec { & dotnet xunit -configuration Release }
 
 Pop-Location
 
-exec { & dotnet pack .\src\DbfDataReader\DbfDataReader.csproj -c Release -o .\artifacts --include-symbols --no-build --version-suffix=$suffix }
+echo $env:APPVEYOR_BUILD_NUMBER
+echo $tag
+echo $revision
+echo $suffix
+echo $buildSuffix
+
+exec { & dotnet pack .\src\DbfDataReader\DbfDataReader.csproj -c Release -o .\artifacts --include-symbols --no-build --version-suffix=$buildSuffix }
