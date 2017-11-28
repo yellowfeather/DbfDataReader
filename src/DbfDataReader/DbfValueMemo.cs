@@ -22,7 +22,7 @@ namespace DbfDataReader
             else
             {
                 var value = new string(binaryReader.ReadChars(Length));
-                if (string.IsNullOrEmpty(value))
+                if (string.IsNullOrWhiteSpace(value))
                 {
                     Value = string.Empty;
                 }
