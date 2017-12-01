@@ -19,7 +19,13 @@
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <Version>0.4.1</Version>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\build\DbfDataReader.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\build\DbfDataReader.snk" Link="DbfDataReader.snk" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
