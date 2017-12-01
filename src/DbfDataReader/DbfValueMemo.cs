@@ -29,7 +29,7 @@ namespace DbfDataReader
                 else
                 {
                     var startBlock = long.Parse(value);
-                    Value = _memo.Get(startBlock);
+                    Value = _memo?.Get(startBlock);
                 }
             }
         }
