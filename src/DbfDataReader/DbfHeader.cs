@@ -23,11 +23,13 @@ namespace DbfDataReader
         {
             Version = binaryReader.ReadByte();
 
-            var year = binaryReader.ReadByte();
+            int year = binaryReader.ReadByte();
+            // if the year value less than 50 then assume that it belongs to the current century
+            year += year < 50 ? 2000 : 1900;
             var month = binaryReader.ReadByte();
             var day = binaryReader.ReadByte();
 
-            UpdatedAt = new DateTime(year + 1900, month, day);
+            UpdatedAt = new DateTime(year, month, day);
 
             RecordCount = binaryReader.ReadUInt32();
             HeaderLength = binaryReader.ReadUInt16();
