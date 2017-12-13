@@ -5,9 +5,16 @@ namespace DbfDataReader
 {
     public class DbfValueCurrency : DbfValue<float?>
     {
-        public DbfValueCurrency(int length, int decimalCount) : base(length)
+        private readonly DbfDataReaderOptions options;
+
+        public DbfValueCurrency(int length, int decimalCount) : this(length, decimalCount, new DbfDataReaderOptions())
+        {
+        }
+
+        public DbfValueCurrency(int length, int decimalCount, DbfDataReaderOptions options) : base(length)
         {
             DecimalCount = decimalCount;
+            this.options = options;
         }
 
         public int DecimalCount { get; set; }
@@ -15,7 +22,7 @@ namespace DbfDataReader
         public override void Read(BinaryReader binaryReader)
         {
             var bytes = binaryReader.ReadBytes(Length);
-            if (bytes[0] == '\0')
+            if (!options.SkipNullBinaryCheck && bytes[0] == '\0')
             {
                 Value = null;
             }

@@ -8,18 +8,22 @@ namespace DbfDataReader
     {
         private const byte EndOfFile = 0x1a;
 
-        public DbfRecord(DbfTable dbfTable)
+        public DbfRecord(DbfTable dbfTable) : this(dbfTable, new DbfDataReaderOptions())
+        {
+        }
+
+        public DbfRecord(DbfTable dbfTable, DbfDataReaderOptions options)
         {
             Values = new List<IDbfValue>();
 
             foreach (var dbfColumn in dbfTable.Columns)
             {
-                var dbfValue = CreateDbfValue(dbfColumn, dbfTable.Memo);
+                var dbfValue = CreateDbfValue(dbfColumn, dbfTable.Memo, options);
                 Values.Add(dbfValue);
             }
         }
 
-        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo)
+        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo, DbfDataReaderOptions options)
         {
             IDbfValue value;
 
@@ -36,13 +40,13 @@ namespace DbfDataReader
                     }
                     break;
                 case DbfColumnType.Signedlong:
-                    value = new DbfValueLong(dbfColumn.Length);
+                    value = new DbfValueLong(dbfColumn.Length, options);
                     break;
                 case DbfColumnType.Float:
                     value = new DbfValueFloat(dbfColumn.Length);
                     break;
                 case DbfColumnType.Currency:
-                    value = new DbfValueCurrency(dbfColumn.Length, dbfColumn.DecimalCount);
+                    value = new DbfValueCurrency(dbfColumn.Length, dbfColumn.DecimalCount, options);
                     break;
                 case DbfColumnType.Date:
                     value = new DbfValueDate(dbfColumn.Length);

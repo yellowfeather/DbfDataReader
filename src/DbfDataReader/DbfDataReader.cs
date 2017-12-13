@@ -10,13 +10,19 @@ namespace DbfDataReader
         public DbfDataReader(string path)
         {
             DbfTable = new DbfTable(path);
-            DbfRecord = new DbfRecord(DbfTable);
+            DbfRecord = new DbfRecord(DbfTable, new DbfDataReaderOptions());
         }
 
         public DbfDataReader(string path, Encoding encoding)
         {
             DbfTable = new DbfTable(path, encoding);
-            DbfRecord = new DbfRecord(DbfTable);
+            DbfRecord = new DbfRecord(DbfTable, new DbfDataReaderOptions());
+        }
+
+        public DbfDataReader(string path, Encoding encoding, DbfDataReaderOptions options)
+        {
+            DbfTable = new DbfTable(path, encoding);
+            DbfRecord = new DbfRecord(DbfTable, options);
         }
 
         public DbfTable DbfTable { get; private set; }
