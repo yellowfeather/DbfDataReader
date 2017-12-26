@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.IO;
 
 namespace DbfDataReader
@@ -12,17 +11,16 @@ namespace DbfDataReader
 
         public override void Read(BinaryReader binaryReader)
         {
-            var value = new string(binaryReader.ReadChars(8));
-            value = value.TrimEnd((char)0);
-
-            if (string.IsNullOrWhiteSpace(value))
+            var bytes = binaryReader.ReadBytes(8);
+            if (bytes[0] == '\0')
             {
                 Value = null;
             }
             else
             {
-                //Value = DateTime.ParseExact(value, "yyyyMMdd", null, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite);
-                Value = null;
+                var datePart = BitConverter.ToInt32(bytes, 0);
+                var timePart = BitConverter.ToInt32(bytes, 4);
+                Value = new DateTime(1, 1, 1).AddDays(datePart).Subtract(TimeSpan.FromDays(1721426)).AddMilliseconds(timePart);
             }
         }
     }
