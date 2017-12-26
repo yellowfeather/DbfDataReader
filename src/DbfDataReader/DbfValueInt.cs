@@ -22,8 +22,7 @@ namespace DbfDataReader
             {
                 var stringValue = new string(binaryReader.ReadChars(Length));
 
-                int value;
-                if (int.TryParse(stringValue, NumberStyles.Integer | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, IntNumberFormat, out value))
+                if (int.TryParse(stringValue, NumberStyles.Integer | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, IntNumberFormat, out int value))
                 {
                     Value = value;
                 }
