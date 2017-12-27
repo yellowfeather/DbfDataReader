@@ -41,6 +41,9 @@ namespace DbfDataReader
         }
 
         public DbfTable(Stream stream, Encoding encoding)
+            : this(stream, null, encoding) { }
+
+        public DbfTable(Stream stream, Stream memoStream, Encoding encoding)
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
@@ -50,6 +53,9 @@ namespace DbfDataReader
             Header = new DbfHeader(BinaryReader);
             Columns = ReadColumns(BinaryReader);
             SkipToFirstRecord(BinaryReader);
+
+            if (memoStream != null)
+                Memo = CreateMemo(memoStream);
         }
 
         public void Close()
@@ -105,6 +111,29 @@ namespace DbfDataReader
             }
 
             return string.Empty;
+        }
+
+        public DbfMemo CreateMemo(Stream memoStream)
+        {
+            DbfMemo memo;
+
+            if (Header.IsFoxPro)
+            {
+                memo = new DbfMemoFoxPro(memoStream, CurrentEncoding);
+            }
+            else
+            {
+                if (Header.Version == 0x83)
+                {
+                    memo = new DbfMemoDbase3(memoStream, CurrentEncoding);
+                }
+                else
+                {
+                    memo = new DbfMemoDbase4(memoStream, CurrentEncoding);
+                }
+            }
+
+            return memo;
         }
 
         public DbfMemo CreateMemo(string path)
