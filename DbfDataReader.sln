@@ -1,11 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02A96866-FEA4-483E-A6FD-CB8660F51FD3}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C65E3B7-6E4F-470A-9422-7B273FE6EBF6}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{8C65E3B7-6E4F-470A-9422-7B273FE6EBF6}"
+	ProjectSection(SolutionItems) = preProject
+		build\DbfDataReader.snk = build\DbfDataReader.snk
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}"
 EndProject
@@ -65,5 +68,8 @@ Global
 		{A58BB1E8-935E-4A73-B630-969EE5B4AF2F} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
 		{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1} = {02A96866-FEA4-483E-A6FD-CB8660F51FD3}
 		{A0D45C13-CE45-444C-B5D3-FF9425BE0635} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3098551B-B3E7-4B97-BC58-D7540130BFDF}
 	EndGlobalSection
 EndGlobal
