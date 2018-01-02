@@ -44,6 +44,7 @@ namespace DbfDataReader.Tests
 
 
         [Fact]
+        [UseCulture("en-GB")]
         public void Should_have_correct_row_values()
         {
             ValidateRowValues("../../../../fixtures/dbase_30.csv");
