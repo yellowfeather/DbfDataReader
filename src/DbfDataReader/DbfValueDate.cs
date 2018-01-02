@@ -27,7 +27,7 @@ namespace DbfDataReader
 
         public override string ToString()
         {
-            return Value?.ToString("yyyyMMdd") ?? string.Empty;
+            return Value?.ToString("d") ?? string.Empty;
         }
     }
 }

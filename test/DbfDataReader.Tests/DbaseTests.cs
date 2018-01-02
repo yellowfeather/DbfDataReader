@@ -31,7 +31,7 @@ namespace DbfDataReader.Tests
             using (var summaryFile = new StreamReader(stream))
             {
                 var line = summaryFile.ReadLine();
-                while (!line.StartsWith("---"))
+                while (line != null && !line.StartsWith("---"))
                 {
                     line = summaryFile.ReadLine();
                 }

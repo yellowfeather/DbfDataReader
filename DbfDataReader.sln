@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02A96866-FEA4-483E-A6FD-CB8660F51FD3}"
 EndProject
@@ -34,6 +34,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixtures", "fixtures", "{A5
 		test\fixtures\dbase_8b.dbf = test\fixtures\dbase_8b.dbf
 		test\fixtures\dbase_8b.dbt = test\fixtures\dbase_8b.dbt
 		test\fixtures\dbase_8b_summary.txt = test\fixtures\dbase_8b_summary.txt
+		test\fixtures\dbase_f5.csv = test\fixtures\dbase_f5.csv
 		test\fixtures\dbase_f5.dbf = test\fixtures\dbase_f5.dbf
 		test\fixtures\dbase_f5.fpt = test\fixtures\dbase_f5.fpt
 		test\fixtures\dbase_f5_summary.txt = test\fixtures\dbase_f5_summary.txt
@@ -65,5 +66,8 @@ Global
 		{A58BB1E8-935E-4A73-B630-969EE5B4AF2F} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
 		{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1} = {02A96866-FEA4-483E-A6FD-CB8660F51FD3}
 		{A0D45C13-CE45-444C-B5D3-FF9425BE0635} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B7A9572-5B9E-4FDD-9BEC-4FBD8885C3F2}
 	EndGlobalSection
 EndGlobal

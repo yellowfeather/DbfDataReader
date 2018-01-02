@@ -27,9 +27,7 @@ namespace DbfDataReader
 
             do
             {
-                var block = new string(_binaryReader.ReadChars(DefaultBlockSize));
-                block = block.TrimEnd('\0', ' ');
-
+                var block = _binaryReader.ReadChars(DefaultBlockSize);
                 stringBuilder.Append(block);
 
                 if (block.Length >= DefaultBlockSize)
@@ -38,7 +36,9 @@ namespace DbfDataReader
                 }
             } while (!finished);
 
-            return stringBuilder.ToString();
+            var value = stringBuilder.ToString();
+            value = value.TrimEnd('\0', ' ');
+            return value;
         }
     }
 }

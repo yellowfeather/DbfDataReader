@@ -16,7 +16,7 @@ namespace DbfDataReader
             }
             else {
                 var value = new string(chars);
-                Value = value.TrimEnd('\0', ' ');
+                Value = value.Trim('\0', ' ');
             }
         }
     }
