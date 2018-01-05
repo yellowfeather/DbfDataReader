@@ -76,7 +76,7 @@ namespace DbfDataReader.Tests
                     {
                         var value = dbfValue.ToString();
                         var csvValue = csvValues[index++];
-                        value.ShouldBe(csvValue, $"Row: {row}, column: {index}");
+                        value.ShouldBe(csvValue, $"Row: {row}, column: {index}", StringCompareShould.IgnoreLineEndings);
                     }
 
                     row++;
