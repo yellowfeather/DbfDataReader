@@ -19,7 +19,7 @@ namespace DbfDataReader
 
         public override string BuildMemo(long startBlock)
         {
-            throw new System.NotImplementedException();
+            return null;
         }
     }
 }
