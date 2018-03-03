@@ -33,7 +33,7 @@ namespace DbfDataReader.Tests
         [Fact]
         public void Should_have_the_correct_number_of_columns()
         {
-            DbfTable.Columns.Count.ShouldBe(11);
+            DbfTable.Columns.Count.ShouldBe(13);
         }
 
         [Fact]

@@ -75,8 +75,10 @@ namespace DbfDataReader.Tests
                     foreach (var dbfValue in dbfRecord.Values)
                     {
                         var value = dbfValue.ToString();
-                        var csvValue = csvValues[index++];
-                        value.ShouldBe(csvValue, $"Row: {row}, column: {index}", StringCompareShould.IgnoreLineEndings);
+                        var csvValue = csvValues[index];
+                        value.ShouldBe(csvValue, $"Row: {row}, column: {index} ({DbfTable.Columns[index].Name})", StringCompareShould.IgnoreLineEndings);
+
+                        index++;
                     }
 
                     row++;
