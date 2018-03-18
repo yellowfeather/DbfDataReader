@@ -17,4 +17,6 @@ UNITSINSTO       I          4          0
 UNITSONORD       I          4          0         
 REORDERLEV       I          4          0         
 DISCONTINU       L          1          0         
+FLOAT            F          10         2
+DOUBLE           B          8          0
 _NullFlags       0          1          0         

@@ -10,15 +10,7 @@ namespace DbfDataReader
 
         public override void Read(BinaryReader binaryReader)
         {
-            if (binaryReader.PeekChar() == '\0')
-            {
-                binaryReader.ReadBytes(4);
-                Value = null;
-            }
-            else
-            {
-                Value = binaryReader.ReadUInt32();
-            }
+            Value = binaryReader.ReadInt32();
         }
     }
 }

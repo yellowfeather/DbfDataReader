@@ -8,7 +8,7 @@ Fields:
 Name             Type       Length     Decimal
 ------------------------------------------------------------------------------
 ACCESSNO         C          15         0         
-ACQVALUE         N          12         2         
+ACQVALUE         B          8          2         
 APPNOTES         M          4          0         
 APPRAISOR        C          75         0         
 CABINET          C          25         0         
@@ -27,7 +27,7 @@ CONTAINER        C          40         0
 COPYRIGHT        M          4          0         
 CREATOR          C          80         0         
 CREDIT           M          4          0         
-CURVALMAX        N          12         2         
+CURVALMAX        F          12         2         
 CURVALUE         N          12         2         
 DATASET          C          15         0         
 DATE             C          50         0         

@@ -1,24 +1,55 @@
+using System;
+using System.Globalization;
 using System.IO;
 
 namespace DbfDataReader
 {
     public class DbfValueFloat : DbfValue<float?>
     {
+        private static readonly NumberFormatInfo FloatNumberFormat = new NumberFormatInfo { NumberDecimalSeparator = "." };
+
+        [Obsolete("This constructor should no longer be used. Use DbfValueFloat(System.Int32, System.Int32) instead.")]
+        public DbfValueFloat(int length) : this(length, 0)
+        {
+
+        }
+
+        public DbfValueFloat(int length, int decimalCount) : base(length)
+        {
+            DecimalCount = decimalCount;
+        }
+
+        public int DecimalCount { get; }
+
         public override void Read(BinaryReader binaryReader)
         {
             if (binaryReader.PeekChar() == '\0')
             {
-                binaryReader.ReadBytes(2);
+                binaryReader.ReadBytes(Length);
                 Value = null;
             }
             else
             {
-                Value = binaryReader.ReadInt16();
+                var stringValue = new string(binaryReader.ReadChars(Length));
+
+                if (float.TryParse(stringValue, NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, FloatNumberFormat, out float value))
+                {
+                    Value = value;
+                }
+                else
+                {
+                    Value = null;
+                }
             }
         }
 
-        public DbfValueFloat(int length) : base(length)
+        public override string ToString()
         {
+            string format = DecimalCount != 0
+                ? $"0.{new string('0', DecimalCount)}"
+                : null;
+
+            return Value?.ToString(format, NumberFormatInfo.CurrentInfo) ?? string.Empty;
         }
     }
 }

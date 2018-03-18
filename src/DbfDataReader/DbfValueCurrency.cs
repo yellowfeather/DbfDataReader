@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace DbfDataReader
@@ -15,21 +16,18 @@ namespace DbfDataReader
         public override void Read(BinaryReader binaryReader)
         {
             var bytes = binaryReader.ReadBytes(Length);
-            if (bytes[0] == '\0')
-            {
-                Value = null;
-            }
-            else
-            {
-                var value = BitConverter.ToUInt64(bytes, 0);
-                Value = value / 10000.0f;
-            }
+
+            var value = BitConverter.ToUInt64(bytes, 0);
+            Value = value / 10000.0f;
         }
 
         public override string ToString()
         {
-            var format = $"f{DecimalCount}";
-            return Value?.ToString(format) ?? string.Empty;
+            string format = DecimalCount != 0
+                ? $"0.{new string('0', DecimalCount)}"
+                : null;
+
+            return Value?.ToString(format, NumberFormatInfo.CurrentInfo) ?? string.Empty;
         }
     }
 }

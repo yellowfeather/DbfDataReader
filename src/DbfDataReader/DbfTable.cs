@@ -142,17 +142,17 @@ namespace DbfDataReader
 
             if (Header.IsFoxPro)
             {
-                memo = new DbfMemoFoxPro(path);
+                memo = new DbfMemoFoxPro(path, CurrentEncoding);
             }
             else
             {
                 if (Header.Version == 0x83)
                 {
-                    memo = new DbfMemoDbase3(path);
+                    memo = new DbfMemoDbase3(path, CurrentEncoding);
                 }
                 else
                 {
-                    memo = new DbfMemoDbase4(path);
+                    memo = new DbfMemoDbase4(path, CurrentEncoding);
                 }
             }
 

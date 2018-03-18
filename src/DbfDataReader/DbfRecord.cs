@@ -39,7 +39,7 @@ namespace DbfDataReader
                     value = new DbfValueLong(dbfColumn.Length);
                     break;
                 case DbfColumnType.Float:
-                    value = new DbfValueFloat(dbfColumn.Length);
+                    value = new DbfValueFloat(dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.Currency:
                     value = new DbfValueCurrency(dbfColumn.Length, dbfColumn.DecimalCount);
@@ -57,7 +57,7 @@ namespace DbfDataReader
                     value = new DbfValueMemo(dbfColumn.Length, memo);
                     break;
                 case DbfColumnType.Double:
-                    value = new DbfValueDouble(dbfColumn.Length);
+                    value = new DbfValueDouble(dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
