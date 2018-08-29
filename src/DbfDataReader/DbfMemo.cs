@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 
@@ -12,7 +12,7 @@ namespace DbfDataReader
         protected BinaryReader _binaryReader;
 
         protected DbfMemo(string path)
-            : this(path, Encoding.UTF8)
+            : this(path, EncodingProvider.GetEncoding(1252))
         {
         }
 

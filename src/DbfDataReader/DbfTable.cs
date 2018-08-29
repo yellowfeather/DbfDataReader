@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -11,9 +11,8 @@ namespace DbfDataReader
         private const int ColumnMetaDataSize = 32;
 
         public DbfTable(string path)
-            : this(path, Encoding.UTF8)
+            : this(path, EncodingProvider.GetEncoding(1252))
         {
-            
         }
 
         public DbfTable(string path, Encoding encoding)
@@ -166,7 +165,7 @@ namespace DbfDataReader
             var index = 0;
             while (binaryReader.PeekChar() != Terminator)
             {
-                var column = new DbfColumn(binaryReader, index++);
+                var column = new DbfColumn(binaryReader, index++, CurrentEncoding);
                 columns.Add(column);
             }
 

@@ -1,12 +1,15 @@
-﻿using System.IO;
+using System.IO;
+using System.Text;
 
 namespace DbfDataReader
 {
     public class DbfColumn
     {
-        public DbfColumn(BinaryReader binaryReader, int index)
+        private readonly Encoding _encoding;
+        public DbfColumn(BinaryReader binaryReader, int index, Encoding encoding)
         {
             Index = index;
+            _encoding = encoding;
             Read(binaryReader);
         }
 
@@ -18,7 +21,7 @@ namespace DbfDataReader
 
         private void Read(BinaryReader binaryReader)
         {
-            var rawName = new string(binaryReader.ReadChars(11));
+            var rawName = binaryReader.ReadString(11, _encoding);
             Name = rawName.TrimEnd((char)0);
 
             var type = binaryReader.ReadByte();

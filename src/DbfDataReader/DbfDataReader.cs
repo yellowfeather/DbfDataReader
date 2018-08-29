@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Data.Common;
 using System.Text;
@@ -23,7 +23,7 @@ namespace DbfDataReader
 
         public DbfRecord DbfRecord { get; private set; }
 
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6_1
         public void Close()
 #else
         public override void Close()
@@ -40,7 +40,7 @@ namespace DbfDataReader
             }
         }
 
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6_1
         protected override void Dispose(bool disposing)
         {
             if (disposing)
