@@ -36,7 +36,7 @@ exec { & dotnet build DbfDataReader.sln -c Release --version-suffix=$buildSuffix
 
 Push-Location -Path .\test\DbfDataReader.Tests
 
-exec { & dotnet xunit -configuration Release }
+exec { & dotnet test --configuration Release }
 
 Pop-Location
 
