@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace DbfDataReader
 {
@@ -14,12 +15,12 @@ namespace DbfDataReader
 
             foreach (var dbfColumn in dbfTable.Columns)
             {
-                var dbfValue = CreateDbfValue(dbfColumn, dbfTable.Memo);
+                var dbfValue = CreateDbfValue(dbfColumn, dbfTable.Memo, dbfTable.CurrentEncoding);
                 Values.Add(dbfValue);
             }
         }
 
-        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo)
+        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo, Encoding encoding)
         {
             IDbfValue value;
 
@@ -54,14 +55,14 @@ namespace DbfDataReader
                     value = new DbfValueBoolean(dbfColumn.Length);
                     break;
                 case DbfColumnType.Memo:
-                    value = new DbfValueMemo(dbfColumn.Length, memo);
+                    value = new DbfValueMemo(dbfColumn.Length, memo, encoding);
                     break;
                 case DbfColumnType.Double:
                     value = new DbfValueDouble(dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
-                    value = new DbfValueString(dbfColumn.Length);
+                    value = new DbfValueString(dbfColumn.Length, encoding);
                     break;
                 default:
                     value = new DbfValueNull(dbfColumn.Length);

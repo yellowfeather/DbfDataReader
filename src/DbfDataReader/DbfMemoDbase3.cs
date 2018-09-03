@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 
 namespace DbfDataReader
@@ -27,7 +27,7 @@ namespace DbfDataReader
 
             do
             {
-                var block = _binaryReader.ReadChars(DefaultBlockSize);
+                var block = _binaryReader.ReadString(DefaultBlockSize, CurrentEncoding);
                 stringBuilder.Append(block);
 
                 if (block.Length >= DefaultBlockSize)

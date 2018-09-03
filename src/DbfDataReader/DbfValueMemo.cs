@@ -1,4 +1,5 @@
-﻿using System.IO;
+using System.IO;
+using System.Text;
 
 namespace DbfDataReader
 {
@@ -6,8 +7,8 @@ namespace DbfDataReader
     {
         private readonly DbfMemo _memo;
 
-        public DbfValueMemo(int length, DbfMemo memo)
-            : base(length)
+        public DbfValueMemo(int length, DbfMemo memo, Encoding encoding)
+            : base(length, encoding)
         {
             _memo = memo;
         }
@@ -21,7 +22,7 @@ namespace DbfDataReader
             }
             else
             {
-                var value = new string(binaryReader.ReadChars(Length));
+                var value = binaryReader.ReadString(Length, CurrentEncoding);
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     Value = string.Empty;

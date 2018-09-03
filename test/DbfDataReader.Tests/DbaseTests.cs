@@ -1,7 +1,8 @@
-﻿using CsvHelper;
+using CsvHelper;
 using Shouldly;
 using System;
 using System.IO;
+using System.Text;
 
 namespace DbfDataReader.Tests
 {

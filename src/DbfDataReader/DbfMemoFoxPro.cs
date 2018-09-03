@@ -1,11 +1,11 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 
 namespace DbfDataReader
 {
     public class DbfMemoFoxPro : DbfMemo
     {
-        public DbfMemoFoxPro(string path) : this(path, Encoding.UTF8)
+        public DbfMemoFoxPro(string path) : this(path, EncodingProvider.GetEncoding(1252))
         {
         }
 
@@ -43,7 +43,7 @@ namespace DbfDataReader
                 return string.Empty;
             }
 
-            var value = _binaryReader.ReadString(memoLength);
+            var value = _binaryReader.ReadString(memoLength, CurrentEncoding);
             value = value.TrimEnd('\0', ' ');
             return value;
         }
