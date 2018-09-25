@@ -55,21 +55,24 @@ namespace DbfDataReader
             return DbfTable.ReadRecord();
         }
 
-        public T GetNullableValue<T>(int ordinal) where T : struct
+        public T GetValue<T>(int ordinal)
         {
-            var value = DbfRecord.GetValue(ordinal);
-            var nullableValue = value as T?;
-            return nullableValue.Value;
+            return DbfRecord.GetValue<T>(ordinal);
+        }
+
+        public T? GetNullableValue<T>(int ordinal) where T : struct
+        {
+            return GetValue<T>(ordinal);
         }
 
         public override bool GetBoolean(int ordinal)
         {
-            return GetNullableValue<bool>(ordinal);
+            return (bool)GetValue(ordinal);
         }
 
         public override byte GetByte(int ordinal)
         {
-            return GetNullableValue<byte>(ordinal);
+            return GetValue<byte>(ordinal);
         }
 
         public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
@@ -79,7 +82,7 @@ namespace DbfDataReader
 
         public override char GetChar(int ordinal)
         {
-            return GetNullableValue<char>(ordinal);
+            return GetValue<char>(ordinal);
         }
 
         public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
@@ -94,17 +97,17 @@ namespace DbfDataReader
 
         public override DateTime GetDateTime(int ordinal)
         {
-            return GetNullableValue<DateTime>(ordinal);
+            return GetValue<DateTime>(ordinal);
         }
 
         public override decimal GetDecimal(int ordinal)
         {
-            return GetNullableValue<decimal>(ordinal);
+            return GetValue<decimal>(ordinal);
         }
 
         public override double GetDouble(int ordinal)
         {
-            return GetNullableValue<double>(ordinal);
+            return GetValue<double>(ordinal);
         }
 
         public override IEnumerator GetEnumerator()
@@ -197,17 +200,17 @@ namespace DbfDataReader
 
         public override long GetInt64(int ordinal)
         {
-            return GetNullableValue<long>(ordinal);
+            return GetValue<long>(ordinal);
         }
 
         public override int GetInt32(int ordinal)
         {
-            return GetNullableValue<int>(ordinal);
+            return GetValue<int>(ordinal);
         }
 
         public override short GetInt16(int ordinal)
         {
-            return GetNullableValue<short>(ordinal);
+            return GetValue<short>(ordinal);
         }
 
         public override Guid GetGuid(int ordinal)
@@ -217,7 +220,7 @@ namespace DbfDataReader
 
         public override float GetFloat(int ordinal)
         {
-            return GetNullableValue<float>(ordinal);
+            return GetValue<float>(ordinal);
         }
 
         public override Type GetFieldType(int ordinal)

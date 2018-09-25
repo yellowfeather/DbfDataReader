@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 
 namespace DbfDataReader
@@ -12,19 +11,19 @@ namespace DbfDataReader
 
         public int Length { get; }
 
+        public T Value { get; protected set; }
+
 
         public abstract void Read(BinaryReader binaryReader);
-
-        public override string ToString()
-        {
-            return Value.ToString();
-        }
 
         public object GetValue()
         {
             return Value;
         }
 
-        public T Value { get; protected set; }
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
     }
 }

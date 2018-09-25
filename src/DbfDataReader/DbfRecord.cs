@@ -113,8 +113,15 @@ namespace DbfDataReader
 
         public T GetValue<T>(int ordinal)
         {
-            var dbfValue = Values[ordinal] as DbfValue<T>;
-            return dbfValue.Value;
+            var dbfValue = Values[ordinal];
+            try
+            {
+                return (T) dbfValue.GetValue();
+            }
+            catch (InvalidCastException ex)
+            {
+                throw new InvalidCastException($"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
+            }
         }
     }
 }

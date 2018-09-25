@@ -74,5 +74,14 @@ namespace DbfDataReader.Tests
 
             rowCount.ShouldBe(14);
         }
+
+        [Fact]
+        public void Should_throw_exception_when_casting_to_wrong_type()
+        {
+            DbfDataReader.Read();
+
+            var exception = Should.Throw<InvalidCastException>(() => DbfDataReader.GetInt32(0));
+            exception.Message.ShouldBe("Unable to cast object of type 'System.String' to type 'System.Int32' at ordinal '0'.");
+        }
     }
 }
