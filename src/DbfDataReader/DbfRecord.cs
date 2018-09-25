@@ -118,7 +118,7 @@ namespace DbfDataReader
             {
                 return (T) dbfValue.GetValue();
             }
-            catch (InvalidCastException ex)
+            catch (InvalidCastException)
             {
                 throw new InvalidCastException($"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
             }

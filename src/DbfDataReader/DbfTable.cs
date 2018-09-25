@@ -10,11 +10,6 @@ namespace DbfDataReader
         private const int HeaderMetaDataSize = 33;
         private const int ColumnMetaDataSize = 32;
 
-        public DbfTable(string path)
-            : this(path, EncodingProvider.GetEncoding(1252))
-        {
-        }
-
         public DbfTable(string path, Encoding encoding)
         {
             if (!File.Exists(path))
@@ -187,8 +182,7 @@ namespace DbfDataReader
         public DbfRecord ReadRecord()
         {
             var dbfRecord = new DbfRecord(this);
-            dbfRecord.Read(BinaryReader);
-            return dbfRecord;
+            return !dbfRecord.Read(BinaryReader) ? null : dbfRecord;
         }
 
         public bool Read(DbfRecord dbfRecord)

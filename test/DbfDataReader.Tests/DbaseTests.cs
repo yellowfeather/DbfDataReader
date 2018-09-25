@@ -2,7 +2,6 @@ using CsvHelper;
 using Shouldly;
 using System;
 using System.IO;
-using System.Text;
 
 namespace DbfDataReader.Tests
 {
@@ -11,7 +10,7 @@ namespace DbfDataReader.Tests
         protected DbaseTests(string fixturePath)
         {
             FixturePath = fixturePath;
-            DbfTable = new DbfTable(fixturePath);
+            DbfTable = new DbfTable(fixturePath, EncodingProvider.GetEncoding(1252));
         }
 
         public void Dispose()

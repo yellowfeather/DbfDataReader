@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Text;
 using Shouldly;
 using Xunit;
 
@@ -12,7 +12,7 @@ namespace DbfDataReader.Tests
         {
             const string fixturePath = "../../../../fixtures/dbase_30.dbf";
 
-            var dbfTable = new DbfTable(fixturePath);
+            var dbfTable = new DbfTable(fixturePath, Encoding.GetEncoding(1252));
 
             dbfTable.BinaryReader.ShouldNotBeNull();
 
@@ -26,7 +26,7 @@ namespace DbfDataReader.Tests
         {
             const string fixturePath = "../../../../fixtures/dbase_30.dbf";
 
-            var dbfTable = new DbfTable(fixturePath);
+            var dbfTable = new DbfTable(fixturePath, Encoding.GetEncoding(1252));
 
             dbfTable.Memo.ShouldNotBeNull();
 

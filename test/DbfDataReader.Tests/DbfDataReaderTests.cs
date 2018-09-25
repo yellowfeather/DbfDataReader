@@ -5,83 +5,102 @@ using Xunit;
 namespace DbfDataReader.Tests
 {
     [Collection("dbase_03")]
-    public class DbfDataReaderTests : IDisposable
+    public class DbfDataReaderTests
     {
         private const string FixturePath = "../../../../fixtures/dbase_03.dbf";
         
-        public DbfDataReaderTests()
-        {
-            DbfDataReader = new DbfDataReader(FixturePath);
-        }
-
-        public void Dispose()
-        {
-            DbfDataReader.Dispose();
-            DbfDataReader = null;
-        }
-
-        public DbfDataReader DbfDataReader { get; set; }
-
         [Fact]
         public void Should_have_valid_first_row_values()
         {
-            DbfDataReader.Read().ShouldBeTrue();
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            {
+                dbfDataReader.Read().ShouldBeTrue();
 
-            DbfDataReader.GetString(0).ShouldBe("0507121");
-            DbfDataReader.GetString(1).ShouldBe("CMP");
-            DbfDataReader.GetString(2).ShouldBe("circular");
-            DbfDataReader.GetString(3).ShouldBe("12");
-            DbfDataReader.GetString(4).ShouldBe(string.Empty);
-            DbfDataReader.GetString(5).ShouldBe("no");
-            DbfDataReader.GetString(6).ShouldBe("Good");
-            DbfDataReader.GetString(7).ShouldBe(string.Empty);
-            DbfDataReader.GetDateTime(8).ShouldBe(new DateTime(2005,7,12));
-            DbfDataReader.GetString(9).ShouldBe("10:56:30am");
-            DbfDataReader.GetDecimal(10).ShouldBe(5.2m);
-            DbfDataReader.GetDecimal(11).ShouldBe(2.0m);
-            DbfDataReader.GetString(12).ShouldBe("Postprocessed Code");
-            DbfDataReader.GetString(13).ShouldBe("GeoXT");
-            DbfDataReader.GetDateTime(14).ShouldBe(new DateTime(2005,7,12));
-            DbfDataReader.GetString(15).ShouldBe("10:56:52am");
-            DbfDataReader.GetString(16).ShouldBe("New");
-            DbfDataReader.GetString(17).ShouldBe("Driveway");
-            DbfDataReader.GetString(18).ShouldBe("050712TR2819.cor");
-            DbfDataReader.GetInt32(19).ShouldBe(2);
-            DbfDataReader.GetInt32(20).ShouldBe(2);
-            DbfDataReader.GetString(21).ShouldBe("MS4");
-            DbfDataReader.GetInt32(22).ShouldBe(1331);
-            DbfDataReader.GetDecimal(23).ShouldBe(226625.000m);
-            DbfDataReader.GetDecimal(24).ShouldBe(1131.323m);
-            DbfDataReader.GetDecimal(25).ShouldBe(3.1m);
-            DbfDataReader.GetDecimal(26).ShouldBe(1.3m);
-            DbfDataReader.GetDecimal(27).ShouldBe(0.897088m);
-            DbfDataReader.GetDecimal(28).ShouldBe(557904.898m);
-            DbfDataReader.GetDecimal(29).ShouldBe(2212577.192m);
-            DbfDataReader.GetInt32(30).ShouldBe(401);
+                dbfDataReader.GetString(0).ShouldBe("0507121");
+                dbfDataReader.GetString(1).ShouldBe("CMP");
+                dbfDataReader.GetString(2).ShouldBe("circular");
+                dbfDataReader.GetString(3).ShouldBe("12");
+                dbfDataReader.GetString(4).ShouldBe(string.Empty);
+                dbfDataReader.GetString(5).ShouldBe("no");
+                dbfDataReader.GetString(6).ShouldBe("Good");
+                dbfDataReader.GetString(7).ShouldBe(string.Empty);
+                dbfDataReader.GetDateTime(8).ShouldBe(new DateTime(2005, 7, 12));
+                dbfDataReader.GetString(9).ShouldBe("10:56:30am");
+                dbfDataReader.GetDecimal(10).ShouldBe(5.2m);
+                dbfDataReader.GetDecimal(11).ShouldBe(2.0m);
+                dbfDataReader.GetString(12).ShouldBe("Postprocessed Code");
+                dbfDataReader.GetString(13).ShouldBe("GeoXT");
+                dbfDataReader.GetDateTime(14).ShouldBe(new DateTime(2005, 7, 12));
+                dbfDataReader.GetString(15).ShouldBe("10:56:52am");
+                dbfDataReader.GetString(16).ShouldBe("New");
+                dbfDataReader.GetString(17).ShouldBe("Driveway");
+                dbfDataReader.GetString(18).ShouldBe("050712TR2819.cor");
+                dbfDataReader.GetInt32(19).ShouldBe(2);
+                dbfDataReader.GetInt32(20).ShouldBe(2);
+                dbfDataReader.GetString(21).ShouldBe("MS4");
+                dbfDataReader.GetInt32(22).ShouldBe(1331);
+                dbfDataReader.GetDecimal(23).ShouldBe(226625.000m);
+                dbfDataReader.GetDecimal(24).ShouldBe(1131.323m);
+                dbfDataReader.GetDecimal(25).ShouldBe(3.1m);
+                dbfDataReader.GetDecimal(26).ShouldBe(1.3m);
+                dbfDataReader.GetDecimal(27).ShouldBe(0.897088m);
+                dbfDataReader.GetDecimal(28).ShouldBe(557904.898m);
+                dbfDataReader.GetDecimal(29).ShouldBe(2212577.192m);
+                dbfDataReader.GetInt32(30).ShouldBe(401);
+            }
         }
 
         [Fact]
         public void Should_be_able_to_read_all_the_rows()
         {
-            var rowCount = 0;
-            while (DbfDataReader.Read())
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
             {
-                rowCount++;
+                var rowCount = 0;
+                while (dbfDataReader.Read())
+                {
+                    rowCount++;
 
-                var valueCol1 = DbfDataReader.GetString(0);
-                var valueCol2 = DbfDataReader.GetDecimal(10);
+                    var valueCol1 = dbfDataReader.GetString(0);
+                    var valueCol2 = dbfDataReader.GetDecimal(10);
+                }
+
+                rowCount.ShouldBe(14);
             }
+        }
 
-            rowCount.ShouldBe(14);
+        [Fact]
+        public void Should_skip_deleted_rows()
+        {
+            var options = new DbfDataReaderOptions
+            {
+                SkipDeletedRecords = true
+            };
+            using (var dbfDataReader = new DbfDataReader(FixturePath, options))
+            {
+                var rowCount = 0;
+                while (dbfDataReader.Read())
+                {
+                    rowCount++;
+
+                    var valueCol1 = dbfDataReader.GetString(0);
+                    var valueCol2 = dbfDataReader.GetDecimal(10);
+                }
+
+                rowCount.ShouldBe(12);
+            }
         }
 
         [Fact]
         public void Should_throw_exception_when_casting_to_wrong_type()
         {
-            DbfDataReader.Read();
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            {
+                dbfDataReader.Read();
 
-            var exception = Should.Throw<InvalidCastException>(() => DbfDataReader.GetInt32(0));
-            exception.Message.ShouldBe("Unable to cast object of type 'System.String' to type 'System.Int32' at ordinal '0'.");
+                var exception = Should.Throw<InvalidCastException>(() => dbfDataReader.GetInt32(0));
+                exception.Message.ShouldBe(
+                    "Unable to cast object of type 'System.String' to type 'System.Int32' at ordinal '0'.");
+            }
         }
     }
 }

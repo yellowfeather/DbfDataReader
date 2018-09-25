@@ -1,21 +1,22 @@
 using System;
 using System.Collections;
 using System.Data.Common;
-using System.Text;
 
 namespace DbfDataReader
 {
     public class DbfDataReader : DbDataReader
     {
+        private readonly DbfDataReaderOptions _options;
+
         public DbfDataReader(string path)
+            : this(path, new DbfDataReaderOptions())
         {
-            DbfTable = new DbfTable(path);
-            DbfRecord = new DbfRecord(DbfTable);
         }
 
-        public DbfDataReader(string path, Encoding encoding)
+        public DbfDataReader(string path, DbfDataReaderOptions options)
         {
-            DbfTable = new DbfTable(path, encoding);
+            _options = options;
+            DbfTable = new DbfTable(path, options.Encoding);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
@@ -52,7 +53,18 @@ namespace DbfDataReader
 
         public DbfRecord ReadRecord()
         {
-            return DbfTable.ReadRecord();
+            DbfRecord dbfRecord;
+            bool skip;
+            do
+            {
+                dbfRecord = DbfTable.ReadRecord();
+                if (dbfRecord == null)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return dbfRecord;
         }
 
         public T GetValue<T>(int ordinal)
@@ -77,7 +89,7 @@ namespace DbfDataReader
 
         public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override char GetChar(int ordinal)
@@ -87,12 +99,12 @@ namespace DbfDataReader
 
         public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override string GetDataTypeName(int ordinal)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override DateTime GetDateTime(int ordinal)
@@ -112,7 +124,7 @@ namespace DbfDataReader
 
         public override IEnumerator GetEnumerator()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override bool NextResult()
@@ -122,20 +134,25 @@ namespace DbfDataReader
 
         public override bool Read()
         {
-            return DbfTable.Read(DbfRecord);
+            bool result;
+            bool skip;
+            do
+            {
+                result = DbfTable.Read(DbfRecord);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
         }
 
-        public override int Depth
-        {
-            get { throw new NotImplementedException(); }
-        }
+        public override int Depth => throw new NotImplementedException();
 
         public override bool IsClosed => DbfTable.IsClosed;
 
-        public override int RecordsAffected
-        {
-            get { throw new NotImplementedException(); }
-        }
+        public override int RecordsAffected => throw new NotImplementedException();
 
         public override object this[string name]
         {
@@ -146,10 +163,7 @@ namespace DbfDataReader
             }
         }
 
-        public override object this[int ordinal]
-        {
-            get { return GetValue(ordinal); }
-        }
+        public override object this[int ordinal] => GetValue(ordinal);
 
         public override int FieldCount => DbfTable.Columns.Count;
 
@@ -163,7 +177,7 @@ namespace DbfDataReader
 
         public override int GetValues(object[] values)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override object GetValue(int ordinal)
@@ -215,7 +229,7 @@ namespace DbfDataReader
 
         public override Guid GetGuid(int ordinal)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override float GetFloat(int ordinal)
@@ -225,7 +239,7 @@ namespace DbfDataReader
 
         public override Type GetFieldType(int ordinal)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }
