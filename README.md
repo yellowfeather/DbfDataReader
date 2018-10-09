@@ -31,6 +31,8 @@ using (var dbfTable = new DbfTable(dbfPath))
 and to iterate over the rows:
 
 ```
+var skipDeleted = true;
+
 var dbfPath = "path/file.dbf";
 using (var dbfTable = new DbfTable(dbfPath))
 {        
@@ -38,7 +40,7 @@ using (var dbfTable = new DbfTable(dbfPath))
 
     while (dbfTable.Read(dbfRecord))
     {
-        if (options.SkipDeleted && dbfRecord.IsDeleted)
+        if (skipDeleted && dbfRecord.IsDeleted)
         {
             continue;
         }
@@ -55,8 +57,14 @@ using (var dbfTable = new DbfTable(dbfPath))
 There is also an implementation of DbDataReader:
 
 ```
+var options = new DbfDataReaderOptions
+{
+    SkipDeletedRecords = true
+    // Encoding = EncodingProvider.GetEncoding(1252);
+};
+
 var dbfPath = "path/file.dbf";
-using (var dbfDataReader = new DbfDataReader.DbfDataReader(dbfPath))
+using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 {
     while (dbfDataReader.Read())
     {
@@ -71,8 +79,14 @@ using (var dbfDataReader = new DbfDataReader.DbfDataReader(dbfPath))
 which also means you can bulk copy to MS SqlServer:
 
 ```
+var options = new DbfDataReaderOptions
+{
+    SkipDeletedRecords = true
+    // Encoding = EncodingProvider.GetEncoding(1252);
+};
+
 var dbfPath = "path/file.dbf";
-using (var dbfDataReader = new DbfDataReader.DbfDataReader(dbfPath))
+using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 {
     using (var bulkCopy = new SqlBulkCopy(connection))
     {
