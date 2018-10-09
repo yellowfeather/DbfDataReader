@@ -24,8 +24,7 @@ namespace DbfDataReader
 
         public void Read(BinaryReader binaryReader)
         {
-            // binaryReader.ReadBytes(Length);
-            binaryReader.ReadByte();
+            binaryReader.ReadBytes(Length);
         }
 
         public override string ToString()
