@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Data.Common;
+using System.IO;
 
 namespace DbfDataReader
 {
@@ -17,6 +18,20 @@ namespace DbfDataReader
         {
             _options = options;
             DbfTable = new DbfTable(path, options.Encoding);
+            DbfRecord = new DbfRecord(DbfTable);
+        }
+
+        public DbfDataReader(Stream stream, DbfDataReaderOptions options)
+        {
+            _options = options;
+            DbfTable = new DbfTable(stream, options.Encoding);
+            DbfRecord = new DbfRecord(DbfTable);
+        }
+
+        public DbfDataReader(Stream stream, Stream memoStream, DbfDataReaderOptions options)
+        {
+            _options = options;
+            DbfTable = new DbfTable(stream, memoStream, options.Encoding);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
