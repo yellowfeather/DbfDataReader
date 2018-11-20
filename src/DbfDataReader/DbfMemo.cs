@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Text;
 
@@ -9,7 +8,7 @@ namespace DbfDataReader
         protected const int BlockHeaderSize = 8;
         protected const int DefaultBlockSize = 512;
 
-        protected BinaryReader _binaryReader;
+        protected BinaryReader BinaryReader;
 
         protected DbfMemo(string path)
             : this(path, EncodingProvider.GetEncoding(1252))
@@ -18,16 +17,13 @@ namespace DbfDataReader
 
         protected DbfMemo(string path, Encoding encoding)
         {
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException();
-            }
+            if (!File.Exists(path)) throw new FileNotFoundException();
 
             Path = path;
             CurrentEncoding = encoding;
 
             var stream = new FileStream(path, FileMode.Open);
-            _binaryReader = new BinaryReader(stream, encoding, false);
+            BinaryReader = new BinaryReader(stream, encoding, false);
         }
 
         protected DbfMemo(Stream stream, Encoding encoding)
@@ -35,10 +31,14 @@ namespace DbfDataReader
             Path = string.Empty;
             CurrentEncoding = encoding;
 
-            _binaryReader = new BinaryReader(stream, encoding, true);
+            BinaryReader = new BinaryReader(stream, encoding, true);
         }
 
         public Encoding CurrentEncoding { get; set; }
+
+        public virtual int BlockSize => DefaultBlockSize;
+
+        public string Path { get; set; }
 
         public void Close()
         {
@@ -50,17 +50,13 @@ namespace DbfDataReader
             try
             {
                 if (!disposing) return;
-                _binaryReader?.Dispose();
+                BinaryReader?.Dispose();
             }
             finally
             {
-                _binaryReader = null;
+                BinaryReader = null;
             }
         }
-
-        public virtual int BlockSize => DefaultBlockSize;
-
-        public string Path { get; set; }
 
         public abstract string BuildMemo(long startBlock);
 
@@ -76,7 +72,7 @@ namespace DbfDataReader
 
         public int ContentSize(int memoSize)
         {
-            return (memoSize - BlockSize) + BlockHeaderSize;
+            return memoSize - BlockSize + BlockHeaderSize;
         }
 
         public int BlockContentSize()

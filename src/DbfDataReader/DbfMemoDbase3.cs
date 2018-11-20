@@ -20,14 +20,14 @@ namespace DbfDataReader
         public override string BuildMemo(long startBlock)
         {
             var offset = Offset(startBlock);
-            _binaryReader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            BinaryReader.BaseStream.Seek(offset, SeekOrigin.Begin);
 
             var finished = false;
             var stringBuilder = new StringBuilder();
 
             do
             {
-                var block = _binaryReader.ReadString(DefaultBlockSize, CurrentEncoding);
+                var block = BinaryReader.ReadString(DefaultBlockSize, CurrentEncoding);
                 stringBuilder.Append(block);
 
                 if (block.Length >= DefaultBlockSize)
