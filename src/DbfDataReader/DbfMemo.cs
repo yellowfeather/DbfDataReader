@@ -27,7 +27,7 @@ namespace DbfDataReader
             CurrentEncoding = encoding;
 
             var stream = new FileStream(path, FileMode.Open);
-            _binaryReader = new BinaryReader(stream, encoding);
+            _binaryReader = new BinaryReader(stream, encoding, false);
         }
 
         protected DbfMemo(Stream stream, Encoding encoding)
@@ -35,7 +35,7 @@ namespace DbfDataReader
             Path = string.Empty;
             CurrentEncoding = encoding;
 
-            _binaryReader = new BinaryReader(stream, encoding);
+            _binaryReader = new BinaryReader(stream, encoding, true);
         }
 
         public Encoding CurrentEncoding { get; set; }
