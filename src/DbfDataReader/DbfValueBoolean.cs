@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace DbfDataReader
 {
@@ -13,22 +12,16 @@ namespace DbfDataReader
         {
             var value = binaryReader.ReadChar();
             if (value == 'Y' || value == 'y' || value == 'T' || value == 't')
-            {
                 Value = true;
-            }
             else if (value == 'N' || value == 'n' || value == 'F' || value == 'f')
-            {
                 Value = false;
-            }
             else
-            {
                 Value = null;
-            }
         }
 
         public override string ToString()
         {
-            return !Value.HasValue ? string.Empty : (Value.Value ? "T" : "F");
+            return !Value.HasValue ? string.Empty : Value.Value ? "T" : "F";
         }
     }
 }

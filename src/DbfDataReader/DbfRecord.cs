@@ -20,6 +20,10 @@ namespace DbfDataReader
             }
         }
 
+        public bool IsDeleted { get; private set; }
+
+        public IList<IDbfValue> Values { get; set; }
+
         private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo, Encoding encoding)
         {
             IDbfValue value;
@@ -28,13 +32,9 @@ namespace DbfDataReader
             {
                 case DbfColumnType.Number:
                     if (dbfColumn.DecimalCount == 0)
-                    {
                         value = new DbfValueInt(dbfColumn.Length);
-                    }
                     else
-                    {
                         value = new DbfValueDecimal(dbfColumn.Length, dbfColumn.DecimalCount);
-                    }
                     break;
                 case DbfColumnType.SignedLong:
                     value = new DbfValueLong(dbfColumn.Length);
@@ -74,25 +74,16 @@ namespace DbfDataReader
 
         public bool Read(BinaryReader binaryReader)
         {
-            if (binaryReader.BaseStream.Position == binaryReader.BaseStream.Length)
-            {
-                return false;
-            }
+            if (binaryReader.BaseStream.Position == binaryReader.BaseStream.Length) return false;
 
             try
             {
                 var value = binaryReader.ReadByte();
-                if (value == EndOfFile)
-                {
-                    return false;
-                }
+                if (value == EndOfFile) return false;
 
-                IsDeleted = (value == 0x2A);
+                IsDeleted = value == 0x2A;
 
-                foreach (var dbfValue in Values)
-                {
-                    dbfValue.Read(binaryReader);
-                }
+                foreach (var dbfValue in Values) dbfValue.Read(binaryReader);
                 return true;
             }
             catch (EndOfStreamException)
@@ -100,10 +91,6 @@ namespace DbfDataReader
                 return false;
             }
         }
-
-        public bool IsDeleted { get; private set; }
-
-        public IList<IDbfValue> Values { get; set; }
 
         public object GetValue(int ordinal)
         {
@@ -120,7 +107,8 @@ namespace DbfDataReader
             }
             catch (InvalidCastException)
             {
-                throw new InvalidCastException($"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
+                throw new InvalidCastException(
+                    $"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
             }
         }
     }

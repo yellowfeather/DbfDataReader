@@ -5,7 +5,7 @@ namespace DbfDataReader
 {
     public class DbfValueInt : DbfValue<int?>
     {
-        private static readonly NumberFormatInfo IntNumberFormat = new NumberFormatInfo();
+        private static readonly NumberFormatInfo _intNumberFormat = new NumberFormatInfo();
 
         public DbfValueInt(int length) : base(length)
         {
@@ -22,14 +22,12 @@ namespace DbfDataReader
             {
                 var stringValue = new string(binaryReader.ReadChars(Length));
 
-                if (int.TryParse(stringValue, NumberStyles.Integer | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, IntNumberFormat, out int value))
-                {
+                if (int.TryParse(stringValue,
+                    NumberStyles.Integer | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
+                    _intNumberFormat, out var value))
                     Value = value;
-                }
                 else
-                {
                     Value = null;
-                }
             }
         }
     }

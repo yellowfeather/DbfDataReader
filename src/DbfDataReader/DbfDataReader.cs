@@ -94,7 +94,7 @@ namespace DbfDataReader
 
         public override bool GetBoolean(int ordinal)
         {
-            return (bool)GetValue(ordinal);
+            return (bool) GetValue(ordinal);
         }
 
         public override byte GetByte(int ordinal)
@@ -171,10 +171,10 @@ namespace DbfDataReader
 
         public override object this[string name]
         {
-            get 
+            get
             {
                 var ordinal = GetOrdinal(name);
-                return GetValue(ordinal); 
+                return GetValue(ordinal);
             }
         }
 
@@ -207,14 +207,11 @@ namespace DbfDataReader
 
         public override int GetOrdinal(string name)
         {
-            int ordinal = 0;
+            var ordinal = 0;
 
             foreach (var dbfColumn in DbfTable.Columns)
             {
-                if (dbfColumn.Name == name)
-                {
-                    return ordinal;
-                }
+                if (dbfColumn.Name == name) return ordinal;
                 ordinal++;
             }
 
@@ -223,7 +220,7 @@ namespace DbfDataReader
 
         public override string GetName(int ordinal)
         {
-            var dbfColumn = DbfTable.Columns[ordinal]; 
+            var dbfColumn = DbfTable.Columns[ordinal];
             return dbfColumn.Name;
         }
 

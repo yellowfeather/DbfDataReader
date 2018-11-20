@@ -6,6 +6,7 @@ namespace DbfDataReader
     public class DbfValueString : DbfValue<string>
     {
         protected readonly Encoding CurrentEncoding;
+
         public DbfValueString(int length, Encoding encoding) : base(length)
         {
             CurrentEncoding = encoding;

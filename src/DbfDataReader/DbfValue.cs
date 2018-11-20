@@ -13,7 +13,6 @@ namespace DbfDataReader
 
         public T Value { get; protected set; }
 
-
         public abstract void Read(BinaryReader binaryReader);
 
         public object GetValue()

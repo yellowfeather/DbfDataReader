@@ -6,7 +6,8 @@ namespace DbfDataReader
 {
     public class DbfValueDouble : DbfValue<double?>
     {
-        private static readonly NumberFormatInfo DoubleNumberFormat = new NumberFormatInfo { NumberDecimalSeparator = "." };
+        private static readonly NumberFormatInfo _doubleNumberFormat = new NumberFormatInfo
+            {NumberDecimalSeparator = "."};
 
         [Obsolete("This constructor should no longer be used. Use DbfValueDouble(System.Int32, System.Int32) instead.")]
         public DbfValueDouble(int length) : this(length, 0)
@@ -28,7 +29,7 @@ namespace DbfDataReader
 
         public override string ToString()
         {
-            string format = DecimalCount != 0
+            var format = DecimalCount != 0
                 ? $"0.{new string('0', DecimalCount)}"
                 : null;
 

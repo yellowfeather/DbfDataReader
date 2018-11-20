@@ -23,7 +23,7 @@ namespace DbfDataReader
 
         public override string ToString()
         {
-            string format = DecimalCount != 0
+            var format = DecimalCount != 0
                 ? $"0.{new string('0', DecimalCount)}"
                 : null;
 

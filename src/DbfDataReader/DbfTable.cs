@@ -12,10 +12,7 @@ namespace DbfDataReader
 
         public DbfTable(string path, Encoding encoding)
         {
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException();
-            }
+            if (!File.Exists(path)) throw new FileNotFoundException();
 
             Path = path;
             CurrentEncoding = encoding;
@@ -28,14 +25,13 @@ namespace DbfDataReader
             SkipToFirstRecord(BinaryReader);
 
             var memoPath = MemoPath();
-            if (!string.IsNullOrEmpty(memoPath))
-            {
-                Memo = CreateMemo(memoPath);
-            }
+            if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
         public DbfTable(Stream stream, Encoding encoding)
-            : this(stream, null, encoding) { }
+            : this(stream, null, encoding)
+        {
+        }
 
         public DbfTable(Stream stream, Stream memoStream, Encoding encoding)
         {
@@ -51,6 +47,20 @@ namespace DbfDataReader
             if (memoStream != null)
                 Memo = CreateMemo(memoStream);
         }
+
+        public string Path { get; }
+
+        public Encoding CurrentEncoding { get; set; }
+
+        public DbfHeader Header { get; }
+
+        public BinaryReader BinaryReader { get; private set; }
+
+        public DbfMemo Memo { get; private set; }
+
+        public IList<DbfColumn> Columns { get; }
+
+        public bool IsClosed => BinaryReader == null;
 
         public void Close()
         {
@@ -72,20 +82,6 @@ namespace DbfDataReader
             }
         }
 
-        public string Path { get; }
-
-        public Encoding CurrentEncoding { get; set; }
-
-        public DbfHeader Header { get; }
-
-        public BinaryReader BinaryReader { get; private set; }
-
-        public DbfMemo Memo { get; private set; }
-
-        public IList<DbfColumn> Columns { get; }
-
-        public bool IsClosed => BinaryReader == null;
-
         public string MemoPath()
         {
             var paths = new[]
@@ -97,12 +93,8 @@ namespace DbfDataReader
             };
 
             foreach (var path in paths)
-            {
                 if (File.Exists(path))
-                {
                     return path;
-                }
-            }
 
             return string.Empty;
         }
@@ -118,13 +110,9 @@ namespace DbfDataReader
             else
             {
                 if (Header.Version == 0x83)
-                {
                     memo = new DbfMemoDbase3(memoStream, CurrentEncoding);
-                }
                 else
-                {
                     memo = new DbfMemoDbase4(memoStream, CurrentEncoding);
-                }
             }
 
             return memo;
@@ -141,13 +129,9 @@ namespace DbfDataReader
             else
             {
                 if (Header.Version == 0x83)
-                {
                     memo = new DbfMemoDbase3(path, CurrentEncoding);
-                }
                 else
-                {
                     memo = new DbfMemoDbase4(path, CurrentEncoding);
-                }
             }
 
             return memo;
@@ -165,17 +149,14 @@ namespace DbfDataReader
             }
 
             var terminator = binaryReader.ReadByte();
-            if (terminator != Terminator)
-            {
-                throw new DbfFileFormatException();
-            }
+            if (terminator != Terminator) throw new DbfFileFormatException();
 
             return columns;
         }
 
         public void SkipToFirstRecord(BinaryReader binaryReader)
         {
-            var numBytesToSkip = Header.HeaderLength - (HeaderMetaDataSize + (ColumnMetaDataSize * Columns.Count));
+            var numBytesToSkip = Header.HeaderLength - (HeaderMetaDataSize + ColumnMetaDataSize * Columns.Count);
             BinaryReader.ReadBytes(numBytesToSkip);
         }
 

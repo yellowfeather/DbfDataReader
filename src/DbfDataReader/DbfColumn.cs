@@ -6,6 +6,7 @@ namespace DbfDataReader
     public class DbfColumn
     {
         private readonly Encoding _encoding;
+
         public DbfColumn(BinaryReader binaryReader, int index, Encoding encoding)
         {
             Index = index;
@@ -13,7 +14,7 @@ namespace DbfDataReader
             Read(binaryReader);
         }
 
-        public int Index { get; private set; }
+        public int Index { get; }
         public string Name { get; private set; }
         public DbfColumnType ColumnType { get; private set; }
         public int Length { get; private set; }
@@ -22,7 +23,7 @@ namespace DbfDataReader
         private void Read(BinaryReader binaryReader)
         {
             var rawName = binaryReader.ReadString(11, _encoding);
-            Name = rawName.TrimEnd((char)0);
+            Name = rawName.TrimEnd((char) 0);
 
             var type = binaryReader.ReadByte();
             ColumnType = (DbfColumnType) type;

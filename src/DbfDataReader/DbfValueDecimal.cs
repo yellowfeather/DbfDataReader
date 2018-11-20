@@ -5,7 +5,8 @@ namespace DbfDataReader
 {
     public class DbfValueDecimal : DbfValue<decimal?>
     {
-        private static readonly NumberFormatInfo DecimalNumberFormat = new NumberFormatInfo { NumberDecimalSeparator = "." };
+        private static readonly NumberFormatInfo _decimalNumberFormat = new NumberFormatInfo
+            {NumberDecimalSeparator = "."};
 
         public DbfValueDecimal(int length, int decimalCount) : base(length)
         {
@@ -25,21 +26,18 @@ namespace DbfDataReader
             {
                 var stringValue = new string(binaryReader.ReadChars(Length));
 
-                decimal value;
-                if (decimal.TryParse(stringValue, NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, DecimalNumberFormat, out value))
-                {
+                if (decimal.TryParse(stringValue,
+                    NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
+                    _decimalNumberFormat, out var value))
                     Value = value;
-                }
                 else
-                {
                     Value = null;
-                }
             }
         }
 
         public override string ToString()
         {
-            string format = DecimalCount != 0
+            var format = DecimalCount != 0
                 ? $"0.{new string('0', DecimalCount)}"
                 : null;
 

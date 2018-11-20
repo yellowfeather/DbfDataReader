@@ -38,10 +38,7 @@ namespace DbfDataReader
             var blockType = BinaryReader.ReadBigEndianInt32();
             var memoLength = BinaryReader.ReadBigEndianInt32();
 
-            if (blockType != 1 || memoLength == 0)
-            {
-                return string.Empty;
-            }
+            if (blockType != 1 || memoLength == 0) return string.Empty;
 
             var value = BinaryReader.ReadString(memoLength, CurrentEncoding);
             value = value.TrimEnd('\0', ' ');

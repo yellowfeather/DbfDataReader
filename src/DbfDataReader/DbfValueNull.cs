@@ -17,14 +17,14 @@ namespace DbfDataReader
             return null;
         }
 
-        public T GetValue<T>()
-        {
-            throw new NotImplementedException();
-        }
-
         public void Read(BinaryReader binaryReader)
         {
             binaryReader.ReadBytes(Length);
+        }
+
+        public T GetValue<T>()
+        {
+            throw new NotImplementedException();
         }
 
         public override string ToString()

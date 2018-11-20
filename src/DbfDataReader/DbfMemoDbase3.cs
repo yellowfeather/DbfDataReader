@@ -30,10 +30,7 @@ namespace DbfDataReader
                 var block = BinaryReader.ReadString(DefaultBlockSize, CurrentEncoding);
                 stringBuilder.Append(block);
 
-                if (block.Length >= DefaultBlockSize)
-                {
-                    finished = true;
-                }
+                if (block.Length >= DefaultBlockSize) finished = true;
             } while (!finished);
 
             var value = stringBuilder.ToString();
