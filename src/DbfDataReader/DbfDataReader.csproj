@@ -16,7 +16,7 @@
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6.1' ">$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6.1' ">1.6.1</NetStandardImplicitPackageVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Version>0.5.1</Version>
+    <Version>0.5.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
