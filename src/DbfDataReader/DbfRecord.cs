@@ -36,7 +36,7 @@ namespace DbfDataReader
                         value = new DbfValueDecimal(dbfColumn.Length, dbfColumn.DecimalCount);
                     }
                     break;
-                case DbfColumnType.Signedlong:
+                case DbfColumnType.SignedLong:
                     value = new DbfValueLong(dbfColumn.Length);
                     break;
                 case DbfColumnType.Float:

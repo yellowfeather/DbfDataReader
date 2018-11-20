@@ -3,7 +3,7 @@
     public enum DbfColumnType
     {
         Number = 'N',
-        Signedlong = 'I',
+        SignedLong = 'I',
         Float = 'F',
         Currency = 'Y',
         Date = 'D',
