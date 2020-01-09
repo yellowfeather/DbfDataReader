@@ -8,7 +8,7 @@ DbfDataReader is a small fast .Net Core library for reading dBase, xBase, Clippe
 
 Usage, to get summary info:
 
-```
+```csharp
 var dbfPath = "path/file.dbf";
 using (var dbfTable = new DbfTable(dbfPath))
 {
@@ -30,7 +30,7 @@ using (var dbfTable = new DbfTable(dbfPath))
 
 and to iterate over the rows:
 
-```
+```csharp
 var skipDeleted = true;
 
 var dbfPath = "path/file.dbf";
@@ -56,7 +56,7 @@ using (var dbfTable = new DbfTable(dbfPath))
 
 There is also an implementation of DbDataReader:
 
-```
+```csharp
 var options = new DbfDataReaderOptions
 {
     SkipDeletedRecords = true
@@ -78,7 +78,7 @@ using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 
 which also means you can bulk copy to MS SqlServer:
 
-```
+```csharp
 var options = new DbfDataReaderOptions
 {
     SkipDeletedRecords = true
