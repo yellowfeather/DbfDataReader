@@ -1,0 +1,42 @@
+
+Database: MS__KHDM.dbf
+Type: (83) dBase III
+Memo File: false
+Records: 193
+
+Fields:
+Name             Type       Length     Decimal
+------------------------------------------------------------------------------
+KHD_CODE         C          8          0         
+KHD_OSTAN        C          17         0
+KHD_SHAHR        C          16         0
+KHD_BAKHSH       C          16         0
+KHD_DEH          C          16         0
+KHD_STASHI       N          1          0
+KHD_SABHVA       N          1          0
+KHD_SMARZI       N          1          0
+KHD_BTASHI       N          1          0
+KHD_BABHVA       N          1          0
+KHD_BMARZI       N          1          0
+KHD_DTASHI       N          1          0
+KHD_DMARZI       N          1          0
+KHD_DABHVA       N          1          0
+KHD_SP           C          9          0
+KHD_BP           C          9          0
+KHD_DP           C          9          0
+GOROH1           N          1          0
+GOROH2           N          1          0
+KHD_MAHRM        N          1          0
+NO_PRN           C          1          0
+KHD_HAV_HY       N          2          0
+KHD_JAZ_HY       N          2          0
+KHD_SGAZB        N          1          0
+KHD_BGAZB        N          1          0
+KHD_DGAZB        N          1          0
+KHD_MIBBAZ       N          6          0
+KHD_ROT1         N          2          0
+KHD_ROT2         N          2          0
+KHD_ROT3         N          2          0
+KHD_ROT4         N          2          0
+KHD_ROT5         N          2          0
+KHD_ROT6         N          2          0
