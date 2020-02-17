@@ -16,7 +16,7 @@ deploy:
 - provider: NuGet
   server: https://www.myget.org/F/dbfdatareader/api/v2/package
   api_key:
-    secure: meYWfMClHkxHsyZFjZCMgLi/JNG6Egtjkemiw8jPa++Stir0FAIM1dLn3b5FHXpU
+    secure: Txy0mqrnu+yAYmJUOeEEasYrBeueDP1aKIleayisMXTS3/8F9+scL0TnBCseWdyx
   skip_symbols: true
   on:
     branch: master
