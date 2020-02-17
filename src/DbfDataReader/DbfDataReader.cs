@@ -251,7 +251,7 @@ namespace DbfDataReader
 
         public override Type GetFieldType(int ordinal)
         {
-            throw new NotImplementedException();
+            return DbfRecord.GetFieldType(ordinal);
         }
     }
 }

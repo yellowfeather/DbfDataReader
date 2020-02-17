@@ -31,5 +31,10 @@ namespace DbfDataReader
         {
             return string.Empty;
         }
+
+        public Type GetFieldType()
+        {
+            return null;
+        }
     }
 }
