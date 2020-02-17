@@ -111,5 +111,11 @@ namespace DbfDataReader
                     $"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
             }
         }
+
+        public Type GetFieldType(int ordinal)
+        {
+            var dbfValue = Values[ordinal];
+            return dbfValue.GetFieldType();
+        }
     }
 }

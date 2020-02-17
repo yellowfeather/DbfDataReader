@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace DbfDataReader
@@ -23,6 +24,11 @@ namespace DbfDataReader
         public override string ToString()
         {
             return Value.ToString();
+        }
+
+        public Type GetFieldType()
+        {
+            return typeof(T);
         }
     }
 }

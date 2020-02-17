@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace DbfDataReader
 {
@@ -7,5 +8,7 @@ namespace DbfDataReader
         void Read(BinaryReader binaryReader);
 
         object GetValue();
+
+        Type GetFieldType();
     }
 }
