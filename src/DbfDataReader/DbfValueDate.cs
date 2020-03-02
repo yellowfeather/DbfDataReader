@@ -17,9 +17,12 @@ namespace DbfDataReader
 
             if (string.IsNullOrWhiteSpace(value))
                 Value = null;
+            else if (DateTime.TryParseExact(value, "yyyyMMdd", null,
+                DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite,
+                out DateTime valueOut))
+                Value = valueOut;
             else
-                Value = DateTime.ParseExact(value, "yyyyMMdd", null,
-                    DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite);
+                Value = null;
         }
 
         public override string ToString()
