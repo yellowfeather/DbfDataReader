@@ -19,7 +19,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="CsvHelper" Version="9.2.3" />
+    <PackageReference Include="CsvHelper" Version="15.0.5" />
     <PackageReference Include="Shouldly" Version="3.0.2" />
   </ItemGroup>
 
