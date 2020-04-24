@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30011.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02A96866-FEA4-483E-A6FD-CB8660F51FD3}"
 EndProject
@@ -15,6 +15,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixtures", "fixtures", "{A5
 		test\fixtures\cp1251_summary.txt = test\fixtures\cp1251_summary.txt
 		test\fixtures\dbase_03.csv = test\fixtures\dbase_03.csv
 		test\fixtures\dbase_03.dbf = test\fixtures\dbase_03.dbf
+		test\fixtures\dbase_03_nullchar.csv = test\fixtures\dbase_03_nullchar.csv
+		test\fixtures\dbase_03_nullchar.dbf = test\fixtures\dbase_03_nullchar.dbf
+		test\fixtures\dbase_03_nullchar_summary.txt = test\fixtures\dbase_03_nullchar_summary.txt
 		test\fixtures\dbase_03_summary.txt = test\fixtures\dbase_03_summary.txt
 		test\fixtures\dbase_30.csv = test\fixtures\dbase_30.csv
 		test\fixtures\dbase_30.dbf = test\fixtures\dbase_30.dbf

@@ -16,5 +16,10 @@ namespace DbfDataReader
         {
             Value = binaryReader.ReadString(Length, CurrentEncoding);
         }
+
+        public override string ToString()
+        {
+            return Value is null ? string.Empty : base.ToString();
+        }
     }
 }

@@ -1,0 +1,12 @@
+
+Database: dbase_03_nullchar.dbf
+Type: (03) dBase III without memo file
+Memo File: false
+Records: 3
+
+Fields:
+Name             Type       Length     Decimal
+------------------------------------------------------------------------------
+TXTCOL           C          25         0         
+OTHERTXT         C          25         0         
+     
