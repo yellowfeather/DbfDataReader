@@ -23,7 +23,7 @@ namespace DbfDataReader
         private void Read(BinaryReader binaryReader)
         {
             var rawName = binaryReader.ReadString(11, _encoding);
-            Name = rawName.TrimEnd((char) 0);
+            Name = rawName.Split((char)0)[0];
 
             var type = binaryReader.ReadByte();
             ColumnType = (DbfColumnType) type;
