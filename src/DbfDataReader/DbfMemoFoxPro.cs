@@ -41,7 +41,12 @@ namespace DbfDataReader
             if (blockType != 1 || memoLength == 0) return string.Empty;
 
             var value = BinaryReader.ReadString(memoLength, CurrentEncoding);
-            value = value.TrimEnd('\0', ' ');
+            var nullIdx = value.IndexOf((char)0);
+            if (nullIdx >= 0)
+            {
+                value = value.Substring(0, nullIdx);   // trim off everything past & including the first NUL byte
+            }
+            value = value.TrimEnd(' ');
             return value;
         }
     }

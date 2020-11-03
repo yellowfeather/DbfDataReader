@@ -13,7 +13,11 @@ namespace DbfDataReader
         public override void Read(BinaryReader binaryReader)
         {
             var value = new string(binaryReader.ReadChars(8));
-            value = value.TrimEnd((char) 0);
+            var nullIdx = value.IndexOf((char)0);
+            if (nullIdx >= 0)
+            {
+                value = value.Substring(0, nullIdx);   // trim off everything past & including the first NUL byte
+            }
 
             if (string.IsNullOrWhiteSpace(value))
                 Value = null;

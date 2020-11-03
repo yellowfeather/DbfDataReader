@@ -23,7 +23,12 @@ namespace DbfDataReader
         private void Read(BinaryReader binaryReader)
         {
             var rawName = binaryReader.ReadString(11, _encoding);
-            Name = rawName.TrimEnd((char) 0);
+            var nullIdx = rawName.IndexOf((char)0);
+            if (nullIdx >= 0)
+            {
+                rawName = rawName.Substring(0, nullIdx);   // trim off everything past & including the first NUL byte
+            }
+			Name = rawName;
 
             var type = binaryReader.ReadByte();
             ColumnType = (DbfColumnType) type;
@@ -34,7 +39,14 @@ namespace DbfDataReader
             Length = binaryReader.ReadByte();
             DecimalCount = binaryReader.ReadByte();
 
-            // skip the reserved bytes
+            // skip the reserved bytes:
+            // - Int16: reserved1
+            // - Byte: workarea_id
+            // - Byte: reserved2
+            // - Byte: reserved3
+            // - Byte: set_fields_flag
+            // - String7: reserved4
+            // - Byte: index_field_flag
             binaryReader.ReadBytes(14);
         }
     }
