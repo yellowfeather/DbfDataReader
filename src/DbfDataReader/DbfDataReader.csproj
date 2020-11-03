@@ -30,7 +30,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6.1'">
     <PackageReference Include="System.Text.Encoding.CodePages">
-      <Version>4.5.0</Version>
+      <Version>4.7.1</Version>
     </PackageReference>
   </ItemGroup>
 
