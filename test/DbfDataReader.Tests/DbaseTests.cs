@@ -1,6 +1,7 @@
 using CsvHelper;
 using Shouldly;
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace DbfDataReader.Tests
@@ -59,20 +60,20 @@ namespace DbfDataReader.Tests
             var dbfRecord = new DbfRecord(DbfTable);
 
             using (var textReader = File.OpenText(path))
-            using (var csvParser = new CsvParser(textReader))
+            using (var csvParser = new CsvParser(textReader, CultureInfo.InvariantCulture))
             {
                 csvParser.Read();
 
                 var row = 1;
                 while (DbfTable.Read(dbfRecord))
                 {
-                    var csvValues = csvParser.Read();
+                    csvParser.Read();
 
                     var index = 0;
                     foreach (var dbfValue in dbfRecord.Values)
                     {
                         var value = dbfValue.ToString();
-                        var csvValue = csvValues[index];
+                        var csvValue = csvParser[index];
                         value.ShouldBe(csvValue, $"Row: {row}, column: {index} ({DbfTable.Columns[index].ColumnName})", StringCompareShould.IgnoreLineEndings);
 
                         index++;
