@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using Shouldly;
 using Xunit;
 
@@ -8,7 +9,8 @@ namespace DbfDataReader.Tests
     public class DbfDataReaderTests
     {
         private const string FixturePath = "../../../../fixtures/dbase_03.dbf";
-        
+        private const string FixtureSummaryPath = "../../../../fixtures/dbase_03_summary.txt";
+
         [Fact]
         public void Should_have_valid_first_row_values()
         {
@@ -100,6 +102,80 @@ namespace DbfDataReader.Tests
                 var exception = Should.Throw<InvalidCastException>(() => dbfDataReader.GetInt32(0));
                 exception.Message.ShouldBe(
                     "Unable to cast object of type 'System.String' to type 'System.Int32' at ordinal '0'.");
+            }
+        }
+
+        [Fact]
+        public void Should_support_get_column_schema()
+        {
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            {
+                dbfDataReader.CanGetColumnSchema().ShouldBeTrue();
+            }
+        }
+
+        [Fact]
+        public void Should_get_valid_column_schema()
+        {
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            {
+                var columns = dbfDataReader.GetColumnSchema();
+                columns.Count.ShouldBe(31);
+
+                using (var dbColumns = columns.GetEnumerator())
+                {
+                    dbColumns.MoveNext();
+
+                    foreach (var line in FixtureHelpers.GetFieldLines(FixtureSummaryPath))
+                    {
+                        var dbColumn = dbColumns.Current;
+                        ValidateColumn(dbColumn, line);
+
+                        dbColumns.MoveNext();
+                    }
+                }
+            }
+        }
+
+        private static void ValidateColumn(DbColumn dbColumn, string line)
+        {
+            var expectedName = line.Substring(0, 16).Trim();
+            var dbfColumnType = (DbfColumnType)line.Substring(17, 1)[0];
+            var decimalLength = int.Parse(line.Substring(39, 1));
+
+            var expectedDataType = GetDataType(dbfColumnType, decimalLength);
+
+            dbColumn.ColumnName.ShouldBe(expectedName);
+            dbColumn.DataType.ShouldBe(expectedDataType);
+        }
+
+        private static Type GetDataType(DbfColumnType dbfColumnType, int decimalLength)
+        {
+            switch (dbfColumnType)
+            {
+                case DbfColumnType.Number:
+                    return decimalLength == 0 ? typeof(int) : typeof(decimal);
+                case DbfColumnType.SignedLong:
+                    return typeof(long);
+                case DbfColumnType.Float:
+                    return typeof(float);
+                case DbfColumnType.Currency:
+                    return typeof(decimal);
+                case DbfColumnType.Date:
+                    return typeof(DateTime);
+                case DbfColumnType.DateTime:
+                    return typeof(DateTime);
+                case DbfColumnType.Boolean:
+                    return typeof(bool);
+                case DbfColumnType.Memo:
+                    return typeof(string);
+                case DbfColumnType.Double:
+                    return typeof(double);
+                case DbfColumnType.General:
+                case DbfColumnType.Character:
+                    return typeof(string);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(dbfColumnType), dbfColumnType, null);
             }
         }
     }

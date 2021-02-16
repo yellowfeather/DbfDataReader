@@ -141,10 +141,10 @@ namespace DbfDataReader
         {
             var columns = new List<DbfColumn>();
 
-            var index = 0;
+            var ordinal = 0;
             while (binaryReader.PeekChar() != Terminator)
             {
-                var column = new DbfColumn(binaryReader, index++, CurrentEncoding);
+                var column = new DbfColumn(binaryReader, ordinal++, CurrentEncoding);
                 columns.Add(column);
             }
 

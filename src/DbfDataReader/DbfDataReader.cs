@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.IO;
+using System.Linq;
 
 namespace DbfDataReader
 {
-    public class DbfDataReader : DbDataReader
+    public class DbfDataReader : DbDataReader, IDbColumnSchemaGenerator
     {
         private readonly DbfDataReaderOptions _options;
 
@@ -211,7 +213,7 @@ namespace DbfDataReader
 
             foreach (var dbfColumn in DbfTable.Columns)
             {
-                if (dbfColumn.Name == name) return ordinal;
+                if (dbfColumn.ColumnName == name) return ordinal;
                 ordinal++;
             }
 
@@ -221,7 +223,7 @@ namespace DbfDataReader
         public override string GetName(int ordinal)
         {
             var dbfColumn = DbfTable.Columns[ordinal];
-            return dbfColumn.Name;
+            return dbfColumn.ColumnName;
         }
 
         public override long GetInt64(int ordinal)
@@ -252,6 +254,12 @@ namespace DbfDataReader
         public override Type GetFieldType(int ordinal)
         {
             return DbfRecord.GetFieldType(ordinal);
+        }
+
+        public ReadOnlyCollection<DbColumn> GetColumnSchema()
+        {
+            var columns = DbfTable.Columns.Select(c => c as DbColumn).ToList();
+            return columns.AsReadOnly();
         }
     }
 }
