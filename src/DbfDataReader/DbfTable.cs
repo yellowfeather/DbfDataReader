@@ -17,7 +17,9 @@ namespace DbfDataReader
             Path = path;
             CurrentEncoding = encoding;
 
-            var stream = new FileStream(path, FileMode.Open);
+            // https://stackoverflow.com/questions/23559452/stream-reader-process-cannot-access-file-because-its-in-use-by-another-process
+            File.SetAttributes(path, FileAttributes.Normal);
+            var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             BinaryReader = new BinaryReader(stream, encoding, false);
 
             Header = new DbfHeader(BinaryReader);
