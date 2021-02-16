@@ -5,7 +5,7 @@
     <Copyright>Copyright Chris Richards</Copyright>
     <VersionPrefix>0.5.5</VersionPrefix>
     <Authors>Chris Richards</Authors>
-    <TargetFrameworks>net461;netstandard1.6.1</TargetFrameworks>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <AssemblyName>DbfDataReader</AssemblyName>
     <PackageId>DbfDataReader</PackageId>
     <PackageTags>dbf;dBase;xBase;Clipper;FoxPro</PackageTags>
@@ -13,8 +13,6 @@
     <PackageLicenseUrl>https://github.com/yellowfeather/DbfDataReader/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/yellowfeather/DbfDataReader</RepositoryUrl>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6.1' ">$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
-    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6.1' ">1.6.1</NetStandardImplicitPackageVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Version>0.5.5</Version>
   </PropertyGroup>
@@ -28,7 +26,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6.1'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Text.Encoding.CodePages">
       <Version>5.0.0</Version>
     </PackageReference>

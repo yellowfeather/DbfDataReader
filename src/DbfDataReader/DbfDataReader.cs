@@ -41,7 +41,7 @@ namespace DbfDataReader
 
         public DbfRecord DbfRecord { get; private set; }
 
-#if NETSTANDARD1_6_1
+#if NETSTANDARD2_0
         public void Close()
 #else
         public override void Close()
@@ -58,7 +58,7 @@ namespace DbfDataReader
             }
         }
 
-#if NETSTANDARD1_6_1
+#if NETSTANDARD2_0
         protected override void Dispose(bool disposing)
         {
             if (disposing)
