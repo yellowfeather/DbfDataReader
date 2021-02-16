@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>DbfDataReader.Tests</AssemblyTitle>
-    <TargetFrameworks>net461;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <AssemblyName>DbfDataReader.Tests</AssemblyName>
     <PackageId>DbfDataReader.Tests</PackageId>
   </PropertyGroup>
