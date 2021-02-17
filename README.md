@@ -9,8 +9,8 @@ DbfDataReader is a small fast .Net Core library for reading dBase, xBase, Clippe
 Usage, to get summary info:
 
 ```csharp
-var dbfPath = "path/file.dbf";
-using (var dbfTable = new DbfTable(dbfPath))
+var dbfPath = "path\\file.dbf";
+using (var dbfTable = new DbfTable(dbfPath, Encoding.UTF8))
 {
     var header = dbfTable.Header;
 
@@ -20,7 +20,7 @@ using (var dbfTable = new DbfTable(dbfPath))
 
     foreach (var dbfColumn in dbfTable.Columns)
     {
-        var name = dbfColumn.Name;
+        var name = dbfColumn.ColumnName;
         var columnType = dbfColumn.ColumnType;
         var length = dbfColumn.Length;
         var decimalCount = dbfColumn.DecimalCount;
@@ -34,7 +34,7 @@ and to iterate over the rows:
 var skipDeleted = true;
 
 var dbfPath = "path/file.dbf";
-using (var dbfTable = new DbfTable(dbfPath))
+using (var dbfTable = new DbfTable(dbfPath, Encoding.UTF8))
 {        
     var dbfRecord = new DbfRecord(dbfTable);
 
