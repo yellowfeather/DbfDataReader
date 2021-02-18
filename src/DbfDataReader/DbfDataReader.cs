@@ -41,11 +41,7 @@ namespace DbfDataReader
 
         public DbfRecord DbfRecord { get; private set; }
 
-#if NETSTANDARD2_0
-        public void Close()
-#else
         public override void Close()
-#endif
         {
             try
             {
