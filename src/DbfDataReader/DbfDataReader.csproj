@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>DbfDataReader is a small fast .Net Core library for reading dBase, xBase, Clipper and FoxPro database files</Description>
     <Copyright>Copyright Chris Richards</Copyright>
-    <VersionPrefix>0.5.7</VersionPrefix>
+    <VersionPrefix>0.5.8</VersionPrefix>
     <Authors>Chris Richards</Authors>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <AssemblyName>DbfDataReader</AssemblyName>
@@ -14,7 +14,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/yellowfeather/DbfDataReader</RepositoryUrl>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Version>0.5.7</Version>
+    <Version>0.5.8</Version>
   </PropertyGroup>
 
   <ItemGroup>
