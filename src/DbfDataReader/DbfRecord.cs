@@ -9,13 +9,21 @@ namespace DbfDataReader
     {
         private const byte EndOfFile = 0x1a;
 
+        private readonly Encoding _encoding;
+        private readonly int _recordLength;
+        private readonly byte[] _buffer;
+
         public DbfRecord(DbfTable dbfTable)
         {
+            _encoding = dbfTable.CurrentEncoding;
+            _recordLength = dbfTable.Header.RecordLength;
+            _buffer = new byte[_recordLength];
+
             Values = new List<IDbfValue>();
 
             foreach (var dbfColumn in dbfTable.Columns)
             {
-                var dbfValue = CreateDbfValue(dbfColumn, dbfTable.Memo, dbfTable.CurrentEncoding);
+                var dbfValue = CreateDbfValue(dbfColumn, dbfTable.Memo);
                 Values.Add(dbfValue);
             }
         }
@@ -24,7 +32,7 @@ namespace DbfDataReader
 
         public IList<IDbfValue> Values { get; set; }
 
-        private static IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo, Encoding encoding)
+        private IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo)
         {
             IDbfValue value;
 
@@ -55,14 +63,14 @@ namespace DbfDataReader
                     value = new DbfValueBoolean(dbfColumn.Length);
                     break;
                 case DbfColumnType.Memo:
-                    value = new DbfValueMemo(dbfColumn.Length, memo, encoding);
+                    value = new DbfValueMemo(dbfColumn.Length, memo, _encoding);
                     break;
                 case DbfColumnType.Double:
                     value = new DbfValueDouble(dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
-                    value = new DbfValueString(dbfColumn.Length, encoding);
+                    value = new DbfValueString(dbfColumn.Length, _encoding);
                     break;
                 default:
                     value = new DbfValueNull(dbfColumn.Length);
@@ -72,12 +80,16 @@ namespace DbfDataReader
             return value;
         }
 
-        public bool Read(BinaryReader binaryReader)
+        public bool Read(Stream stream)
         {
-            if (binaryReader.BaseStream.Position == binaryReader.BaseStream.Length) return false;
+            if (stream.Position == stream.Length) return false;
 
             try
             {
+                stream.Read(_buffer, 0, _recordLength);
+                var memoryStream = new MemoryStream(_buffer, false);
+                var binaryReader = new BinaryReader(memoryStream, _encoding);
+
                 var value = binaryReader.ReadByte();
                 if (value == EndOfFile) return false;
 

@@ -19,12 +19,13 @@ namespace DbfDataReader
 
             // https://stackoverflow.com/questions/23559452/stream-reader-process-cannot-access-file-because-its-in-use-by-another-process
             File.SetAttributes(path, FileAttributes.Normal);
-            var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            BinaryReader = new BinaryReader(stream, encoding, false);
+            Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            Header = new DbfHeader(BinaryReader);
-            Columns = ReadColumns(BinaryReader);
-            SkipToFirstRecord(BinaryReader);
+            var binaryReader = new BinaryReader(Stream, encoding, false);
+            Header = new DbfHeader(binaryReader);
+            Columns = ReadColumns(binaryReader);
+
+            SkipToFirstRecord();
 
             var memoPath = MemoPath();
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
@@ -39,12 +40,13 @@ namespace DbfDataReader
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
+            Stream = stream;
 
-            BinaryReader = new BinaryReader(stream, encoding, true);
+            var binaryReader = new BinaryReader(stream, encoding, true);
+            Header = new DbfHeader(binaryReader);
+            Columns = ReadColumns(binaryReader);
 
-            Header = new DbfHeader(BinaryReader);
-            Columns = ReadColumns(BinaryReader);
-            SkipToFirstRecord(BinaryReader);
+            SkipToFirstRecord();
 
             if (memoStream != null)
                 Memo = CreateMemo(memoStream);
@@ -56,13 +58,13 @@ namespace DbfDataReader
 
         public DbfHeader Header { get; }
 
-        public BinaryReader BinaryReader { get; private set; }
+        public Stream Stream { get; private set; }
 
         public DbfMemo Memo { get; private set; }
 
         public IList<DbfColumn> Columns { get; }
 
-        public bool IsClosed => BinaryReader == null;
+        public bool IsClosed => Stream == null;
 
         public void Close()
         {
@@ -74,12 +76,12 @@ namespace DbfDataReader
             try
             {
                 if (!disposing) return;
-                BinaryReader?.Dispose();
+                Stream?.Dispose();
                 Memo?.Dispose();
             }
             finally
             {
-                BinaryReader = null;
+                Stream = null;
                 Memo = null;
             }
         }
@@ -156,21 +158,21 @@ namespace DbfDataReader
             return columns;
         }
 
-        public void SkipToFirstRecord(BinaryReader binaryReader)
+        public void SkipToFirstRecord()
         {
             var numBytesToSkip = Header.HeaderLength - (HeaderMetaDataSize + ColumnMetaDataSize * Columns.Count);
-            BinaryReader.ReadBytes(numBytesToSkip);
+            Stream.Seek(numBytesToSkip, SeekOrigin.Current);
         }
 
         public DbfRecord ReadRecord()
         {
             var dbfRecord = new DbfRecord(this);
-            return !dbfRecord.Read(BinaryReader) ? null : dbfRecord;
+            return !dbfRecord.Read(Stream) ? null : dbfRecord;
         }
 
         public bool Read(DbfRecord dbfRecord)
         {
-            return dbfRecord.Read(BinaryReader);
+            return dbfRecord.Read(Stream);
         }
     }
 }
