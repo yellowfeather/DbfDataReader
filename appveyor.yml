@@ -11,7 +11,7 @@ build_script:
 - ps: .\Build.ps1
 test: off
 artifacts:
-- path: .\src\DbfDataReader\artifacts\**\*.nupkg
+- path: .\DbfDataReader\artifacts\**\*.nupkg
   name: NuGet
 deploy:
 - provider: NuGet
