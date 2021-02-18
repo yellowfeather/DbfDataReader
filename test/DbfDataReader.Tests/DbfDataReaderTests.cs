@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Data.Common;
 using Shouldly;
 using Xunit;
@@ -135,6 +136,37 @@ namespace DbfDataReader.Tests
                     }
                 }
             }
+        }
+
+        [Fact]
+        public void Should_get_valid_schema_table()
+        {
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            {
+                var schemaTable = dbfDataReader.GetSchemaTable();
+                schemaTable.ShouldNotBeNull();
+                schemaTable.Rows.Count.ShouldBe(31);
+
+                var index = 0;
+                var rows = schemaTable.Rows;
+                foreach (var line in FixtureHelpers.GetFieldLines(FixtureSummaryPath))
+                {
+                    var row = rows[index++];
+                    ValidateRow(row, line);
+                }
+            }
+        }
+
+        private void ValidateRow(DataRow row, string line)
+        {
+            var expectedName = line.Substring(0, 16).Trim();
+            var dbfColumnType = (DbfColumnType)line.Substring(17, 1)[0];
+            var decimalLength = int.Parse(line.Substring(39, 1));
+
+            var expectedDataType = GetDataType(dbfColumnType, decimalLength);
+
+            row[SchemaTableColumn.ColumnName].ShouldBe(expectedName);
+            row[SchemaTableColumn.DataType].ShouldBe(expectedDataType);
         }
 
         private static void ValidateColumn(DbColumn dbColumn, string line)
