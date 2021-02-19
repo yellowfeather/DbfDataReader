@@ -5,7 +5,7 @@
     <Copyright>Copyright Chris Richards</Copyright>
     <VersionPrefix>0.5.8</VersionPrefix>
     <Authors>Chris Richards</Authors>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <AssemblyName>DbfDataReader</AssemblyName>
     <PackageId>DbfDataReader</PackageId>
     <PackageTags>dbf;dBase;xBase;Clipper;FoxPro</PackageTags>
@@ -19,17 +19,8 @@
 
   <ItemGroup>
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Text.Encoding.CodePages">
-      <Version>5.0.0</Version>
-    </PackageReference>
+    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="5.0.0" />
   </ItemGroup>
 
 </Project>
