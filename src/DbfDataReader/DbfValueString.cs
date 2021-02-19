@@ -21,7 +21,11 @@ namespace DbfDataReader
                 Value = null;
             }
 
+#if NET48
+            var value = Encoding.GetString(bytes.ToArray());
+#else
             var value = Encoding.GetString(bytes);
+#endif
             Value = value.Trim(NullChar, ' ');
         }
     }

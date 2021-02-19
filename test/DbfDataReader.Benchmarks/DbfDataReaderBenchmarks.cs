@@ -10,17 +10,18 @@ namespace DbfDataReader.Benchmarks
         [Benchmark]
         public void DbfDataReader()
         {
-            using var dbfDataReader = new DbfDataReader(FixturePath);
-
-            var cols = dbfDataReader.GetColumnSchema();
-            var allowDbNull = cols.Select(c => c.AllowDBNull != false).ToArray();
-            while (dbfDataReader.Read())
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
             {
-                for (var ordinal = 0; ordinal < dbfDataReader.FieldCount; ordinal++)
+                var cols = dbfDataReader.GetColumnSchema();
+                var allowDbNull = cols.Select(c => c.AllowDBNull != false).ToArray();
+                while (dbfDataReader.Read())
                 {
-                    if (allowDbNull[ordinal] && dbfDataReader.IsDBNull(ordinal))
-                        continue;
-                    dbfDataReader.ReadField(ordinal);
+                    for (var ordinal = 0; ordinal < dbfDataReader.FieldCount; ordinal++)
+                    {
+                        if (allowDbNull[ordinal] && dbfDataReader.IsDBNull(ordinal))
+                            continue;
+                        dbfDataReader.ReadField(ordinal);
+                    }
                 }
             }
         }

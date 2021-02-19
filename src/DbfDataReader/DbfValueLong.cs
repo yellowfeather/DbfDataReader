@@ -10,7 +10,11 @@ namespace DbfDataReader
 
         public override void Read(ReadOnlySpan<byte> bytes)
         {
+#if NET48
+            Value = BitConverter.ToInt32(bytes.ToArray(), 0);
+#else
             Value = BitConverter.ToInt32(bytes);
+#endif
         }
     }
 }

@@ -22,7 +22,11 @@ namespace DbfDataReader
 
         private void Read(ReadOnlySpan<byte> bytes, Encoding encoding)
         {
+#if NET48
+            var rawName = encoding.GetString(bytes.Slice(0, 11).ToArray());
+#else
             var rawName = encoding.GetString(bytes.Slice(0, 11));
+#endif
             var nullIdx = rawName.IndexOf((char)0);
             if (nullIdx >= 0)
             {

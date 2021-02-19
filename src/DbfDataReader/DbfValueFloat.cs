@@ -29,7 +29,11 @@ namespace DbfDataReader
             }
             else
             {
+#if NET48
+                var stringValue = Encoding.ASCII.GetString(bytes.ToArray());
+#else
                 var stringValue = Encoding.ASCII.GetString(bytes);
+#endif
 
                 if (float.TryParse(stringValue,
                     NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
