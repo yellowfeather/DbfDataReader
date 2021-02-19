@@ -55,7 +55,6 @@ namespace DbfDataReader
             }
         }
 
-#if NETSTANDARD2_0
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -63,7 +62,6 @@ namespace DbfDataReader
                 Close();
             }
         }
-#endif
 
         public DbfRecord ReadRecord()
         {

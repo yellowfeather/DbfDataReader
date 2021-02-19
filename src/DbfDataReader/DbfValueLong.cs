@@ -1,16 +1,16 @@
-﻿using System.IO;
+﻿using System;
 
 namespace DbfDataReader
 {
     public class DbfValueLong : DbfValue<long?>
     {
-        public DbfValueLong(int length) : base(length)
+        public DbfValueLong(int start, int length) : base(start, length)
         {
         }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            Value = binaryReader.ReadInt32();
+            Value = BitConverter.ToInt32(bytes);
         }
     }
 }

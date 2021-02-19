@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-using System.IO;
+using System.Text;
 
 namespace DbfDataReader
 {
@@ -10,27 +10,26 @@ namespace DbfDataReader
             _floatNumberFormat = new NumberFormatInfo {NumberDecimalSeparator = "."};
 
         [Obsolete("This constructor should no longer be used. Use DbfValueFloat(System.Int32, System.Int32) instead.")]
-        public DbfValueFloat(int length) : this(length, 0)
+        public DbfValueFloat(int start, int length) : this(start, length, 0)
         {
         }
 
-        public DbfValueFloat(int length, int decimalCount) : base(length)
+        public DbfValueFloat(int start, int length, int decimalCount) : base(start, length)
         {
             DecimalCount = decimalCount;
         }
 
         public int DecimalCount { get; }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            if (binaryReader.PeekChar() == '\0')
+            if (bytes[0] == '\0')
             {
-                binaryReader.ReadBytes(Length);
                 Value = null;
             }
             else
             {
-                var stringValue = new string(binaryReader.ReadChars(Length));
+                var stringValue = Encoding.ASCII.GetString(bytes);
 
                 if (float.TryParse(stringValue,
                     NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,

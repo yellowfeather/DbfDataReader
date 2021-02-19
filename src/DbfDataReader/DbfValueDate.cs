@@ -1,18 +1,18 @@
 using System;
 using System.Globalization;
-using System.IO;
+using System.Text;
 
 namespace DbfDataReader
 {
     public class DbfValueDate : DbfValue<DateTime?>
     {
-        public DbfValueDate(int length) : base(length)
+        public DbfValueDate(int start, int length) : base(start, length)
         {
         }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            var value = new string(binaryReader.ReadChars(8));
+            var value = Encoding.ASCII.GetString(bytes);
             var nullIdx = value.IndexOf((char)0);
             if (nullIdx >= 0)
             {

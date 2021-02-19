@@ -40,40 +40,40 @@ namespace DbfDataReader
             {
                 case DbfColumnType.Number:
                     if (dbfColumn.DecimalCount == 0)
-                        value = new DbfValueInt(dbfColumn.Length);
+                        value = new DbfValueInt(dbfColumn.Start, dbfColumn.Length);
                     else
-                        value = new DbfValueDecimal(dbfColumn.Length, dbfColumn.DecimalCount);
+                        value = new DbfValueDecimal(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.SignedLong:
-                    value = new DbfValueLong(dbfColumn.Length);
+                    value = new DbfValueLong(dbfColumn.Start, dbfColumn.Length);
                     break;
                 case DbfColumnType.Float:
-                    value = new DbfValueFloat(dbfColumn.Length, dbfColumn.DecimalCount);
+                    value = new DbfValueFloat(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.Currency:
-                    value = new DbfValueCurrency(dbfColumn.Length, dbfColumn.DecimalCount);
+                    value = new DbfValueCurrency(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.Date:
-                    value = new DbfValueDate(dbfColumn.Length);
+                    value = new DbfValueDate(dbfColumn.Start, dbfColumn.Length);
                     break;
                 case DbfColumnType.DateTime:
-                    value = new DbfValueDateTime(dbfColumn.Length);
+                    value = new DbfValueDateTime(dbfColumn.Start, dbfColumn.Length);
                     break;
                 case DbfColumnType.Boolean:
-                    value = new DbfValueBoolean(dbfColumn.Length);
+                    value = new DbfValueBoolean(dbfColumn.Start, dbfColumn.Length);
                     break;
                 case DbfColumnType.Memo:
-                    value = new DbfValueMemo(dbfColumn.Length, memo, _encoding);
+                    value = new DbfValueMemo(dbfColumn.Start, dbfColumn.Length, memo, _encoding);
                     break;
                 case DbfColumnType.Double:
-                    value = new DbfValueDouble(dbfColumn.Length, dbfColumn.DecimalCount);
+                    value = new DbfValueDouble(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
                     break;
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
-                    value = new DbfValueString(dbfColumn.Length, _encoding);
+                    value = new DbfValueString(dbfColumn.Start, dbfColumn.Length, _encoding);
                     break;
                 default:
-                    value = new DbfValueNull(dbfColumn.Length);
+                    value = new DbfValueNull(dbfColumn.Start, dbfColumn.Length);
                     break;
             }
 
@@ -87,15 +87,18 @@ namespace DbfDataReader
             try
             {
                 stream.Read(_buffer, 0, _recordLength);
-                var memoryStream = new MemoryStream(_buffer, false);
-                var binaryReader = new BinaryReader(memoryStream, _encoding);
+                var span = new ReadOnlySpan<byte>(_buffer);
 
-                var value = binaryReader.ReadByte();
+                var value = span[0];
                 if (value == EndOfFile) return false;
 
                 IsDeleted = value == 0x2A;
 
-                foreach (var dbfValue in Values) dbfValue.Read(binaryReader);
+                foreach (var dbfValue in Values)
+                {
+                    var slice = span.Slice(dbfValue.Start, dbfValue.Length);
+                    dbfValue.Read(slice);
+                }
                 return true;
             }
             catch (EndOfStreamException)

@@ -1,28 +1,28 @@
 using System;
 using System.Data.Common;
-using System.IO;
 using System.Text;
 
 namespace DbfDataReader
 {
     public class DbfColumn : DbColumn
     {
-        private readonly Encoding _encoding;
+        public const int DbfColumnSize = 32;
 
-        public DbfColumn(BinaryReader binaryReader, int ordinal, Encoding encoding)
+        public DbfColumn(ReadOnlySpan<byte> bytes, int start, int ordinal, Encoding encoding)
         {
+            Start = start;
             ColumnOrdinal = ordinal;
-            _encoding = encoding;
-            Read(binaryReader);
+            Read(bytes, encoding);
         }
 
         public DbfColumnType ColumnType { get; private set; }
+        public int Start { get; }
         public int Length { get; private set; }
         public int DecimalCount { get; private set; }
 
-        private void Read(BinaryReader binaryReader)
+        private void Read(ReadOnlySpan<byte> bytes, Encoding encoding)
         {
-            var rawName = binaryReader.ReadString(11, _encoding);
+            var rawName = encoding.GetString(bytes.Slice(0, 11));
             var nullIdx = rawName.IndexOf((char)0);
             if (nullIdx >= 0)
             {
@@ -30,14 +30,12 @@ namespace DbfDataReader
             }
 			ColumnName = rawName;
 
-            var type = binaryReader.ReadByte();
-            ColumnType = (DbfColumnType) type;
+            ColumnType = (DbfColumnType) bytes[11];
 
             // ignore field data address
-            binaryReader.ReadUInt32();
 
-            Length = binaryReader.ReadByte();
-            DecimalCount = binaryReader.ReadByte();
+            Length = bytes[16];
+            DecimalCount = bytes[17];
 
             DataType = GetDataType(ColumnType);
             DataTypeName = DataType.ToString();
@@ -50,7 +48,6 @@ namespace DbfDataReader
             // - Byte: set_fields_flag
             // - String7: reserved4
             // - Byte: index_field_flag
-            binaryReader.ReadBytes(14);
         }
 
         private Type GetDataType(DbfColumnType columnType)

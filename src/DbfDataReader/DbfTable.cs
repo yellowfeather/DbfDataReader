@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -7,8 +8,6 @@ namespace DbfDataReader
     public class DbfTable : Disposable
     {
         private const byte Terminator = 0x0d;
-        private const int HeaderMetaDataSize = 33;
-        private const int ColumnMetaDataSize = 32;
 
         public DbfTable(string path, Encoding encoding)
         {
@@ -21,11 +20,8 @@ namespace DbfDataReader
             File.SetAttributes(path, FileAttributes.Normal);
             Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            var binaryReader = new BinaryReader(Stream, encoding, false);
-            Header = new DbfHeader(binaryReader);
-            Columns = ReadColumns(binaryReader);
-
-            SkipToFirstRecord();
+            Header = new DbfHeader(Stream);
+            Columns = ReadColumns(Stream);
 
             var memoPath = MemoPath();
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
@@ -42,11 +38,8 @@ namespace DbfDataReader
             CurrentEncoding = encoding;
             Stream = stream;
 
-            var binaryReader = new BinaryReader(stream, encoding, true);
-            Header = new DbfHeader(binaryReader);
-            Columns = ReadColumns(binaryReader);
-
-            SkipToFirstRecord();
+            Header = new DbfHeader(Stream);
+            Columns = ReadColumns(Stream);
 
             if (memoStream != null)
                 Memo = CreateMemo(memoStream);
@@ -141,27 +134,30 @@ namespace DbfDataReader
             return memo;
         }
 
-        public IList<DbfColumn> ReadColumns(BinaryReader binaryReader)
+        public IList<DbfColumn> ReadColumns(Stream stream)
         {
+            var count = Header.HeaderLength - DbfHeader.DbfHeaderSize;
+            var buffer = new byte[count];
+            stream.Read(buffer, 0, count);
+            var span = new ReadOnlySpan<byte>(buffer);
+
             var columns = new List<DbfColumn>();
 
+            var start = 0;
+            var startField = 1;
             var ordinal = 0;
-            while (binaryReader.PeekChar() != Terminator)
+            while (span[start] != Terminator)
             {
-                var column = new DbfColumn(binaryReader, ordinal++, CurrentEncoding);
+                var slice = span.Slice(start, DbfColumn.DbfColumnSize);
+                var column = new DbfColumn(slice, startField, ordinal, CurrentEncoding);
                 columns.Add(column);
+
+                ordinal++;
+                start = ordinal * DbfColumn.DbfColumnSize;
+                startField += column.Length;
             }
 
-            var terminator = binaryReader.ReadByte();
-            if (terminator != Terminator) throw new DbfFileFormatException();
-
             return columns;
-        }
-
-        public void SkipToFirstRecord()
-        {
-            var numBytesToSkip = Header.HeaderLength - (HeaderMetaDataSize + ColumnMetaDataSize * Columns.Count);
-            Stream.Seek(numBytesToSkip, SeekOrigin.Current);
         }
 
         public DbfRecord ReadRecord()

@@ -1,11 +1,14 @@
 ﻿using System;
-using System.IO;
 
 namespace DbfDataReader
 {
     public interface IDbfValue
     {
-        void Read(BinaryReader binaryReader);
+        int Start { get; }
+
+        int Length { get; }
+
+        void Read(ReadOnlySpan<byte> bytes);
 
         object GetValue();
 

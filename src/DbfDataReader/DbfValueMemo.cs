@@ -1,4 +1,4 @@
-using System.IO;
+using System;
 using System.Text;
 
 namespace DbfDataReader
@@ -7,22 +7,22 @@ namespace DbfDataReader
     {
         private readonly DbfMemo _memo;
 
-        public DbfValueMemo(int length, DbfMemo memo, Encoding encoding)
-            : base(length, encoding)
+        public DbfValueMemo(int start, int length, DbfMemo memo, Encoding encoding)
+            : base(start, length, encoding)
         {
             _memo = memo;
         }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
             if (Length == 4)
             {
-                var startBlock = binaryReader.ReadUInt32();
+                var startBlock = BitConverter.ToUInt32(bytes);
                 Value = _memo.Get(startBlock);
             }
             else
             {
-                var value = binaryReader.ReadString(Length, CurrentEncoding);
+                var value = Encoding.GetString(bytes);
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     Value = string.Empty;
