@@ -17,7 +17,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
-    <PackageReference Include="DbfDataReader" Version="0.5.6" />
+    <PackageReference Include="DbfDataReader" Version="0.5.8" />
   </ItemGroup>
 
   <ItemGroup>
