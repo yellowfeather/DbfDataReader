@@ -38,6 +38,10 @@ namespace DbfDataReader
         public static string ReadString(this BinaryReader binaryReader, int fieldLength, Encoding encoding)
         {
             var chars = binaryReader.ReadBytes(fieldLength);
+            if ((chars == null) || (chars.Length == 0))
+            {
+                return null;
+            }
             if (chars[0] == NullChar)
             {
                 return null;
