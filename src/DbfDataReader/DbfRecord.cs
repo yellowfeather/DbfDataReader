@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.IO;
 using System.Text;
 
@@ -118,12 +119,29 @@ namespace DbfDataReader
             var dbfValue = Values[ordinal];
             try
             {
-                return (T) dbfValue.GetValue();
+                var value = dbfValue.GetValue();
+                if (value is null)
+                    throw new SqlNullValueException($"Data is Null. This method or property cannot be called on Null values. Ordinal {ordinal}");
+                return (T) value;
             }
             catch (InvalidCastException)
             {
                 throw new InvalidCastException(
                     $"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
+            }
+        }
+
+        public string GetStringValue(int ordinal)
+        {
+            var dbfValue = Values[ordinal];
+            try
+            {
+                return (string) dbfValue.GetValue();
+            }
+            catch (InvalidCastException)
+            {
+                throw new InvalidCastException(
+                    $"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(string).FullName}' at ordinal '{ordinal}'.");
             }
         }
 
