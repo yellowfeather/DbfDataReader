@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DbfDataReader
 {
-    public static class BinaryReaderExtensions
+    internal static class BinaryReaderExtensions
     {
         private const char NullChar = '\0';
 
