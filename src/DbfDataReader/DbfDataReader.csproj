@@ -5,7 +5,7 @@
     <Copyright>Copyright Chris Richards</Copyright>
     <VersionPrefix>0.7.0</VersionPrefix>
     <Authors>Chris Richards</Authors>
-    <TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
     <AssemblyName>DbfDataReader</AssemblyName>
     <PackageId>DbfDataReader</PackageId>
     <PackageTags>dbf;dBase;xBase;Clipper;FoxPro</PackageTags>
