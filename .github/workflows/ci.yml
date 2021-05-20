@@ -40,6 +40,7 @@ jobs:
       run: dotnet pack --output ./artifacts --configuration $BUILD_CONFIG --no-build
 
     - name: Push to MyGet
+      if: github.ref == 'refs/heads/main'
       env:
         NUGET_URL: ${{ secrets.MYGET_URL }}
         NUGET_API_KEY: ${{ secrets.MYGET_API_KEY }}
