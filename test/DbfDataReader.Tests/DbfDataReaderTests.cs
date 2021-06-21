@@ -63,8 +63,8 @@ namespace DbfDataReader.Tests
                 {
                     rowCount++;
 
-                    var valueCol1 = dbfDataReader.GetString(0);
-                    var valueCol2 = dbfDataReader.GetDecimal(10);
+                    dbfDataReader.GetString(0);
+                    dbfDataReader.GetDecimal(10);
                 }
 
                 rowCount.ShouldBe(14);
@@ -85,8 +85,8 @@ namespace DbfDataReader.Tests
                 {
                     rowCount++;
 
-                    var valueCol1 = dbfDataReader.GetString(0);
-                    var valueCol2 = dbfDataReader.GetDecimal(10);
+                    dbfDataReader.GetString(0);
+                    dbfDataReader.GetDecimal(10);
                 }
 
                 rowCount.ShouldBe(12);
@@ -133,6 +133,56 @@ namespace DbfDataReader.Tests
                         ValidateColumn(dbColumn, line);
 
                         dbColumns.MoveNext();
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public void Should_get_typed_values()
+        {
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            {
+                var columns = dbfDataReader.GetColumnSchema();
+                columns.Count.ShouldBe(31);
+
+                for (var i = 0; i < dbfDataReader.FieldCount; i++)
+                {
+                    if (dbfDataReader.IsDBNull(i))
+                    {
+                        var value = dbfDataReader.GetValue(i);
+                        value.ShouldBeNull();
+                        continue;
+                    }
+
+                    var fieldType = dbfDataReader.GetFieldType(i);
+                    var typeCode = Type.GetTypeCode(fieldType);
+                    switch (typeCode)
+                    {
+                        case TypeCode.Boolean:
+                            dbfDataReader.GetBoolean(i);
+                            break;
+                        case TypeCode.Int32:
+                            dbfDataReader.GetInt32(i);
+                            break;
+                        case TypeCode.DateTime:
+                            dbfDataReader.GetDateTime(i);
+                            break;
+                        case TypeCode.Single:
+                            dbfDataReader.GetFloat(i);
+                            break;
+                        case TypeCode.Double:
+                            dbfDataReader.GetDouble(i);
+                            break;
+                        case TypeCode.Decimal:
+                            dbfDataReader.GetDecimal(i);
+                            break;
+                        case TypeCode.String:
+                            dbfDataReader.GetString(i);
+                            break;
+                        default:
+                            // no cheating
+                            throw new NotSupportedException($"Unsupported field type: {fieldType} for column at index: {i}");
                     }
                 }
             }

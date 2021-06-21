@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>DbfDataReader.Tests</AssemblyTitle>
-    <TargetFrameworks>net48;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net5.0;netcoreapp3.1</TargetFrameworks>
     <AssemblyName>DbfDataReader.Tests</AssemblyName>
     <PackageId>DbfDataReader.Tests</PackageId>
   </PropertyGroup>
@@ -12,13 +12,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="CsvHelper" Version="24.0.1" />
+    <PackageReference Include="CsvHelper" Version="27.0.4" />
     <PackageReference Include="Shouldly" Version="4.0.3" />
   </ItemGroup>
 

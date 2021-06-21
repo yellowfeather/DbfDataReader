@@ -199,7 +199,7 @@ namespace DbfDataReader
 
         public override string GetString(int ordinal)
         {
-            return DbfRecord.GetValue<string>(ordinal);
+            return DbfRecord.GetStringValue(ordinal);
         }
 
         public override int GetOrdinal(string name)
