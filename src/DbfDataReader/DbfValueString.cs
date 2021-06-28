@@ -19,6 +19,7 @@ namespace DbfDataReader
             if (bytes[0] == NullChar)
             {
                 Value = null;
+                return;
             }
 
 #if NET48
