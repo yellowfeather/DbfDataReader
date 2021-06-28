@@ -41,13 +41,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixtures", "fixtures", "{A5
 		test\fixtures\dbase_f5.dbf = test\fixtures\dbase_f5.dbf
 		test\fixtures\dbase_f5.fpt = test\fixtures\dbase_f5.fpt
 		test\fixtures\dbase_f5_summary.txt = test\fixtures\dbase_f5_summary.txt
+		test\fixtures\foxpro_currency_01.csv = test\fixtures\foxpro_currency_01.csv
+		test\fixtures\foxpro_currency_01.dbf = test\fixtures\foxpro_currency_01.dbf
+		test\fixtures\foxpro_currency_01_summary.txt = test\fixtures\foxpro_currency_01_summary.txt
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader", "src\DbfDataReader\DbfDataReader.csproj", "{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader.Tests", "test\DbfDataReader.Tests\DbfDataReader.Tests.csproj", "{A0D45C13-CE45-444C-B5D3-FF9425BE0635}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DbfDataReader.Benchmarks", "test\DbfDataReader.Benchmarks\DbfDataReader.Benchmarks.csproj", "{8D20CC57-206C-47FE-BC3E-C80E198C3602}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader.Benchmarks", "test\DbfDataReader.Benchmarks\DbfDataReader.Benchmarks.csproj", "{8D20CC57-206C-47FE-BC3E-C80E198C3602}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +66,10 @@ Global
 		{A0D45C13-CE45-444C-B5D3-FF9425BE0635}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0D45C13-CE45-444C-B5D3-FF9425BE0635}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0D45C13-CE45-444C-B5D3-FF9425BE0635}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D20CC57-206C-47FE-BC3E-C80E198C3602}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D20CC57-206C-47FE-BC3E-C80E198C3602}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D20CC57-206C-47FE-BC3E-C80E198C3602}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D20CC57-206C-47FE-BC3E-C80E198C3602}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
