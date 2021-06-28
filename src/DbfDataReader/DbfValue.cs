@@ -25,7 +25,7 @@ namespace DbfDataReader
 
         public override string ToString()
         {
-            return Value.ToString();
+            return Value == null ? string.Empty : Value.ToString();
         }
 
         public Type GetFieldType()
