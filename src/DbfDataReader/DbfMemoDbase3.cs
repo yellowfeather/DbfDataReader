@@ -28,13 +28,22 @@ namespace DbfDataReader
             do
             {
                 var block = BinaryReader.ReadString(DefaultBlockSize, CurrentEncoding);
+                if ((block == null) || (block.Length == 0))
+                {
+                    break;
+                }
                 stringBuilder.Append(block);
 
                 if (block.Length >= DefaultBlockSize) finished = true;
             } while (!finished);
 
             var value = stringBuilder.ToString();
-            value = value.TrimEnd('\0', ' ');
+            var nullIdx = value.IndexOf((char)0);
+            if (nullIdx >= 0)
+            {
+                value = value.Substring(0, nullIdx);   // trim off everything past & including the first NUL byte
+            }
+            value = value.TrimEnd(' ');
             return value;
         }
     }

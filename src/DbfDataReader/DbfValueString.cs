@@ -1,25 +1,32 @@
-using System.IO;
+using System;
 using System.Text;
 
 namespace DbfDataReader
 {
     public class DbfValueString : DbfValue<string>
     {
-        protected readonly Encoding CurrentEncoding;
+        private const char NullChar = '\0';
 
-        public DbfValueString(int length, Encoding encoding) : base(length)
+        public DbfValueString(int start, int length, Encoding encoding) : base(start, length)
         {
-            CurrentEncoding = encoding;
+            Encoding = encoding;
         }
 
-        public override void Read(BinaryReader binaryReader)
-        {
-            Value = binaryReader.ReadString(Length, CurrentEncoding);
-        }
+        protected readonly Encoding Encoding;
 
-        public override string ToString()
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            return Value is null ? string.Empty : base.ToString();
+            if (bytes[0] == NullChar)
+            {
+                Value = null;
+            }
+
+#if NET48
+            var value = Encoding.GetString(bytes.ToArray());
+#else
+            var value = Encoding.GetString(bytes);
+#endif
+            Value = value.Trim(NullChar, ' ');
         }
     }
 }

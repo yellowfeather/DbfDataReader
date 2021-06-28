@@ -1,16 +1,16 @@
-﻿using System.IO;
+﻿using System;
 
 namespace DbfDataReader
 {
     public class DbfValueBoolean : DbfValue<bool?>
     {
-        public DbfValueBoolean(int length) : base(length)
+        public DbfValueBoolean(int start, int length) : base(start, length)
         {
         }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            var value = binaryReader.ReadChar();
+            var value = bytes[0];
             if (value == 'Y' || value == 'y' || value == 'T' || value == 't')
                 Value = true;
             else if (value == 'N' || value == 'n' || value == 'F' || value == 'f')

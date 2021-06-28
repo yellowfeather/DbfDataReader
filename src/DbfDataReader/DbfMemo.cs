@@ -22,7 +22,7 @@ namespace DbfDataReader
             Path = path;
             CurrentEncoding = encoding;
 
-            var stream = new FileStream(path, FileMode.Open);
+            var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             BinaryReader = new BinaryReader(stream, encoding, false);
         }
 

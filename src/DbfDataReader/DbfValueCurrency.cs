@@ -1,23 +1,24 @@
 using System;
 using System.Globalization;
-using System.IO;
 
 namespace DbfDataReader
 {
     public class DbfValueCurrency : DbfValue<float?>
     {
-        public DbfValueCurrency(int length, int decimalCount) : base(length)
+        public DbfValueCurrency(int start, int length, int decimalCount) : base(start, length)
         {
             DecimalCount = decimalCount;
         }
 
         public int DecimalCount { get; set; }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            var bytes = binaryReader.ReadBytes(Length);
-
-            var value = BitConverter.ToUInt64(bytes, 0);
+#if NET48
+            var value = BitConverter.ToUInt64(bytes.ToArray(), 0);
+#else
+            var value = BitConverter.ToUInt64(bytes);
+#endif
             Value = value / 10000.0f;
         }
 

@@ -1,14 +1,16 @@
 ﻿using System;
-using System.IO;
 
 namespace DbfDataReader
 {
     public class DbfValueNull : IDbfValue
     {
-        public DbfValueNull(int length)
+        public DbfValueNull(int start, int length)
         {
+            Start = start;
             Length = length;
         }
+
+        public int Start { get; }
 
         public int Length { get; }
 
@@ -17,9 +19,9 @@ namespace DbfDataReader
             return null;
         }
 
-        public void Read(BinaryReader binaryReader)
+        public void Read(ReadOnlySpan<byte> bytes)
         {
-            binaryReader.ReadBytes(Length);
+            // do nothing
         }
 
         public T GetValue<T>()

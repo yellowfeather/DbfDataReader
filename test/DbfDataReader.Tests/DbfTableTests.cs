@@ -8,17 +8,17 @@ namespace DbfDataReader.Tests
     public class DbfTableTests
     {
         [Fact]
-        public void Should_dispose_binary_reader()
+        public void Should_dispose_stream()
         {
             const string fixturePath = "../../../../fixtures/dbase_30.dbf";
 
             var dbfTable = new DbfTable(fixturePath, Encoding.GetEncoding(1252));
 
-            dbfTable.BinaryReader.ShouldNotBeNull();
+            dbfTable.Stream.ShouldNotBeNull();
 
             dbfTable.Dispose();
 
-            dbfTable.BinaryReader.ShouldBeNull();
+            dbfTable.Stream.ShouldBeNull();
         }
 
         [Fact]

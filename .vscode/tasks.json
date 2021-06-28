@@ -1,22 +1,32 @@
 {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
-    "version": "0.1.0",
+    "version": "2.0.0",
     "command": "dotnet",
-    "isShellCommand": true,
     "args": [],
     "tasks": [
         {
-            "taskName": "build",
-            "args": [ "src/DbfDataReader", "test/DbfDataReader.Tests" ],
-            "isBuildCommand": true,
-            "showOutput": "silent",
-            "problemMatcher": "$msCompile"
+            "label": "build",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "src/DbfDataReader",
+                "test/DbfDataReader.Tests"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": "build"
         },
         {
-            "taskName": "test",
-            "args": [ "test/DbfDataReader.Tests" ],
-            "isTestCommand": true
+            "label": "test",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "test",
+                "test/DbfDataReader.Tests"
+            ],
+            "problemMatcher": [],
+            "group": "test"
         }
     ]
 }

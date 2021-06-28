@@ -1,19 +1,27 @@
 using System;
 using System.Globalization;
-using System.IO;
+using System.Text;
 
 namespace DbfDataReader
 {
     public class DbfValueDate : DbfValue<DateTime?>
     {
-        public DbfValueDate(int length) : base(length)
+        public DbfValueDate(int start, int length) : base(start, length)
         {
         }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            var value = new string(binaryReader.ReadChars(8));
-            value = value.TrimEnd((char) 0);
+#if NET48
+            var value = Encoding.ASCII.GetString(bytes.ToArray());
+#else
+            var value = Encoding.ASCII.GetString(bytes);
+#endif
+            var nullIdx = value.IndexOf((char)0);
+            if (nullIdx >= 0)
+            {
+                value = value.Substring(0, nullIdx);   // trim off everything past & including the first NUL byte
+            }
 
             if (string.IsNullOrWhiteSpace(value))
                 Value = null;

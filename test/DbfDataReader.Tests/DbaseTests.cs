@@ -1,6 +1,7 @@
 using CsvHelper;
 using Shouldly;
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace DbfDataReader.Tests
@@ -27,19 +28,16 @@ namespace DbfDataReader.Tests
 
         protected void ValidateColumnSchema(string path)
         {
-            using (var stream = new FileStream(path, FileMode.Open))
-            using (var summaryFile = new StreamReader(stream))
+            using (var dbfColumns = DbfTable.Columns.GetEnumerator())
             {
-                var line = summaryFile.ReadLine();
-                while (line != null && !line.StartsWith("---"))
-                {
-                    line = summaryFile.ReadLine();
-                }
+                dbfColumns.MoveNext();
 
-                foreach (var dbfColumn in DbfTable.Columns)
+                foreach (var line in FixtureHelpers.GetFieldLines(path))
                 {
-                    line = summaryFile.ReadLine();
+                    var dbfColumn = dbfColumns.Current;
                     ValidateColumn(dbfColumn, line);
+
+                    dbfColumns.MoveNext();
                 }
             }
         }
@@ -51,7 +49,7 @@ namespace DbfDataReader.Tests
             var expectedLength = int.Parse(line.Substring(28, 10));
             var expectedDecimalCount = int.Parse(line.Substring(39));
 
-            dbfColumn.Name.ShouldBe(expectedName);
+            dbfColumn.ColumnName.ShouldBe(expectedName);
             dbfColumn.ColumnType.ShouldBe(expectedColumnType);
             dbfColumn.Length.ShouldBe(expectedLength);
             dbfColumn.DecimalCount.ShouldBe(expectedDecimalCount);
@@ -62,21 +60,21 @@ namespace DbfDataReader.Tests
             var dbfRecord = new DbfRecord(DbfTable);
 
             using (var textReader = File.OpenText(path))
-            using (var csvParser = new CsvParser(textReader))
+            using (var csvParser = new CsvParser(textReader, CultureInfo.InvariantCulture))
             {
                 csvParser.Read();
 
                 var row = 1;
                 while (DbfTable.Read(dbfRecord))
                 {
-                    var csvValues = csvParser.Read();
+                    csvParser.Read();
 
                     var index = 0;
                     foreach (var dbfValue in dbfRecord.Values)
                     {
                         var value = dbfValue.ToString();
-                        var csvValue = csvValues[index];
-                        value.ShouldBe(csvValue, $"Row: {row}, column: {index} ({DbfTable.Columns[index].Name})", StringCompareShould.IgnoreLineEndings);
+                        var csvValue = csvParser[index];
+                        value.ShouldBe(csvValue, $"Row: {row}, column: {index} ({DbfTable.Columns[index].ColumnName})", StringCompareShould.IgnoreLineEndings);
 
                         index++;
                     }

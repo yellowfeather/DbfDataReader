@@ -1,30 +1,24 @@
 using System;
 using System.Globalization;
-using System.IO;
 
 namespace DbfDataReader
 {
     public class DbfValueDouble : DbfValue<double?>
     {
-        private static readonly NumberFormatInfo _doubleNumberFormat = new NumberFormatInfo
-            {NumberDecimalSeparator = "."};
-
-        [Obsolete("This constructor should no longer be used. Use DbfValueDouble(System.Int32, System.Int32) instead.")]
-        public DbfValueDouble(int length) : this(length, 0)
-        {
-        }
-
-        public DbfValueDouble(int length, int decimalCount) : base(length)
+        public DbfValueDouble(int start, int length, int decimalCount) : base(start, length)
         {
             DecimalCount = decimalCount;
         }
 
         public int DecimalCount { get; }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            var bytes = binaryReader.ReadBytes(Length);
-            Value = BitConverter.ToDouble(bytes, 0);
+#if NET48
+            Value = BitConverter.ToDouble(bytes.ToArray(), 0);
+#else
+            Value = BitConverter.ToDouble(bytes);
+#endif
         }
 
         public override string ToString()

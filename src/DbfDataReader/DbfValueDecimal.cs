@@ -1,5 +1,6 @@
-﻿using System.Globalization;
-using System.IO;
+﻿using System;
+using System.Globalization;
+using System.Text;
 
 namespace DbfDataReader
 {
@@ -8,23 +9,26 @@ namespace DbfDataReader
         private static readonly NumberFormatInfo _decimalNumberFormat = new NumberFormatInfo
             {NumberDecimalSeparator = "."};
 
-        public DbfValueDecimal(int length, int decimalCount) : base(length)
+        public DbfValueDecimal(int start, int length, int decimalCount) : base(start, length)
         {
             DecimalCount = decimalCount;
         }
 
         public int DecimalCount { get; }
 
-        public override void Read(BinaryReader binaryReader)
+        public override void Read(ReadOnlySpan<byte> bytes)
         {
-            if (binaryReader.PeekChar() == '\0')
+            if (bytes[0] == '\0')
             {
-                binaryReader.ReadBytes(Length);
                 Value = null;
             }
             else
             {
-                var stringValue = new string(binaryReader.ReadChars(Length));
+#if NET48
+                var stringValue = Encoding.ASCII.GetString(bytes.ToArray());
+#else
+                var stringValue = Encoding.ASCII.GetString(bytes);
+#endif
 
                 if (decimal.TryParse(stringValue,
                     NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,

@@ -5,11 +5,14 @@ namespace DbfDataReader
 {
     public class DbfHeader
     {
-        private const int DbfHeaderSize = 32;
+        public const int DbfHeaderSize = 32;
 
-        public DbfHeader(BinaryReader binaryReader)
+        public DbfHeader(Stream stream)
         {
-            Read(binaryReader);
+            var buffer = new byte[DbfHeaderSize];
+            stream.Read(buffer, 0, DbfHeaderSize);
+            var span = new ReadOnlySpan<byte>(buffer);
+            Read(span);
         }
 
         public int Version { get; private set; }
@@ -88,22 +91,36 @@ namespace DbfDataReader
 
         public bool IsFoxPro => Version == 0x30 || Version == 0x31 || Version == 0xf5 || Version == 0xfb;
 
-        public void Read(BinaryReader binaryReader)
+        public void Read(ReadOnlySpan<byte> bytes)
         {
-            Version = binaryReader.ReadByte();
+            Version = bytes[0];
 
-            var year = binaryReader.ReadByte();
-            var month = binaryReader.ReadByte();
-            var day = binaryReader.ReadByte();
+            var year = bytes[1];
+            var month = bytes[2];
+            var day = bytes[3];
 
             UpdatedAt = new DateTime(year + 1900, month, day);
 
-            RecordCount = binaryReader.ReadUInt32();
-            HeaderLength = binaryReader.ReadUInt16();
-            RecordLength = binaryReader.ReadUInt16();
+#if NET48
+            RecordCount = BitConverter.ToUInt32(bytes.Slice(4, 4).ToArray(), 0);
+            HeaderLength = BitConverter.ToUInt16(bytes.Slice(8, 2).ToArray(), 0);
+            RecordLength = BitConverter.ToUInt16(bytes.Slice(10, 2).ToArray(), 0);
 
-            // skip the reserved bytes
-            binaryReader.ReadBytes(20);
+#else
+            RecordCount = BitConverter.ToUInt32(bytes[4..]);
+            HeaderLength = BitConverter.ToUInt16(bytes[8..]);
+            RecordLength = BitConverter.ToUInt16(bytes[10..]);
+#endif
+            // See https://www.clicketyclick.dk/databases/xbase/format/dbf.html
+
+            // 12 - 13  - reserved
+            // 14       - incomplete transaction
+            // 15       - encryption flag
+            // 16 - 19  - free record thread
+            // 20 - 27  - reserved for multi-user dbase
+            // 28       - MDX flag
+            // 29       - language driver
+            // 30 - 31  - reserved
         }
     }
 }

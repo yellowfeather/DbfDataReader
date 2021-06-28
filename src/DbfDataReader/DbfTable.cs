@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -7,8 +8,6 @@ namespace DbfDataReader
     public class DbfTable : Disposable
     {
         private const byte Terminator = 0x0d;
-        private const int HeaderMetaDataSize = 33;
-        private const int ColumnMetaDataSize = 32;
 
         public DbfTable(string path, Encoding encoding)
         {
@@ -17,12 +16,12 @@ namespace DbfDataReader
             Path = path;
             CurrentEncoding = encoding;
 
-            var stream = new FileStream(path, FileMode.Open);
-            BinaryReader = new BinaryReader(stream, encoding, false);
+            // https://stackoverflow.com/questions/23559452/stream-reader-process-cannot-access-file-because-its-in-use-by-another-process
+            File.SetAttributes(path, FileAttributes.Normal);
+            Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            Header = new DbfHeader(BinaryReader);
-            Columns = ReadColumns(BinaryReader);
-            SkipToFirstRecord(BinaryReader);
+            Header = new DbfHeader(Stream);
+            Columns = ReadColumns(Stream);
 
             var memoPath = MemoPath();
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
@@ -37,12 +36,10 @@ namespace DbfDataReader
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
+            Stream = stream;
 
-            BinaryReader = new BinaryReader(stream, encoding, true);
-
-            Header = new DbfHeader(BinaryReader);
-            Columns = ReadColumns(BinaryReader);
-            SkipToFirstRecord(BinaryReader);
+            Header = new DbfHeader(Stream);
+            Columns = ReadColumns(Stream);
 
             if (memoStream != null)
                 Memo = CreateMemo(memoStream);
@@ -54,13 +51,13 @@ namespace DbfDataReader
 
         public DbfHeader Header { get; }
 
-        public BinaryReader BinaryReader { get; private set; }
+        public Stream Stream { get; private set; }
 
         public DbfMemo Memo { get; private set; }
 
         public IList<DbfColumn> Columns { get; }
 
-        public bool IsClosed => BinaryReader == null;
+        public bool IsClosed => Stream == null;
 
         public void Close()
         {
@@ -72,12 +69,12 @@ namespace DbfDataReader
             try
             {
                 if (!disposing) return;
-                BinaryReader?.Dispose();
+                Stream?.Dispose();
                 Memo?.Dispose();
             }
             finally
             {
-                BinaryReader = null;
+                Stream = null;
                 Memo = null;
             }
         }
@@ -137,38 +134,41 @@ namespace DbfDataReader
             return memo;
         }
 
-        public IList<DbfColumn> ReadColumns(BinaryReader binaryReader)
+        public IList<DbfColumn> ReadColumns(Stream stream)
         {
+            var count = Header.HeaderLength - DbfHeader.DbfHeaderSize;
+            var buffer = new byte[count];
+            stream.Read(buffer, 0, count);
+            var span = new ReadOnlySpan<byte>(buffer);
+
             var columns = new List<DbfColumn>();
 
-            var index = 0;
-            while (binaryReader.PeekChar() != Terminator)
+            var start = 0;
+            var startField = 1;
+            var ordinal = 0;
+            while (span[start] != Terminator)
             {
-                var column = new DbfColumn(binaryReader, index++, CurrentEncoding);
+                var slice = span.Slice(start, DbfColumn.DbfColumnSize);
+                var column = new DbfColumn(slice, startField, ordinal, CurrentEncoding);
                 columns.Add(column);
+
+                ordinal++;
+                start = ordinal * DbfColumn.DbfColumnSize;
+                startField += column.Length;
             }
 
-            var terminator = binaryReader.ReadByte();
-            if (terminator != Terminator) throw new DbfFileFormatException();
-
             return columns;
-        }
-
-        public void SkipToFirstRecord(BinaryReader binaryReader)
-        {
-            var numBytesToSkip = Header.HeaderLength - (HeaderMetaDataSize + ColumnMetaDataSize * Columns.Count);
-            BinaryReader.ReadBytes(numBytesToSkip);
         }
 
         public DbfRecord ReadRecord()
         {
             var dbfRecord = new DbfRecord(this);
-            return !dbfRecord.Read(BinaryReader) ? null : dbfRecord;
+            return !dbfRecord.Read(Stream) ? null : dbfRecord;
         }
 
         public bool Read(DbfRecord dbfRecord)
         {
-            return dbfRecord.Read(BinaryReader);
+            return dbfRecord.Read(Stream);
         }
     }
 }

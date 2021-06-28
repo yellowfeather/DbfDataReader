@@ -6,9 +6,7 @@ namespace DbfDataReader
     {
         static EncodingProvider()
         {
-#if NETSTANDARD1_6_1
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-#endif
         }
 
         public static Encoding UTF8 => Encoding.UTF8;

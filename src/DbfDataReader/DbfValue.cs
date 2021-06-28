@@ -1,20 +1,22 @@
 using System;
-using System.IO;
 
 namespace DbfDataReader
 {
     public abstract class DbfValue<T> : IDbfValue
     {
-        protected DbfValue(int length)
+        protected DbfValue(int offset, int length)
         {
+            Start = offset;
             Length = length;
         }
+
+        public int Start { get; }
 
         public int Length { get; }
 
         public T Value { get; protected set; }
 
-        public abstract void Read(BinaryReader binaryReader);
+        public abstract void Read(ReadOnlySpan<byte> bytes);
 
         public object GetValue()
         {
