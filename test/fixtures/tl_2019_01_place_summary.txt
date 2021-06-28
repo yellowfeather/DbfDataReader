@@ -1,0 +1,25 @@
+
+Database: tl_2019_01_place.dbf
+Type: (03) dBase III without memo file
+Memo File: false
+Records: 586
+
+Fields:
+Name             Type       Length     Decimal
+------------------------------------------------------------------------------
+STATEFP          C          2          0         
+PLACEFP          C          5          0         
+PLACENS          C          8          0         
+GEOID            C          7          0         
+NAME             C          100        0         
+NAMELSAD         C          100        0         
+LSAD             C          2          0         
+CLASSFP          C          2          0         
+PCICBSA          C          1          0         
+PCINECTA         C          1          0         
+MTFCC            C          5          0         
+FUNCSTAT         C          1          0         
+ALAND            N          14         0         
+AWATER           N          14         0         
+INTPTLAT         C          11         0         
+INTPTLON         C          12         0         
