@@ -6,9 +6,9 @@ namespace DbfDataReader.Tests
     [Collection("foxpro_currency")]
     public class FoxproCurrencyTests : DbaseTests
     {
-        private const string FixturePath = "../../../../fixtures/foxpro_currency_01.dbf";
+        private const string FoxproCurrency01FixturePath = "../../../../fixtures/foxpro_currency_01.dbf";
 
-        public FoxproCurrencyTests() : base(FixturePath)
+        public FoxproCurrencyTests() : base(FoxproCurrency01FixturePath)
         {
         }
 

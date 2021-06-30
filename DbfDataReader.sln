@@ -44,6 +44,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixtures", "fixtures", "{A5
 		test\fixtures\foxpro_currency_01.csv = test\fixtures\foxpro_currency_01.csv
 		test\fixtures\foxpro_currency_01.dbf = test\fixtures\foxpro_currency_01.dbf
 		test\fixtures\foxpro_currency_01_summary.txt = test\fixtures\foxpro_currency_01_summary.txt
+		test\fixtures\tl_2019_01_place.csv = test\fixtures\tl_2019_01_place.csv
+		test\fixtures\tl_2019_01_place.dbf = test\fixtures\tl_2019_01_place.dbf
+		test\fixtures\tl_2019_01_place_summary.txt = test\fixtures\tl_2019_01_place_summary.txt
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader", "src\DbfDataReader\DbfDataReader.csproj", "{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1}"
