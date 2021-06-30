@@ -12,11 +12,7 @@ namespace DbfDataReader
 
         public override void Read(ReadOnlySpan<byte> bytes)
         {
-#if NET48
-            var value = Encoding.ASCII.GetString(bytes.ToArray());
-#else
             var value = Encoding.ASCII.GetString(bytes);
-#endif
             var nullIdx = value.IndexOf((char)0);
             if (nullIdx >= 0)
             {

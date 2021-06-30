@@ -14,11 +14,7 @@ namespace DbfDataReader
 
         public override void Read(ReadOnlySpan<byte> bytes)
         {
-#if NET48
-            Value = BitConverter.ToDouble(bytes.ToArray(), 0);
-#else
             Value = BitConverter.ToDouble(bytes);
-#endif
         }
 
         public override string ToString()
