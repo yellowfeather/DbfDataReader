@@ -7,7 +7,7 @@ namespace DbfDataReader
         public DbfDataReaderOptions()
         {
             SkipDeletedRecords = false;
-            Encoding = EncodingProvider.GetEncoding(1252);
+            Encoding = null;
         }
 
         public bool SkipDeletedRecords { get; set; }
