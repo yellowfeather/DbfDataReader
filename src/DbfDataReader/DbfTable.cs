@@ -9,7 +9,7 @@ namespace DbfDataReader
     {
         private const byte Terminator = 0x0d;
 
-        public DbfTable(string path, Encoding encoding)
+        public DbfTable(string path, Encoding encoding = null)
         {
             if (!File.Exists(path)) throw new FileNotFoundException();
 
@@ -20,42 +20,47 @@ namespace DbfDataReader
             File.SetAttributes(path, FileAttributes.Normal);
             Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            Header = new DbfHeader(Stream);
-            Columns = ReadColumns(Stream);
+            Init();
 
             var memoPath = MemoPath();
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
-        public DbfTable(Stream stream, Encoding encoding)
+        public DbfTable(Stream stream, Encoding encoding = null)
             : this(stream, null, encoding)
         {
         }
 
-        public DbfTable(Stream stream, Stream memoStream, Encoding encoding)
+        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null)
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
             Stream = stream;
 
-            Header = new DbfHeader(Stream);
-            Columns = ReadColumns(Stream);
+            Init();
 
             if (memoStream != null)
                 Memo = CreateMemo(memoStream);
         }
 
+        private void Init()
+        {
+            Header = new DbfHeader(Stream);
+            CurrentEncoding ??= EncodingProvider.GetEncoding(Header.LanguageDriver);
+            Columns = ReadColumns(Stream);
+        }
+
         public string Path { get; }
 
-        public Encoding CurrentEncoding { get; set; }
+        public Encoding CurrentEncoding { get; private set; }
 
-        public DbfHeader Header { get; }
+        public DbfHeader Header { get; private set; }
 
         public Stream Stream { get; private set; }
 
         public DbfMemo Memo { get; private set; }
 
-        public IList<DbfColumn> Columns { get; }
+        public IList<DbfColumn> Columns { get; private set; }
 
         public bool IsClosed => Stream == null;
 

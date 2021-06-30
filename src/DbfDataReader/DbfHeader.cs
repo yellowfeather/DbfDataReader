@@ -21,6 +21,7 @@ namespace DbfDataReader
         public int HeaderLength { get; private set; }
         public int RecordLength { get; private set; }
         public long RecordCount { get; private set; }
+        public byte LanguageDriver { get; private set; }
 
         public string VersionDescription
         {
@@ -113,7 +114,9 @@ namespace DbfDataReader
             // 16 - 19  - free record thread
             // 20 - 27  - reserved for multi-user dbase
             // 28       - MDX flag
-            // 29       - language driver
+
+            LanguageDriver = bytes[29];
+
             // 30 - 31  - reserved
         }
     }
