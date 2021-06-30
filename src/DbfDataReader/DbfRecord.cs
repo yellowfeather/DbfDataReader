@@ -40,8 +40,14 @@ namespace DbfDataReader
             switch (dbfColumn.ColumnType)
             {
                 case DbfColumnType.Number:
-                    if (dbfColumn.DecimalCount == 0)
-                        value = new DbfValueInt(dbfColumn.Start, dbfColumn.Length);
+                    if (dbfColumn.DecimalCount == 0) {
+                        if (dbfColumn.Length < 10) {
+                            value = new DbfValueInt(dbfColumn.Start, dbfColumn.Length);
+                        }
+                        else {
+                            value = new DbfValueInt64(dbfColumn.Start, dbfColumn.Length);
+                        }
+                    }
                     else
                         value = new DbfValueDecimal(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
                     break;

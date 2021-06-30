@@ -15,7 +15,7 @@ namespace DbfDataReader.Tests
         [Fact]
         public void Should_report_correct_record_count()
         {
-            DbfHeader.RecordCount.ShouldBe(586);
+            DbfHeader.RecordCount.ShouldBe(587);
         }
 
         [Fact]

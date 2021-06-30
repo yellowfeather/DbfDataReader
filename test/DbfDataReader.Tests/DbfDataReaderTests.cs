@@ -38,8 +38,8 @@ namespace DbfDataReader.Tests
                 dbfDataReader.GetString(16).ShouldBe("New");
                 dbfDataReader.GetString(17).ShouldBe("Driveway");
                 dbfDataReader.GetString(18).ShouldBe("050712TR2819.cor");
-                dbfDataReader.GetInt32(19).ShouldBe(2);
-                dbfDataReader.GetInt32(20).ShouldBe(2);
+                dbfDataReader.GetInt64(19).ShouldBe(2);
+                dbfDataReader.GetInt64(20).ShouldBe(2);
                 dbfDataReader.GetString(21).ShouldBe("MS4");
                 dbfDataReader.GetInt32(22).ShouldBe(1331);
                 dbfDataReader.GetDecimal(23).ShouldBe(226625.000m);
