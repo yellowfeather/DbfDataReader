@@ -111,6 +111,10 @@ namespace DbfDataReader
                     return Encoding.GetEncoding(865); //  "cp865", "Nordic MS-DOS"
                 case 0x67:
                     return Encoding.GetEncoding(861); //  "cp861", "Icelandic MS-DOS"
+                case 0x68:
+                    return Encoding.GetEncoding(895); // Kamenicky (Czech) MS-DOS
+                case 0x69:
+                    return Encoding.GetEncoding(620); //  "Mazovia (Polish) MS-DOS"
                 case 0x6a:
                     return Encoding.GetEncoding(737); //  "cp737", "Greek MS-DOS (437G)"
                 case 0x6b:
@@ -140,7 +144,7 @@ namespace DbfDataReader
                 case 0x96:
                     return Encoding.GetEncoding(10007); //  "mac_cyrillic", "Russian Macintosh"
                 case 0x97:
-                    return Encoding.GetEncoding(10007); //  "mac_latin2", "Macintosh EE"
+                    return Encoding.GetEncoding(10029); //  "mac_latin2", "Macintosh EE"
                 case 0x98:
                     return Encoding.GetEncoding(10006); //  "mac_greek", "Greek Macintosh"
                 case 0xc8:
