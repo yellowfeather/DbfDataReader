@@ -8,7 +8,9 @@ namespace DbfDataReader.Tests
     {
         private const string MsKhdmFixturePath = "../../../../fixtures/MS__KHDM.DBF";
 
-        public MsKhdmTests() : base(MsKhdmFixturePath)
+        // override default encoding to use 1251 codepage
+        public MsKhdmTests() 
+            : base(MsKhdmFixturePath, EncodingProvider.GetEncoding(1251))
         {
         }
 
@@ -42,7 +44,7 @@ namespace DbfDataReader.Tests
             ValidateColumnSchema("../../../../fixtures/MS__KHDM_summary.txt");
         }
 
-        [Fact(Skip = "WIP")]
+        [Fact]
         public void Should_have_correct_row_values()
         {
             ValidateRowValues("../../../../fixtures/MS__KHDM.csv");
