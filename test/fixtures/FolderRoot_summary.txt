@@ -1,0 +1,19 @@
+
+Database: FolderRoot.dbf
+Type: (31) Visual FoxPro with AutoIncrement field
+Memo File: false
+Records: 9
+
+Fields:
+Name             Type       Length     Decimal
+------------------------------------------------------------------------------
+NAME             C          1040       0         
+DISC_ID          C          255        0         
+ROOT_TYPE        C          255        0         
+SYS_PATH         C          1040       0         
+DB_RT_PATH       C          600        0         
+VOL_NAME         C          64         0         
+FS_TYPE          C          32         0         
+PNP_ID           C          255        0         
+FOLD_RT_ID       B          8          0         
+TS               7          8          0         

@@ -34,8 +34,19 @@ namespace DbfDataReader
 
             // ignore field data address
 
-            Length = bytes[16];
-            DecimalCount = bytes[17];
+            var length = bytes[16];
+            var decimalCount = bytes[17];
+
+            if (ColumnType == DbfColumnType.Character)
+            {
+                Length =  BitConverter.ToInt16(bytes.Slice(16, 2));
+                DecimalCount = 0;
+            }
+            else
+            {
+                Length = length;
+                DecimalCount = decimalCount;
+            }
 
             DataType = GetDataType(ColumnType);
             DataTypeName = DataType.ToString();

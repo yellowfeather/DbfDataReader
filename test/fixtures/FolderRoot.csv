@@ -1,0 +1,10 @@
+﻿NAME,DISC_ID,ROOT_TYPE,SYS_PATH,DB_RT_PATH,VOL_NAME,FS_TYPE,PNP_ID,FOLD_RT_ID,TS
+C:,F0A65FAE,Local,C:,Local\F0A65FAE,System,NTFS,,1,
+D:,F64AADF0,Local,D:,Local\F64AADF0,Data,NTFS,,2,
+\\diskserveur,00000000,Remote,\\diskserveur,Remote\diskserveur,,,,3,
+G:,4A5A67B8,Removable,G:,Removable\4A5A67B8,,NTFS,,4,
+G:,022EAD81,Removable,G:,Removable\022EAD81,USB 4GO,FAT32,,5,
+Galaxy S10e,5841b71d-8727-4349-b3db-46fa9ca47660,WPDStorageDrive,Galaxy S10e,WPDStorageDrive\5841b71d-8727-4349-b3db-46fa9ca47660,,,\\?\usb#vid_04e8&pid_6860&ms_comp_mtp&samsung_android#6&22918cac&0&0000#{6ac27878-a6fa-4155-ba85-f98f491d4f33},6,
+Mini GS5 (Galaxy S5 mini),bdbc2acc-097f-4488-a3a8-894c94864fe9,WPDStorageDrive,Mini GS5 (Galaxy S5 mini),WPDStorageDrive\bdbc2acc-097f-4488-a3a8-894c94864fe9,,,\\?\usb#vid_04e8&pid_6860&ms_comp_mtp&samsung_android#6&15dd26f&0&0000#{6ac27878-a6fa-4155-ba85-f98f491d4f33},7,
+D:,002300CA,Local,D:,Local\002300CA,Data,NTFS,,8,
+E:,0DD50EBD,Local,E:,Local\0DD50EBD,Raid1,NTFS,,9,
