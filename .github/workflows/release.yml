@@ -36,7 +36,7 @@ jobs:
       run: dotnet test /p:Configuration=$BUILD_CONFIG --no-restore --no-build --verbosity normal
 
     - name: Pack
-      run: dotnet pack --output ./artifacts --configuration $BUILD_CONFIG --no-build
+      run: dotnet pack ./src/DbfDataReader --output ./artifacts --configuration $BUILD_CONFIG --no-build
 
     - name: Push to MyGet
       env:
