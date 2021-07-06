@@ -17,7 +17,6 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.0" />
-    <PackageReference Include="DbfDataReader" Version="0.7.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +27,10 @@
     <None Include="..\fixtures\dbase_03.dbf" Link="fixtures\dbase_03.dbf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DbfDataReader\DbfDataReader.csproj" />
   </ItemGroup>
 
 </Project>

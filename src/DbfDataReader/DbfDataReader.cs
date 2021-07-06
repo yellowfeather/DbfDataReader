@@ -63,22 +63,6 @@ namespace DbfDataReader
             }
         }
 
-        public DbfRecord ReadRecord()
-        {
-            DbfRecord dbfRecord;
-            bool skip;
-            do
-            {
-                dbfRecord = DbfTable.ReadRecord();
-                if (dbfRecord == null)
-                    break;
-
-                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
-            } while (skip);
-
-            return dbfRecord;
-        }
-
         public T GetValue<T>(int ordinal)
         {
             return DbfRecord.GetValue<T>(ordinal);

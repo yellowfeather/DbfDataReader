@@ -11,14 +11,12 @@ namespace DbfDataReader
         private const byte EndOfFile = 0x1a;
 
         private readonly Encoding _encoding;
-        private readonly int _recordLength;
-        private readonly byte[] _buffer;
+        private readonly Memory<byte> _buffer;
 
         public DbfRecord(DbfTable dbfTable)
         {
             _encoding = dbfTable.CurrentEncoding;
-            _recordLength = dbfTable.Header.RecordLength;
-            _buffer = new byte[_recordLength];
+            _buffer = new byte[dbfTable.Header.RecordLength];
 
             Values = new List<IDbfValue>();
 
@@ -93,17 +91,17 @@ namespace DbfDataReader
 
             try
             {
-                stream.Read(_buffer, 0, _recordLength);
-                var span = new ReadOnlySpan<byte>(_buffer);
+                var bufferSpan = _buffer.Span;
+                stream.Read(bufferSpan);
 
-                var value = span[0];
+                var value = bufferSpan[0];
                 if (value == EndOfFile) return false;
 
                 IsDeleted = value == 0x2A;
 
                 foreach (var dbfValue in Values)
                 {
-                    var slice = span.Slice(dbfValue.Start, dbfValue.Length);
+                    var slice = bufferSpan.Slice(dbfValue.Start, dbfValue.Length);
                     dbfValue.Read(slice);
                 }
                 return true;

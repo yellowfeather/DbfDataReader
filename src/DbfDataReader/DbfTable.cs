@@ -165,12 +165,6 @@ namespace DbfDataReader
             return columns;
         }
 
-        public DbfRecord ReadRecord()
-        {
-            var dbfRecord = new DbfRecord(this);
-            return !dbfRecord.Read(Stream) ? null : dbfRecord;
-        }
-
         public bool Read(DbfRecord dbfRecord)
         {
             return dbfRecord.Read(Stream);
