@@ -11,7 +11,15 @@ namespace DbfDataReader
 
         public override void Read(ReadOnlySpan<byte> bytes)
         {
-            if (bytes[0] == '\0')
+            int i;
+            for (i = 0; i < bytes.Length; i++)
+            {
+                if (bytes[0] != '\0')
+                {
+                    break;
+                }
+            }
+            if (i == bytes.Length)
             {
                 Value = null;
             }
