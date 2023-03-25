@@ -18,7 +18,7 @@ namespace DbfDataReader
             if (Length == 4)
             {
                 var startBlock = BitConverter.ToUInt32(bytes);
-                Value = _memo.Get(startBlock);
+                Value = _memo?.Get(startBlock);
             }
             else
             {
