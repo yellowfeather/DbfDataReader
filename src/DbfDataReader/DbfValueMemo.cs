@@ -28,10 +28,13 @@ namespace DbfDataReader
                 {
                     Value = string.Empty;
                 }
+                else if (long.TryParse(value, out long startBlock))
+                {
+                    Value = _memo?.Get(startBlock);
+                }
                 else
                 {
-                    var startBlock = long.Parse(value);
-                    Value = _memo?.Get(startBlock);
+                    Value = string.Empty;
                 }
             }
         }
