@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AssemblyTitle>DbfDataReader.Tests</AssemblyTitle>
@@ -19,7 +19,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="CsvHelper" Version="30.0.1" />
-    <PackageReference Include="Shouldly" Version="4.0.3" />
+    <PackageReference Include="Shouldly" Version="4.2.1" />
   </ItemGroup>
 
 </Project>
