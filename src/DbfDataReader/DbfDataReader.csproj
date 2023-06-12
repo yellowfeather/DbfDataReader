@@ -9,7 +9,7 @@
     <PackageId>DbfDataReader</PackageId>
     <PackageTags>dbf;dBase;xBase;Clipper;FoxPro</PackageTags>
     <PackageProjectUrl>https://github.com/yellowfeather/DbfDataReader</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/yellowfeather/DbfDataReader/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>git://github.com/yellowfeather/DbfDataReader</RepositoryUrl>
@@ -29,6 +29,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\"/>
     <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
