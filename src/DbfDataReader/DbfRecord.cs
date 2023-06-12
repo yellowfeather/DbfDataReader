@@ -79,6 +79,9 @@ namespace DbfDataReader
                 case DbfColumnType.Character:
                     value = new DbfValueString(dbfColumn.Start, dbfColumn.Length, _encoding);
                     break;
+                case DbfColumnType.WideCharacter:
+                    value = new DbfValueWideString(dbfColumn.Start, dbfColumn.Length);
+                    break;
                 default:
                     value = new DbfValueNull(dbfColumn.Start, dbfColumn.Length);
                     break;
