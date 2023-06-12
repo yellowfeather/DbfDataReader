@@ -42,6 +42,11 @@ namespace DbfDataReader
                 Length =  BitConverter.ToInt16(bytes.Slice(16, 2));
                 DecimalCount = 0;
             }
+            else if (ColumnType == DbfColumnType.WideCharacter)
+            {
+                Length =  BitConverter.ToInt16(bytes.Slice(16, 2));
+                DecimalCount = 0;
+            }
             else
             {
                 Length = length;
@@ -85,6 +90,7 @@ namespace DbfDataReader
                     return typeof(double);
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
+                case DbfColumnType.WideCharacter:
                     return typeof(string);
                 default:
                     return typeof(object);
