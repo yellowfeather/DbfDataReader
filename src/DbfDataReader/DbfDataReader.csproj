@@ -19,10 +19,6 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <MinVerTagPrefix>v</MinVerTagPrefix>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="docs\README.md" Pack="true" PackagePath="\"/>
-  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
@@ -30,6 +26,12 @@
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Link>README.md</Link>
+    </None>
   </ItemGroup>
 
 </Project>
