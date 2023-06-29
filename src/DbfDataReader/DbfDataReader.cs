@@ -211,8 +211,14 @@ namespace DbfDataReader
                 if (dbfColumn.ColumnName == name) return ordinal;
                 ordinal++;
             }
+            ordinal = 0; 
+            foreach (var dbfColumn in DbfTable.Columns)
+            {
+                if (String.Equals(dbfColumn.ColumnName,name,StringComparison.OrdinalIgnoreCase)) return ordinal;
+                ordinal++;
+            }
 
-            return -1;
+            throw new IndexOutOfRangeException();
         }
 
         public override string GetName(int ordinal)

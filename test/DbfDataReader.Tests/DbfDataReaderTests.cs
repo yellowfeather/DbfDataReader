@@ -13,6 +13,22 @@ namespace DbfDataReader.Tests
         private const string FixtureSummaryPath = "../../../../fixtures/dbase_03_summary.txt";
 
         [Fact]
+        public void Should_resolve_names_to_ordinals()
+        {
+            // Test if GetOrdinal resolves names according to IDataRecord.GetOrdinal()
+            // see https://learn.microsoft.com/en-us/dotnet/api/system.data.idatarecord.getordinal?view=net-7.0#system-data-idatarecord-getordinal(system-string)
+            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            {
+                dbfDataReader.GetOrdinal("Point_ID").ShouldBe(0);
+                dbfDataReader.GetOrdinal("POINT_ID").ShouldBe(0);
+                dbfDataReader.GetOrdinal("point_id").ShouldBe(0);
+                dbfDataReader.GetOrdinal("Std_Dev").ShouldBe(27);
+                dbfDataReader.GetOrdinal("STD_DEV").ShouldBe(27);
+                dbfDataReader.GetOrdinal("std_dev").ShouldBe(27);
+                Assert.Throws<IndexOutOfRangeException>(() => dbfDataReader.GetOrdinal("NO_SUCH_FIELD"));
+            }
+        }
+        [Fact]
         public void Should_have_valid_first_row_values()
         {
             using (var dbfDataReader = new DbfDataReader(FixturePath))
