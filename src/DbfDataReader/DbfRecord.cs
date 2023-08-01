@@ -106,7 +106,7 @@ namespace DbfDataReader
                         return false;
                     read += r;
                 }
-				var span = new ReadOnlySpan<byte>(_buffer);
+                var span = new ReadOnlySpan<byte>(_buffer);
 
                 var value = span[0];
                 if (value == EndOfFile) return false;
