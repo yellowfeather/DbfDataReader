@@ -96,8 +96,12 @@ namespace DbfDataReader
 
             try
             {
-                stream.Read(_buffer, 0, _recordLength);
-                var span = new ReadOnlySpan<byte>(_buffer);
+                var read = stream.Read(_buffer, 0, _recordLength);
+                if (read <= 0) 
+                    return false;
+                if (read < _recordLength)
+					stream.Read(_buffer, read, _recordLength - read);
+				var span = new ReadOnlySpan<byte>(_buffer);
 
                 var value = span[0];
                 if (value == EndOfFile) return false;
