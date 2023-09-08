@@ -1,8 +1,11 @@
 ﻿using System;
-using System.IO;
 
 namespace DbfDataReader
 {
+    // DateTime values are encoded as two 32 bits numbers. The high word is
+    // the date, encoded as the number of days since the beginning of the
+    // Julian period (Jan 1, 4713BC), and the low word is the time, encoded
+    // as the number of milliseconds since midnight.
     public class DbfValueDateTime : DbfValue<DateTime?>
     {
         public DbfValueDateTime(int start, int length) : base(start, length)
@@ -11,17 +14,20 @@ namespace DbfDataReader
 
         public override void Read(ReadOnlySpan<byte> bytes)
         {
-            if (bytes[0] == '\0')
+            var datePart = BitConverter.ToInt32(bytes);
+            var timePart = BitConverter.ToInt32(bytes[4..]);
+
+            if (datePart == 0 && timePart == 0)
             {
                 Value = null;
+                return;
             }
-            else
-            {
-                var datePart = BitConverter.ToInt32(bytes);
-                var timePart = BitConverter.ToInt32(bytes[4..]);
-                Value = new DateTime(1, 1, 1).AddDays(datePart).Subtract(TimeSpan.FromDays(1721426))
-                    .AddMilliseconds(timePart);
-            }
+
+            const int numberOfDaysSinceBeginJulianPeriod = 1721426;
+            
+            Value = new DateTime(1, 1, 1)
+                .AddDays(datePart - numberOfDaysSinceBeginJulianPeriod)
+                .AddMilliseconds(timePart);
         }
     }
 }
