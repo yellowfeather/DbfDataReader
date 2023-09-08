@@ -19,8 +19,7 @@ namespace DbfDataReader
             {
                 var datePart = BitConverter.ToInt32(bytes);
                 var timePart = BitConverter.ToInt32(bytes[4..]);
-                Value = new DateTime(1, 1, 1).AddDays(datePart).Subtract(TimeSpan.FromDays(1721426))
-                    .AddMilliseconds(timePart);
+                Value = new DateTime(1, 1, 1).AddDays(datePart-1721426).AddMilliseconds(timePart);
             }
         }
     }
