@@ -12,6 +12,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fixtures", "fixtures", "{A58BB1E8-935E-4A73-B630-969EE5B4AF2F}"
 	ProjectSection(SolutionItems) = preProject
 		test\fixtures\cp1251.dbf = test\fixtures\cp1251.dbf
+		test\fixtures\client.dbf = test\fixtures\client.dbf
+		test\fixtures\client.dbt = test\fixtures\client.dbt
+		test\fixtures\client.mdx = test\fixtures\client.mdx
 		test\fixtures\cp1251_summary.txt = test\fixtures\cp1251_summary.txt
 		test\fixtures\dbase_03.csv = test\fixtures\dbase_03.csv
 		test\fixtures\dbase_03.dbf = test\fixtures\dbase_03.dbf
