@@ -14,8 +14,18 @@ namespace DbfDataReader
         private readonly int _recordLength;
         private readonly byte[] _buffer;
 
-        public DbfRecord(DbfTable dbfTable)
+        private readonly DbfRecordConfiguration Config;
+
+        public DbfRecord(DbfTable dbfTable, DbfRecordConfiguration config = null)
         {
+            if (config == null)
+            {
+                this.Config = DbfRecordConfiguration.GetDefault();
+            }
+            else {
+                this.Config = config;
+            }
+
             _encoding = dbfTable.CurrentEncoding;
             _recordLength = dbfTable.Header.RecordLength;
             _buffer = new byte[_recordLength];
@@ -55,7 +65,13 @@ namespace DbfDataReader
                     value = new DbfValueLong(dbfColumn.Start, dbfColumn.Length);
                     break;
                 case DbfColumnType.Float:
-                    value = new DbfValueFloat(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
+                    if (this.Config.ReadFloatsAsDecimals)
+                    {
+                        value = new DbfValueDecimal(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
+                    }
+                    else {
+                        value = new DbfValueFloat(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
+                    }
                     break;
                 case DbfColumnType.Currency:
                     value = new DbfValueCurrency(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
