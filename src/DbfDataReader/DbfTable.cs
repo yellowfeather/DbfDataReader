@@ -9,12 +9,13 @@ namespace DbfDataReader
     {
         private const byte Terminator = 0x0d;
 
-        public DbfTable(string path, Encoding encoding = null)
+        public DbfTable(string path, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim)
         {
             if (!File.Exists(path)) throw new FileNotFoundException();
 
             Path = path;
             CurrentEncoding = encoding;
+            StringTrimming = stringTrimming;
 
             Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
@@ -24,15 +25,16 @@ namespace DbfDataReader
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
-        public DbfTable(Stream stream, Encoding encoding = null)
-            : this(stream, null, encoding)
+        public DbfTable(Stream stream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim)
+            : this(stream, null, encoding, stringTrimming)
         {
         }
 
-        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null)
+        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim)
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
+            StringTrimming = stringTrimming;
             Stream = stream;
 
             Init();
@@ -59,6 +61,8 @@ namespace DbfDataReader
         public DbfMemo Memo { get; private set; }
 
         public IList<DbfColumn> Columns { get; private set; }
+
+        public StringTrimmingOption StringTrimming { get; private set; }
 
         public bool IsClosed => Stream == null;
 
