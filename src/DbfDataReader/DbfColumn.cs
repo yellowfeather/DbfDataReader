@@ -72,8 +72,8 @@ namespace DbfDataReader
             {
                 case DbfColumnType.Number:
                     if (DecimalCount == 0) {
-                        if (Lenght < 10) {
-                            return typeof(int)
+                        if (Length < 10) {
+                            return typeof(int);
                         }
                         else {
                             return typeof(long);
