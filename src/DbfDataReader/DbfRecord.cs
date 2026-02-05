@@ -11,12 +11,16 @@ namespace DbfDataReader
         private const byte EndOfFile = 0x1a;
 
         private readonly Encoding _encoding;
+        private readonly StringTrimmingOption _stringTrimming;
+        private readonly bool _readFloatsAsDecimals;
         private readonly int _recordLength;
         private readonly byte[] _buffer;
 
         public DbfRecord(DbfTable dbfTable)
         {
             _encoding = dbfTable.CurrentEncoding;
+            _stringTrimming = dbfTable.StringTrimming;
+            _readFloatsAsDecimals = dbfTable.ReadFloatsAsDecimals;
             _recordLength = dbfTable.Header.RecordLength;
             _buffer = new byte[_recordLength];
 
@@ -55,7 +59,13 @@ namespace DbfDataReader
                     value = new DbfValueLong(dbfColumn.Start, dbfColumn.Length);
                     break;
                 case DbfColumnType.Float:
-                    value = new DbfValueFloat(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
+                    if (_readFloatsAsDecimals)
+                    {
+                        value = new DbfValueDecimal(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
+                    }
+                    else {
+                        value = new DbfValueFloat(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
+                    }                    
                     break;
                 case DbfColumnType.Currency:
                     value = new DbfValueCurrency(dbfColumn.Start, dbfColumn.Length, dbfColumn.DecimalCount);
@@ -77,10 +87,10 @@ namespace DbfDataReader
                     break;
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
-                    value = new DbfValueString(dbfColumn.Start, dbfColumn.Length, _encoding);
+                    value = new DbfValueString(dbfColumn.Start, dbfColumn.Length, _encoding, _stringTrimming);
                     break;
                 case DbfColumnType.WideCharacter:
-                    value = new DbfValueWideString(dbfColumn.Start, dbfColumn.Length);
+                    value = new DbfValueWideString(dbfColumn.Start, dbfColumn.Length, _stringTrimming);
                     break;
                 default:
                     value = new DbfValueNull(dbfColumn.Start, dbfColumn.Length);

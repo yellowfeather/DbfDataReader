@@ -227,9 +227,10 @@ namespace DbfDataReader.Tests
         {
             var expectedName = line.Substring(0, 16).Trim();
             var dbfColumnType = (DbfColumnType)line.Substring(17, 1)[0];
-            var decimalLength = int.Parse(line.Substring(39, 1));
+            var length = int.Parse(line.Substring(28, 8).Trim());
+            var decimalCount = int.Parse(line.Substring(39, 1));
 
-            var expectedDataType = GetDataType(dbfColumnType, decimalLength);
+            var expectedDataType = GetDataType(dbfColumnType, length, decimalCount);
 
             row[SchemaTableColumn.ColumnName].ShouldBe(expectedName);
             row[SchemaTableColumn.DataType].ShouldBe(expectedDataType);
@@ -239,20 +240,30 @@ namespace DbfDataReader.Tests
         {
             var expectedName = line.Substring(0, 16).Trim();
             var dbfColumnType = (DbfColumnType)line.Substring(17, 1)[0];
-            var decimalLength = int.Parse(line.Substring(39, 1));
+            var length = int.Parse(line.Substring(28, 8).Trim());
+            var decimalCount = int.Parse(line.Substring(39, 1));
 
-            var expectedDataType = GetDataType(dbfColumnType, decimalLength);
+            var expectedDataType = GetDataType(dbfColumnType, length, decimalCount);
 
             dbColumn.ColumnName.ShouldBe(expectedName);
             dbColumn.DataType.ShouldBe(expectedDataType);
         }
 
-        private static Type GetDataType(DbfColumnType dbfColumnType, int decimalLength)
+        private static Type GetDataType(DbfColumnType dbfColumnType, int length, int decimalCount)
         {
             switch (dbfColumnType)
             {
                 case DbfColumnType.Number:
-                    return decimalLength == 0 ? typeof(int) : typeof(decimal);
+                    if (decimalCount == 0) {
+                        if (length < 10) {
+                            return typeof(int);
+                        }
+                        else {
+                            return typeof(long);
+                        }
+                    } else {
+                        return typeof(decimal);
+                    }
                 case DbfColumnType.SignedLong:
                     return typeof(long);
                 case DbfColumnType.Float:
