@@ -8,8 +8,13 @@ namespace DbfDataReader.Tests
     {
         private const string DbaseF5FixturePath = "../../../../fixtures/dbase_f5.dbf";
 
+        private static readonly DbfDataReaderOptions Options = new()
+        {
+            Encoding = EncodingProvider.GetEncoding(1252)
+        };
+        
         // override default encoding to use codepage 1252
-        public DbaseF5Tests() : base(DbaseF5FixturePath, EncodingProvider.GetEncoding(1252))
+        public DbaseF5Tests() : base(DbaseF5FixturePath, Options)
         {
         }
 
