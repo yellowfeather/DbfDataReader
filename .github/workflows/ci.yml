@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 6.0.x
 
@@ -42,7 +42,7 @@ jobs:
       run: dotnet nuget push ./artifacts/**.nupkg --source $NUGET_URL --api-key $NUGET_API_KEY
 
     - name: Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v5
       with:
         name: artifacts
         path: artifacts/**/*
