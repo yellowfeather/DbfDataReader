@@ -45,3 +45,4 @@ project.fragment.lock.json
 artifacts/
 **/Properties/launchSettings.json
 /test/DbfDataReader.Benchmarks/BenchmarkDotNet.Artifacts/results
+**/Properties/PublishProfiles
