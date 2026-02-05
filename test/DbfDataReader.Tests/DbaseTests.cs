@@ -3,16 +3,17 @@ using Shouldly;
 using System;
 using System.Globalization;
 using System.IO;
-using System.Text;
 
 namespace DbfDataReader.Tests
 {
     public abstract class DbaseTests : IDisposable
     {
-        protected DbaseTests(string fixturePath, Encoding encoding = null)
+        protected DbaseTests(string fixturePath, DbfDataReaderOptions options = null)
         {
             FixturePath = fixturePath;
-            DbfTable = new DbfTable(fixturePath, encoding);
+            DbfTable = options == null 
+                ? new DbfTable(fixturePath)
+                : new DbfTable(fixturePath, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
         }
 
         public void Dispose()
