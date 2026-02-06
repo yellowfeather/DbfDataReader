@@ -26,8 +26,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <PackageReference Include="System.Data.Common" Version="4.3.0" />
-    <PackageReference Include="System.Memory" Version="4.6.3" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.2" />
   </ItemGroup>
   
