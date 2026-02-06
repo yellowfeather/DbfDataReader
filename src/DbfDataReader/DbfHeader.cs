@@ -10,7 +10,11 @@ namespace DbfDataReader
         public DbfHeader(Stream stream)
         {
             var buffer = new byte[DbfHeaderSize];
+#if NETSTANDARD2_1
             stream.Read(buffer, 0, DbfHeaderSize);
+#else
+            stream.ReadExactly(buffer, 0, DbfHeaderSize);
+#endif
             var span = new ReadOnlySpan<byte>(buffer);
             Read(span);
         }

@@ -149,7 +149,11 @@ namespace DbfDataReader
         {
             var count = Header.HeaderLength - DbfHeader.DbfHeaderSize;
             var buffer = new byte[count];
+#if NETSTANDARD2_1
             stream.Read(buffer, 0, count);
+#else
+            stream.ReadExactly(buffer, 0, count);
+#endif
             var span = new ReadOnlySpan<byte>(buffer);
 
             var columns = new List<DbfColumn>();
