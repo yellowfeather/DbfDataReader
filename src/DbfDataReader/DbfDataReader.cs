@@ -116,7 +116,12 @@ namespace DbfDataReader
 
         public override string GetDataTypeName(int ordinal)
         {
-            throw new NotImplementedException();
+            if (ordinal >= DbfTable.Columns.Count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+            var dbfColumn = DbfTable.Columns[ordinal];
+            return dbfColumn.ColumnType.ToString();
         }
 
         public override DateTime GetDateTime(int ordinal)
@@ -136,9 +141,9 @@ namespace DbfDataReader
 
         public override IEnumerator GetEnumerator()
         {
-            throw new NotImplementedException();
+            return new DbEnumerator(this, closeReader: false);
         }
-
+        
         public override bool NextResult()
         {
             return false;
@@ -189,7 +194,11 @@ namespace DbfDataReader
 
         public override int GetValues(object[] values)
         {
-            throw new NotImplementedException();
+            for (var ordinal = 0; ordinal < FieldCount; ordinal++)
+            {
+                values[ordinal] = GetValue(ordinal);
+            }
+            return FieldCount;
         }
 
         public override object GetValue(int ordinal)
@@ -269,7 +278,7 @@ namespace DbfDataReader
             return GetSchemaTable(columnSchema);
         }
 
-		public static DataTable GetSchemaTable(ReadOnlyCollection<DbColumn> columnSchema)
+        private static DataTable GetSchemaTable(ReadOnlyCollection<DbColumn> columnSchema)
 		{
             var table = new DataTable("SchemaTable")
             {
@@ -302,7 +311,7 @@ namespace DbfDataReader
             foreach (var column in columnSchema)
 			{
 				var row = table.NewRow();
-				row[0] = column.ColumnName ?? dbNull;
+				row[0] = column.ColumnName;
 				row[1] = column.ColumnOrdinal ?? dbNull;
 				row[2] = column.ColumnSize ?? dbNull;
 				row[3] = column.NumericPrecision ?? dbNull;
