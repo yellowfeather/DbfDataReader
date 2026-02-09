@@ -57,6 +57,8 @@ namespace DbfDataReader
 
         protected override void Dispose(bool disposing)
         {
+            base.Dispose(disposing);
+            
             if (disposing)
             {
                 Close();
@@ -116,10 +118,6 @@ namespace DbfDataReader
 
         public override string GetDataTypeName(int ordinal)
         {
-            if (ordinal >= DbfTable.Columns.Count)
-            {
-                throw new IndexOutOfRangeException();
-            }
             var dbfColumn = DbfTable.Columns[ordinal];
             return dbfColumn.ColumnType.ToString();
         }
