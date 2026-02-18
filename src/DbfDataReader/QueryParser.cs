@@ -1,58 +1,32 @@
 ﻿using System;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace DbfDataReader
 {
     internal static class QueryParser
     {
+        // Match forms like:
+        //   SELECT * FROM file.dbf
+        //   SELECT * FROM "file with spaces.dbf"
+        //   SELECT * FROM [file with spaces.dbf]
+        private static readonly string Regex = @"^\s*SELECT\s*\*\s*FROM\s*(?:\""(?<FileName>[^\""]+)\""|\[(?<FileName>[^\]]+)\]|(?<FileName>[\w\.]+))\s*;?\s*$";
+        private const RegexOptions Options = RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.ExplicitCapture;
+        private static readonly Regex FileNameRegex = new Regex(Regex, Options, TimeSpan.FromMilliseconds(100));
 
-        internal static string GetFileName(string commandText)
+        internal static string Parse(string commandText)
         {
+            if (commandText == null)
+            {
+                throw new ArgumentNullException(nameof(commandText));
+            }
+
             var match = FileNameRegex.Match(commandText);
             if (!match.Success)
             {
                 throw new ArgumentException("The command text must be in the format 'SELECT * FROM <FILENAME>'.", nameof(commandText));
             }
-            
-            var ret = new[] 
-            {
-                match.Groups["Value1"].Value,
-                match.Groups["Value2"].Value,
-                match.Groups["Value3"].Value,
-            }.FirstOrDefault(x => !string.IsNullOrEmpty(x)) ?? string.Empty;
 
-            return ret;
+            return match.Groups["FileName"].Value;
         }
-
-        private const RegexOptions Options = RegexOptions.None
-                                             | RegexOptions.ExplicitCapture
-                                             | RegexOptions.IgnoreCase
-                                             | RegexOptions.IgnorePatternWhitespace
-                                             | RegexOptions.Compiled;
-
-        private const string Space = @"(\s|\r|\n)";
-
-        private static readonly string Regex = $@"
-                {Space}*
-                SELECT
-                {Space}*
-                \*
-                {Space}*
-                FROM
-                (
-                    ({Space}+ (?<Value1> (\w|\.)+))
-                        |
-                    ({Space}* \""(?<Value2>.*)\"")
-                        |
-                    ({Space}* \[(?<Value3>.*)\])
-                )
-
-                {Space}*
-                (;)?
-                {Space}*
-        ";
-
-        private static readonly Regex FileNameRegex = new Regex(Regex, Options);
     }
 }

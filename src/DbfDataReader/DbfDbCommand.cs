@@ -62,7 +62,7 @@ namespace DbfDataReader
                 throw new DirectoryNotFoundException($"The specified folder does not exist: {folder}");
             }
             
-            var baseFileName = QueryParser.GetFileName(CommandText);
+            var baseFileName = QueryParser.Parse(CommandText);
             var fileNames = new[]
             {
                 Path.Combine(folder, $"{baseFileName}.dbf"),
@@ -90,11 +90,6 @@ namespace DbfDataReader
             }
 
             var options = dbfDbConnection.Options;
-            if (options is null)
-            {
-                throw new InvalidOperationException("Invalid Configuration");
-            }
-
             return new DbfDataReader(foundFile, options);
         }
     }

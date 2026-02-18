@@ -16,6 +16,8 @@ namespace DbfDataReader
             ServerVersion = serverVersion;
         }
 
+        public DbfDataReaderOptions Options { get; private set; } = new DbfDataReaderOptions();
+
         public override string ConnectionString { get; set; }
         public override string DataSource { get; }
         public override string ServerVersion { get; }
@@ -82,7 +84,5 @@ namespace DbfDataReader
                 Connection = this,
             };
         }
-
-        internal DbfDataReaderOptions Options { get; private set; }
     }
 }
