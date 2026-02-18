@@ -105,6 +105,48 @@ using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 }
 ```
 
+There is also an implementation of DbConnection so you can query a folder of files e.g.
+
+```csharp
+var dbConnection = new DbfDbConnection(string.Empty, string.Empty);
+dbConnection.ConnectionString = $"Folder=./test/fixtures;SkipDeletedRecords=false";
+dbConnection.Open();
+
+var dbCommand = dbConnection.CreateCommand();
+dbCommand.CommandText = "select * from dbase_03.dbf;";
+
+var reader = await dbCommand.ExecuteReaderAsync();
+while (await reader.ReadAsync())
+{
+    var valueCol1 = reader.GetString(0);
+    var valueCol11 = reader.GetDecimal(10);
+}
+```
+
+The connection string supports the options available in `DbfDataReaderOptions`:
+
+- Folder - the folder containing the files to be queried
+  - required
+  - string
+- Encoding - the encoding to be used
+  - optional
+  - string
+  - valid Encoding name from [Encoding](https://learn.microsoft.com/en-us/dotnet/api/System.Text.Encoding)
+- ReadFloatsAsDecimals - whether to read floats as decimals
+  - optional
+  - boolean
+  - defaults to false
+- SkipDeletedRecords - whether to skip deleted records
+  - optional
+  - boolean
+  - defaults to true
+- StringTrimming - string timming behaviour
+  - optional
+  - string
+  - defaults to 'None'
+  - one of 'None', 'Trim', 'TrimStart', 'TrimEnd'
+
+
 Used by 
 
 - DbfBulkCopy
