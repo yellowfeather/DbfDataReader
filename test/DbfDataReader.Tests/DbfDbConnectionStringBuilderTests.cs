@@ -8,7 +8,8 @@ namespace DbfDataReader.Tests;
 public class DbfDbConnectionStringBuilderTests
 {
     [Fact]
-    public void Should_parse_folder() {
+    public void Should_parse_folder()
+    {
         // Arrange
         var faker = new Faker();
         var folder = faker.System.DirectoryPath();
@@ -22,7 +23,8 @@ public class DbfDbConnectionStringBuilderTests
     }
     
     [Fact]
-    public void Should_parse_encoding() {
+    public void Should_parse_encoding()
+    {
         // Arrange
         var encoding = "ASCII";
         var connectionString = $"Encoding={encoding}";
@@ -35,7 +37,8 @@ public class DbfDbConnectionStringBuilderTests
     }
 
     [Fact]
-    public void Should_parse_read_floats_as_decimals() {
+    public void Should_parse_read_floats_as_decimals()
+    {
         // Arrange
         var faker = new Faker();
         var readFloatsAsDecimals = faker.Random.Bool();
@@ -49,7 +52,8 @@ public class DbfDbConnectionStringBuilderTests
     }
     
     [Fact]
-    public void Should_parse_skip_deleted_records() {
+    public void Should_parse_skip_deleted_records()
+    {
         // Arrange
         var faker = new Faker();
         var skipDeletedRecords = faker.Random.Bool();
@@ -63,7 +67,8 @@ public class DbfDbConnectionStringBuilderTests
     }
     
     [Fact]
-    public void Should_parse_string_trimming() {
+    public void Should_parse_string_trimming()
+    {
         // Arrange
         var faker = new Faker();
         var stringTrimming = faker.PickRandom<StringTrimmingOption>();
@@ -77,7 +82,8 @@ public class DbfDbConnectionStringBuilderTests
     }
     
     [Fact]
-    public void Should_parse_example1() {
+    public void Should_parse_example1()
+    {
         // Arrange
         var faker = new Faker();
         var folder = faker.System.DirectoryPath();
@@ -93,7 +99,8 @@ public class DbfDbConnectionStringBuilderTests
     }
     
     [Fact]
-    public void Should_parse_example2() {
+    public void Should_parse_example2()
+    {
         // Arrange
         var faker = new Faker();
         var folder = faker.System.DirectoryPath();
@@ -108,5 +115,40 @@ public class DbfDbConnectionStringBuilderTests
         builder.Folder.ShouldBe(folder);
         builder.SkipDeletedRecords.ShouldBe(skipDeletedRecords);
         builder.StringTrimming.ShouldBe(stringTrimming);
+    }
+
+    [Fact]
+    public void Should_set_value()
+    {
+        // Arrange
+        var faker = new Faker();
+        var folder = faker.System.DirectoryPath();
+        var connectionString = $"Folder={folder}";
+
+        var builder = new DbfDbConnectionStringBuilder(connectionString);
+        var newFolder = faker.System.DirectoryPath();
+
+        // Act
+        builder["Folder"] = newFolder; 
+        
+        // Assert
+        builder.Folder.ShouldBe(newFolder);
+    }
+    
+    [Fact]
+    public void Should_remove_value()
+    {
+        // Arrange
+        var faker = new Faker();
+        var folder = faker.System.DirectoryPath();
+        var connectionString = $"Folder={folder}";
+
+        var builder = new DbfDbConnectionStringBuilder(connectionString);
+
+        // Act
+        builder["Folder"] = null; 
+        
+        // Assert
+        builder.Folder.ShouldBe(string.Empty);
     }
 }

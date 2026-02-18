@@ -190,9 +190,7 @@ namespace DbfDataReader
             }
             else if (value.GetType().IsEnum)
             {
-                // explicitly block scenarios in which user tries to use wrong enum types, like:
-                // builder["PoolBlockingPeriod"] = EnvironmentVariableTarget.Process;
-                // workaround: explicitly cast non-PoolBlockingPeriod enums to int
+                // explicitly block scenarios in which user tries to use wrong enum types
                 throw ConvertFailed(value.GetType(), typeof(StringTrimmingOption), null);
             }
             else

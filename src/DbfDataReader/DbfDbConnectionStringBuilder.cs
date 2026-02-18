@@ -22,37 +22,15 @@ namespace DbfDataReader
 
         internal const int KeywordsCount = (int)Keywords.KeywordsCount;
         
-        private static readonly string[] ValidKeywords;
-        private static readonly Dictionary<string,Keywords> KeywordsHash;
-
+        private static readonly string[] ValidKeywords = BuildValidKeywords();
+        private static readonly Dictionary<string,Keywords> KeywordsHash = BuildKeywordsHash();
+        
         private Encoding _encoding;
         private string _folder = string.Empty;
         private bool _readFloatsAsDecimals;
         private bool _skipDeletedRecords = true;
         private StringTrimmingOption _stringTrimming = StringTrimmingOption.Trim;
 
-        static DbfDbConnectionStringBuilder()
-        {
-            var validKeywords = new string[KeywordsCount];
-            validKeywords[(int)Keywords.Encoding]             = DbfDbConnectionStringKeywords.Encoding;
-            validKeywords[(int)Keywords.Folder]               = DbfDbConnectionStringKeywords.Folder;
-            validKeywords[(int)Keywords.ReadFloatsAsDecimals] = DbfDbConnectionStringKeywords.ReadFloatsAsDecimals;
-            validKeywords[(int)Keywords.SkipDeletedRecords]   = DbfDbConnectionStringKeywords.SkipDeletedRecords;
-            validKeywords[(int)Keywords.StringTrimming]       = DbfDbConnectionStringKeywords.StringTrimming;
-            ValidKeywords = validKeywords;
-
-            var hash = new Dictionary<string, Keywords>(KeywordsCount, StringComparer.OrdinalIgnoreCase)
-            {
-                { DbfDbConnectionStringKeywords.Encoding, Keywords.Encoding },
-                { DbfDbConnectionStringKeywords.Folder, Keywords.Folder },
-                { DbfDbConnectionStringKeywords.ReadFloatsAsDecimals, Keywords.ReadFloatsAsDecimals },
-                { DbfDbConnectionStringKeywords.SkipDeletedRecords, Keywords.SkipDeletedRecords },
-                { DbfDbConnectionStringKeywords.StringTrimming, Keywords.StringTrimming }
-            };
-            Debug.Assert(KeywordsCount == hash.Count, "initial expected size is incorrect");
-            KeywordsHash = hash;
-        }
-        
         public DbfDbConnectionStringBuilder() : this(null)
         {
         }
@@ -150,7 +128,31 @@ namespace DbfDataReader
                 _stringTrimming = value;
             }
         }
+        
+        public override bool Remove(string keyword)
+        {
+            DbfDbConnectionStringBuilderUtil.CheckArgumentNull(keyword, "keyword");
+            if (!KeywordsHash.TryGetValue(keyword, out var index) ||
+                !base.Remove(ValidKeywords[(int)index]))
+            {
+                return false;
+            }
 
+            Reset(index);
+            return true;
+        }
+        
+        public override bool TryGetValue(string keyword, out object value)
+        {
+            if (KeywordsHash.TryGetValue(keyword, out var index))
+            {
+                value = GetAt(index);
+                return true;
+            }
+            
+            value = null;
+            return false;
+        }
 
         private void SetValue(string keyword, bool value)
         {
@@ -186,10 +188,10 @@ namespace DbfDataReader
                 default:
                     Debug.Assert(false, "unexpected keyword");
                     throw DbfDbConnectionStringBuilderUtil.KeywordNotSupported(ValidKeywords[(int)index]);
-                }
+            }
         }
 
-        private Keywords GetIndex(string keyword)
+        private static Keywords GetIndex(string keyword)
         {
             DbfDbConnectionStringBuilderUtil.CheckArgumentNull(keyword, "keyword");
             if (KeywordsHash.TryGetValue(keyword, out var index))
@@ -198,21 +200,7 @@ namespace DbfDataReader
             }
             throw DbfDbConnectionStringBuilderUtil.KeywordNotSupported(keyword);            
         }
-
-        public override bool Remove(string keyword)
-        {
-            DbfDbConnectionStringBuilderUtil.CheckArgumentNull(keyword, "keyword");
-            if (KeywordsHash.TryGetValue(keyword, out var index))
-            {
-                if (base.Remove(ValidKeywords[(int)index]))
-                {
-                    Reset(index);
-                    return true;
-                }
-            }
-            return false;
-        }
-
+        
         private void Reset(Keywords index)
         {
             switch(index)
@@ -237,18 +225,30 @@ namespace DbfDataReader
                     throw DbfDbConnectionStringBuilderUtil.KeywordNotSupported(ValidKeywords[(int)index]);
             }
         }
-        
-        public override bool TryGetValue(string keyword, out object value)
-        {
-            if (KeywordsHash.TryGetValue(keyword, out var index))
-            {
-                value = GetAt(index);
-                return true;
-            }
-            
-            value = null;
-            return false;
-        }
 
+        private static string[] BuildValidKeywords()
+        {
+            var validKeywords = new string[KeywordsCount];
+            validKeywords[(int)Keywords.Encoding]             = DbfDbConnectionStringKeywords.Encoding;
+            validKeywords[(int)Keywords.Folder]               = DbfDbConnectionStringKeywords.Folder;
+            validKeywords[(int)Keywords.ReadFloatsAsDecimals] = DbfDbConnectionStringKeywords.ReadFloatsAsDecimals;
+            validKeywords[(int)Keywords.SkipDeletedRecords]   = DbfDbConnectionStringKeywords.SkipDeletedRecords;
+            validKeywords[(int)Keywords.StringTrimming]       = DbfDbConnectionStringKeywords.StringTrimming;
+            return validKeywords;
+        }
+        
+        private static Dictionary<string, Keywords> BuildKeywordsHash()
+        {
+            var hash = new Dictionary<string, Keywords>(KeywordsCount, StringComparer.OrdinalIgnoreCase)
+            {
+                { DbfDbConnectionStringKeywords.Encoding, Keywords.Encoding },
+                { DbfDbConnectionStringKeywords.Folder, Keywords.Folder },
+                { DbfDbConnectionStringKeywords.ReadFloatsAsDecimals, Keywords.ReadFloatsAsDecimals },
+                { DbfDbConnectionStringKeywords.SkipDeletedRecords, Keywords.SkipDeletedRecords },
+                { DbfDbConnectionStringKeywords.StringTrimming, Keywords.StringTrimming }
+            };
+            Debug.Assert(KeywordsCount == hash.Count, "initial expected size is incorrect");
+            return hash;
+        }
     }
 }
