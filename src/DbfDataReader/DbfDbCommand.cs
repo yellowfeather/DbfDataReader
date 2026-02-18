@@ -2,8 +2,6 @@
 using System.Data;
 using System.Data.Common;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace DbfDataReader
 {
@@ -62,35 +60,15 @@ namespace DbfDataReader
                 throw new DirectoryNotFoundException($"The specified folder does not exist: {folder}");
             }
             
-            var baseFileName = QueryParser.Parse(CommandText);
-            var fileNames = new[]
+            var fileName = QueryParser.Parse(CommandText);
+            var filePath = Path.Combine(folder, $"{fileName}");
+            if (!File.Exists(filePath))
             {
-                Path.Combine(folder, $"{baseFileName}.dbf"),
-                Path.Combine(folder, $"{baseFileName}")
-            };
-
-            var foundFile = fileNames.FirstOrDefault(File.Exists);
-
-            if (foundFile is null)
-            {
-                var builder = new StringBuilder();
-                builder.AppendLine("Unable to find any of the following files:");
-                for(var i = 0; i < fileNames.Length; i++)
-                {
-                    if (i + 1 != fileNames.Length)
-                    {
-                        builder.AppendLine(fileNames[i]);
-                    }
-                    else {
-                        builder.Append(fileNames[i]);
-                    }
-                }
-
-                throw new FileNotFoundException(builder.ToString());
+                throw new FileNotFoundException(filePath);
             }
 
             var options = dbfDbConnection.Options;
-            return new DbfDataReader(foundFile, options);
+            return new DbfDataReader(filePath, options);
         }
     }
 }
