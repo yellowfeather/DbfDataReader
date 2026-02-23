@@ -7,7 +7,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02A96866-FEA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C65E3B7-6E4F-470A-9422-7B273FE6EBF6}"
 	ProjectSection(SolutionItems) = preProject
+		benchmarks.md = benchmarks.md
+		CODE_OF_CONDUCT.md = CODE_OF_CONDUCT.md
+		LICENSE = LICENSE
 		README.md = README.md
+		.gitignore = .gitignore
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}"
@@ -69,6 +73,24 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader.Tests", "test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DbfDataReader.Benchmarks", "test\DbfDataReader.Benchmarks\DbfDataReader.Benchmarks.csproj", "{8D20CC57-206C-47FE-BC3E-C80E198C3602}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{F72B0526-1069-4277-8CEB-070B90ED128E}"
+	ProjectSection(SolutionItems) = preProject
+		.github\FUNDING.yml = .github\FUNDING.yml
+		.github\dependabot.yml = .github\dependabot.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{01BCD36E-5136-4927-BA8C-21587337B48F}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\ci.yml = .github\workflows\ci.yml
+		.github\workflows\release.yml = .github\workflows\release.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ISSUE_TEMPLATE", "ISSUE_TEMPLATE", "{FC7BD261-6D38-40FB-B8C2-DF067BC624D0}"
+	ProjectSection(SolutionItems) = preProject
+		.github\ISSUE_TEMPLATE\bug_report.md = .github\ISSUE_TEMPLATE\bug_report.md
+		.github\ISSUE_TEMPLATE\feature_request.md = .github\ISSUE_TEMPLATE\feature_request.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +118,9 @@ Global
 		{40A3F4FC-21A9-48FC-8FBB-85B9AE7C3EC1} = {02A96866-FEA4-483E-A6FD-CB8660F51FD3}
 		{A0D45C13-CE45-444C-B5D3-FF9425BE0635} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
 		{8D20CC57-206C-47FE-BC3E-C80E198C3602} = {6E1D36E2-2D05-4ACF-80B7-1AFB75A20839}
+		{F72B0526-1069-4277-8CEB-070B90ED128E} = {8C65E3B7-6E4F-470A-9422-7B273FE6EBF6}
+		{01BCD36E-5136-4927-BA8C-21587337B48F} = {F72B0526-1069-4277-8CEB-070B90ED128E}
+		{FC7BD261-6D38-40FB-B8C2-DF067BC624D0} = {F72B0526-1069-4277-8CEB-070B90ED128E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4B7A9572-5B9E-4FDD-9BEC-4FBD8885C3F2}
