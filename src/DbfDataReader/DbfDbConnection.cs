@@ -10,6 +10,12 @@ namespace DbfDataReader
         private string _database = string.Empty;
         private ConnectionState _state  = ConnectionState.Closed;
 
+        public DbfDbConnection()
+        {
+            DataSource = string.Empty;
+            ServerVersion = string.Empty;
+        }
+
         public DbfDbConnection(string dataSource, string serverVersion)
         {
             DataSource = dataSource;
