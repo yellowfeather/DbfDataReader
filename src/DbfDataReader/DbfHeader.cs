@@ -104,7 +104,9 @@ namespace DbfDataReader
             var month = bytes[2];
             var day = bytes[3];
 
-            UpdatedAt = new DateTime(year + 1900, month, day);
+            UpdatedAt = IsValidDayMonth(day, month)
+                ? new DateTime(year + 1900, month, day)
+                : DateTime.MinValue;
 
             RecordCount = BitConverter.ToUInt32(bytes[4..]);
             HeaderLength = BitConverter.ToUInt16(bytes[8..]);
@@ -122,6 +124,11 @@ namespace DbfDataReader
             LanguageDriver = bytes[29];
 
             // 30 - 31  - reserved
+        }
+
+        private static bool IsValidDayMonth(byte day, byte month)
+        {
+            return day >= 1 && day <= 31 && month >= 1 && month <= 12;
         }
     }
 }
