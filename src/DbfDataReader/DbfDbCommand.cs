@@ -61,14 +61,33 @@ namespace DbfDataReader
             }
             
             var fileName = QueryParser.Parse(CommandText);
-            var filePath = Path.Combine(folder, $"{fileName}");
-            if (!File.Exists(filePath))
-            {
-                throw new FileNotFoundException(filePath);
-            }
+            var filePath = GetFilePath(folder, fileName);
 
             var options = dbfDbConnection.Options;
             return new DbfDataReader(filePath, options);
+        }
+
+        private static string GetFilePath(string folder, string fileName)
+        {
+            var filePath = Path.Combine(folder, $"{fileName}");
+            if (File.Exists(filePath))
+            {
+                return filePath;
+            }
+            
+            filePath = Path.ChangeExtension(filePath, ".dbf");
+            if (File.Exists(filePath))
+            {
+                return filePath;
+            }
+
+            filePath = Path.ChangeExtension(filePath, ".DBF");
+            if (File.Exists(filePath))
+            {
+                return filePath;
+            }
+
+            throw new FileNotFoundException(filePath);
         }
     }
 }

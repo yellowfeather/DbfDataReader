@@ -53,5 +53,31 @@ public class DbfDbConnectionTests
         }
 
         rowCount.ShouldBe(12);
+    }
+    
+    [Theory]
+    [InlineData("dbase_03")]
+    [InlineData("dbase_03.dbf")]
+    [InlineData("dbase_03.DBF")]
+    public async Task Should_read_file(string filename)
+    {
+        var dbConnection = new DbfDbConnection();
+        dbConnection.ConnectionString = $"Folder={FolderPath};Encoding=ascii;SkipDeletedRecords=false";
+        dbConnection.Open();
+        
+        var dbCommand = dbConnection.CreateCommand();
+        dbCommand.CommandText = $"select * from {filename};";
+
+        var rowCount = 0;
+        var reader = await dbCommand.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            rowCount++;
+
+            _ = reader.GetString(0);
+            _ = reader.GetDecimal(10);
+        }
+
+        rowCount.ShouldBe(14);
     }    
 }
