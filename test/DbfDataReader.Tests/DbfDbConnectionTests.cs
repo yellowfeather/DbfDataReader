@@ -13,7 +13,7 @@ public class DbfDbConnectionTests
     public async Task Should_read_all_rows()
     {
         var dbConnection = new DbfDbConnection();
-        dbConnection.ConnectionString = $"Folder={FolderPath};SkipDeletedRecords=false";
+        dbConnection.ConnectionString = $"Folder={FolderPath};Encoding=ascii;SkipDeletedRecords=false";
         dbConnection.Open();
         
         var dbCommand = dbConnection.CreateCommand();
@@ -36,7 +36,7 @@ public class DbfDbConnectionTests
     public async Task Should_skip_deleted_rows()
     {
         var dbConnection = new DbfDbConnection();
-        dbConnection.ConnectionString = $"Folder={FolderPath};SkipDeletedRecords=true";
+        dbConnection.ConnectionString = $"Folder={FolderPath};Encoding=ascii;SkipDeletedRecords=true";
         dbConnection.Open();
         
         var dbCommand = dbConnection.CreateCommand();

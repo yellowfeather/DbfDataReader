@@ -131,7 +131,8 @@ The connection string supports the options available in `DbfDataReaderOptions`:
 - Encoding - the encoding to be used
   - optional
   - string
-  - valid Encoding name from [Encoding](https://learn.microsoft.com/en-us/dotnet/api/System.Text.Encoding)
+  - defaults to null and uses the language from the DBF header
+  - valid Encoding web name from [Encoding](https://learn.microsoft.com/en-us/dotnet/api/System.Text.Encoding) e.g. 'ascii'
 - ReadFloatsAsDecimals - whether to read floats as decimals
   - optional
   - boolean

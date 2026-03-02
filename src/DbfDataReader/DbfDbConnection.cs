@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.Common;
 using System.IO;
+using System.Text;
 
 namespace DbfDataReader
 {
@@ -54,9 +55,9 @@ namespace DbfDataReader
 
             var options = new DbfDataReaderOptions();
             
-            if (builder.Encoding is var encoding) 
+            if (builder.Encoding is { } encoding) 
             {
-                options.Encoding = encoding;
+                options.Encoding = Encoding.GetEncoding(encoding);
             }
 
             if (builder.ReadFloatsAsDecimals is var readFloatsAsDecimals)

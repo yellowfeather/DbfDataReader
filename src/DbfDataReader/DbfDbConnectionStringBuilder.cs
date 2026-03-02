@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Text;
 
 namespace DbfDataReader
 {
@@ -25,7 +24,7 @@ namespace DbfDataReader
         private static readonly string[] ValidKeywords = BuildValidKeywords();
         private static readonly Dictionary<string,Keywords> KeywordsHash = BuildKeywordsHash();
         
-        private Encoding _encoding;
+        private string _encoding;
         private string _folder = string.Empty;
         private bool _readFloatsAsDecimals;
         private bool _skipDeletedRecords = true;
@@ -57,7 +56,7 @@ namespace DbfDataReader
                     Keywords index = GetIndex(keyword);
                     switch (index)
                     {
-                        case Keywords.Encoding: Encoding = DbfDbConnectionStringBuilderUtil.ConvertToEncoding(keyword, value); break;
+                        case Keywords.Encoding: Encoding = DbfDbConnectionStringBuilderUtil.ConvertToString(value); break;
                         case Keywords.Folder: Folder = DbfDbConnectionStringBuilderUtil.ConvertToString(value); break;
                         case Keywords.ReadFloatsAsDecimals: ReadFloatsAsDecimals = DbfDbConnectionStringBuilderUtil.ConvertToBoolean(value); break;
                         case Keywords.SkipDeletedRecords: SkipDeletedRecords = DbfDbConnectionStringBuilderUtil.ConvertToBoolean(value); break;
@@ -74,12 +73,12 @@ namespace DbfDataReader
             }
         }
         
-        public Encoding Encoding
+        public string Encoding
         {
             get => _encoding;
             set
             {
-                SetEncodingValue(value);
+                SetValue(DbfDbConnectionStringKeywords.Encoding, value);
                 _encoding = value;
             }
         }
@@ -165,11 +164,6 @@ namespace DbfDataReader
             base[keyword] = value;
         }
         
-        private void SetEncodingValue(Encoding value)
-        {
-            base[DbfDbConnectionStringKeywords.Encoding] = DbfDbConnectionStringBuilderUtil.EncodingToString(value);
-        }
-
         private void SetStringTrimmingValue(StringTrimmingOption value)
         {
             Debug.Assert(DbfDbConnectionStringBuilderUtil.IsValidStringTrimmingOptionValue(value), "Invalid value for StringTrimming");
@@ -206,7 +200,7 @@ namespace DbfDataReader
             switch(index)
             {
                 case Keywords.Encoding:
-                    _encoding = null;
+                    _encoding = string.Empty;
                     break;
                 case Keywords.Folder:
                     _folder = string.Empty;

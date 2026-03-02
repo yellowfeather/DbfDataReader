@@ -33,7 +33,7 @@ public class DbfDbConnectionStringBuilderTests
         var builder = new DbfDbConnectionStringBuilder(connectionString);
         
         // Assert
-        builder.Encoding.ShouldBe(Encoding.GetEncoding(encoding));
+        builder.Encoding.ShouldBe(encoding);
     }
 
     [Fact]
