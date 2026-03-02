@@ -23,7 +23,7 @@ namespace DbfDataReader
             var match = FileNameRegex.Match(commandText);
             if (!match.Success)
             {
-                throw new ArgumentException("The command text must be in the format 'SELECT * FROM <FILENAME>'.", nameof(commandText));
+                throw new ArgumentException($"Invalid command text: '{commandText}'. Must be in the format 'SELECT * FROM <FILENAME>'.", nameof(commandText));
             }
 
             return match.Groups["FileName"].Value;
