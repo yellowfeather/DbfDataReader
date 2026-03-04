@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Bogus;
 using Shouldly;
 using Xunit;
@@ -7,49 +8,65 @@ namespace DbfDataReader.Tests;
 
 public class QueryParserTests
 {
+    private readonly string _fileName;
+    public QueryParserTests()
+    {
+        var faker = new Faker();
+        var fileName = faker.System.FileName("dbf");
+        _fileName = fileName.Replace("&", "_and_");
+    }
+    
     [Fact]
-    public void Should_parse_lowercase_query()
+    public void Should_parse_filename_without_extension()
     {
         // Arrange
-        var faker = new Faker();
-        var fileName = $"{faker.System.FileName()}.dbf";
-        var query = $"select * from {fileName}";
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(_fileName);
+        var query = $"select * from {fileNameWithoutExtension}";
         
         // Act
         var result = QueryParser.Parse(query);
         
         // Assert
-        result.ShouldBe(fileName);
+        result.ShouldBe(fileNameWithoutExtension);
+    }
+
+    [Fact]
+    public void Should_parse_lowercase_query()
+    {
+        // Arrange
+        var query = $"select * from {_fileName}";
+        
+        // Act
+        var result = QueryParser.Parse(query);
+        
+        // Assert
+        result.ShouldBe(_fileName);
     }
     
     [Fact]
     public void Should_parse_uppercase_query()
     {
         // Arrange
-        var faker = new Faker();
-        var fileName = $"{faker.System.FileName()}.dbf".ToUpper();
-        var query = $"SELECT * FROM {fileName}";
+        var query = $"SELECT * FROM {_fileName}";
         
         // Act
         var result = QueryParser.Parse(query);
         
         // Assert
-        result.ShouldBe(fileName);
+        result.ShouldBe(_fileName);
     }
     
     [Fact]
     public void Should_parse_mixed_case_query()
     {
         // Arrange
-        var faker = new Faker();
-        var fileName = $"{faker.System.FileName()}.dbf";
-        var query = $"SELECT * from {fileName}";
+        var query = $"SELECT * from {_fileName}";
         
         // Act
         var result = QueryParser.Parse(query);
         
         // Assert
-        result.ShouldBe(fileName);
+        result.ShouldBe(_fileName);
     }
     
     [Fact]
