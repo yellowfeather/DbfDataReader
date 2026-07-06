@@ -30,7 +30,7 @@ namespace DbfDataReader.Query
         {
             if (!useIndexes) return QueryAccessPlan.FullScan("indexes disabled");
 
-            var orderOrdinal = GetSingleAscendingOrderOrdinal(orderKeys);
+            var (orderOrdinal, orderDescending) = GetSingleOrderKey(orderKeys);
             if (where == null && orderOrdinal < 0) return QueryAccessPlan.FullScan("no indexable clause");
 
             // character keys compare byte-wise; only single-byte encodings keep that
@@ -43,7 +43,8 @@ namespace DbfDataReader.Query
 
             try
             {
-                return CreatePlanCore(where, orderOrdinal, table, indexPath, namedParameters, positionalParameters);
+                return CreatePlanCore(where, orderOrdinal, orderDescending, table, indexPath, namedParameters,
+                    positionalParameters);
             }
             catch (Exception exception) when (exception is CdxException || exception is IOException ||
                                               exception is EndOfStreamException)
@@ -52,9 +53,9 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static QueryAccessPlan CreatePlanCore(SqlExpression where, int orderOrdinal, DbfTable table,
-            string indexPath, IReadOnlyDictionary<string, object> namedParameters,
-            IReadOnlyList<object> positionalParameters)
+        private static QueryAccessPlan CreatePlanCore(SqlExpression where, int orderOrdinal,
+            bool orderDescending, DbfTable table, string indexPath,
+            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
         {
             using (var cdxFile = new CdxFile(indexPath, table.CurrentEncoding))
             {
@@ -70,7 +71,7 @@ namespace DbfDataReader.Query
                     {
                         var sortSatisfied = candidate.Ordinal == orderOrdinal;
                         var coversWhereExactly = candidate.IsExact && conjuncts.Count == 1;
-                        var recordIndexes = ExecuteSearch(candidate, sortSatisfied);
+                        var recordIndexes = ExecuteSearch(candidate, sortSatisfied, orderDescending);
                         return QueryAccessPlan.Index(recordIndexes, sortSatisfied, coversWhereExactly,
                             candidate.Description);
                     }
@@ -79,21 +80,24 @@ namespace DbfDataReader.Query
                 if (where == null && orderOrdinal >= 0 && tags.TryGetValue(orderOrdinal, out var orderTag))
                 {
                     var entries = orderTag.Index.EnumerateEntries().ToList();
-                    StabilizeDuplicateKeyRuns(entries, orderTag.Index.Header.KeyLength, orderTag.PadByte);
+                    PrepareOrderedEntries(entries, orderTag.Index.Header.KeyLength, orderTag.PadByte,
+                        orderDescending);
                     var recordIndexes = ToRecordIndexes(entries, sortSatisfied: true);
+                    var direction = orderDescending ? " (descending)" : "";
                     return QueryAccessPlan.Index(recordIndexes, true, false,
-                        $"index order scan on tag '{orderTag.Name}'");
+                        $"index order scan{direction} on tag '{orderTag.Name}'");
                 }
 
                 return QueryAccessPlan.FullScan("no matching index tag");
             }
         }
 
-        private static int GetSingleAscendingOrderOrdinal(IReadOnlyList<(int Ordinal, bool Descending)> orderKeys)
+        private static (int Ordinal, bool Descending) GetSingleOrderKey(
+            IReadOnlyList<(int Ordinal, bool Descending)> orderKeys)
         {
-            return orderKeys != null && orderKeys.Count == 1 && !orderKeys[0].Descending
-                ? orderKeys[0].Ordinal
-                : -1;
+            return orderKeys != null && orderKeys.Count == 1
+                ? orderKeys[0]
+                : (-1, false);
         }
 
         private sealed class IndexTag
@@ -114,7 +118,9 @@ namespace DbfDataReader.Query
 
         // A tag is usable when its key expression is a plain column of a supported
         // type, ordered ascending, and carries none of the flags that make its entries
-        // a subset of the table: dBASE-style UNIQUE indexes only the first record per
+        // a subset of the table. Descending tags are skipped because their on-disk key
+        // semantics are unverified (no fixture contains one); a descending ORDER BY is
+        // served by reversing an ascending tag instead. The excluded flags: dBASE-style UNIQUE indexes only the first record per
         // key, and FOR clauses filter rows. Flag 0x04 (named CustomIndex here) is NOT
         // excluded: in Visual FoxPro files it marks primary/candidate keys, which
         // reject duplicate values instead of hiding records and therefore cover every
@@ -682,7 +688,8 @@ namespace DbfDataReader.Query
             return true;
         }
 
-        private static IReadOnlyList<int> ExecuteSearch(Candidate candidate, bool sortSatisfied)
+        private static IReadOnlyList<int> ExecuteSearch(Candidate candidate, bool sortSatisfied,
+            bool sortDescending)
         {
             List<CdxKeyEntry> entries;
 
@@ -699,8 +706,24 @@ namespace DbfDataReader.Query
                 entries = new List<CdxKeyEntry>();
             }
 
-            StabilizeDuplicateKeyRuns(entries, candidate.Index.Header.KeyLength, candidate.PadByte);
+            PrepareOrderedEntries(entries, candidate.Index.Header.KeyLength, candidate.PadByte,
+                sortSatisfied && sortDescending);
             return ToRecordIndexes(entries, sortSatisfied);
+        }
+
+        // Puts entries into the order the query needs. Ascending tags deliver keys in
+        // ascending order; a descending ORDER BY is served by reversing the list. Each
+        // run of duplicate keys is re-sorted by record index afterwards, because a
+        // stable descending sort keeps ties in their original (ascending) row order.
+        private static void PrepareOrderedEntries(List<CdxKeyEntry> entries, int keyLength, byte padByte,
+            bool descending)
+        {
+            StabilizeDuplicateKeyRuns(entries, keyLength, padByte);
+
+            if (!descending) return;
+
+            entries.Reverse();
+            StabilizeDuplicateKeyRuns(entries, keyLength, padByte);
         }
 
         // entries with equal keys carry no defined order in the index; sorting each run

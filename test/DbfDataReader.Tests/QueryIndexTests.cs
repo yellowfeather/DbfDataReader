@@ -145,7 +145,8 @@ public class QueryIndexTests
     [Fact]
     public void Should_sort_in_memory_when_the_index_cannot_satisfy_the_order()
     {
-        var commandText = "select KEY_NAME from setup.dbf order by KEY_NAME desc";
+        // multi-key orderings are never index-served
+        var commandText = "select KEY_NAME from setup.dbf order by KEY_NAME desc, VALUE";
 
         Explain(commandText).ShouldStartWith("full scan");
 
