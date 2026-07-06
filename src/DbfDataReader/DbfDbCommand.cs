@@ -67,22 +67,31 @@ namespace DbfDataReader
             var filePath = GetFilePath(folder, statement.TableName);
 
             var options = dbfDbConnection.Options;
-            return new DbfDataReader(filePath, options);
+            var reader = new DbfDataReader(filePath, options);
+
+            // a plain SELECT * needs no projection or row limit; return the raw reader
+            if (statement.IsSelectAll && statement.Top == null) return reader;
+
+            try
+            {
+                SqlBinder.Bind(statement, reader.DbfTable.Columns);
+                return new DbfQueryDataReader(reader, statement);
+            }
+            catch
+            {
+                reader.Dispose();
+                throw;
+            }
         }
 
         // execution catches up with the parser in later phases; parse everything,
         // run what is implemented
         private static void EnsureSupported(SelectStatement statement)
         {
-            if (!statement.IsSelectAll)
-                throw new NotSupportedException(
-                    "Column selection is not supported yet; only 'SELECT *' can be executed.");
             if (statement.Where != null)
                 throw new NotSupportedException("WHERE clauses are not supported yet.");
             if (statement.OrderBy.Count > 0)
                 throw new NotSupportedException("ORDER BY is not supported yet.");
-            if (statement.Top != null)
-                throw new NotSupportedException("TOP and LIMIT are not supported yet.");
         }
 
         private static string GetFilePath(string folder, string fileName)
