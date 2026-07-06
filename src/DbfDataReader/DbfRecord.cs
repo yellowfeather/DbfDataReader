@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.SqlTypes;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
@@ -14,6 +16,7 @@ namespace DbfDataReader
         private readonly StringTrimmingOption _stringTrimming;
         private readonly bool _readFloatsAsDecimals;
         private readonly int _recordLength;
+        private readonly long _dataOffset;
         private readonly byte[] _buffer;
 
         public DbfRecord(DbfTable dbfTable)
@@ -22,6 +25,7 @@ namespace DbfDataReader
             _stringTrimming = dbfTable.StringTrimming;
             _readFloatsAsDecimals = dbfTable.ReadFloatsAsDecimals;
             _recordLength = dbfTable.Header.RecordLength;
+            _dataOffset = dbfTable.DataOffset;
             _buffer = new byte[_recordLength];
 
             Values = new List<IDbfValue>();
@@ -34,6 +38,8 @@ namespace DbfDataReader
         }
 
         public bool IsDeleted { get; private set; }
+
+        public int RecordIndex { get; private set; } = -1;
 
         public IList<IDbfValue> Values { get; set; }
 
@@ -102,38 +108,74 @@ namespace DbfDataReader
 
         public bool Read(Stream stream)
         {
-            if (stream.Position == stream.Length) return false;
+            var position = stream.Position;
+            if (position == stream.Length) return false;
 
             try
             {
                 var read = stream.Read(_buffer, 0, _recordLength);
-                if (read <= 0) 
+                if (read <= 0)
                     return false;
                 while (read < _recordLength)
                 {
                     var r = stream.Read(_buffer, read, _recordLength - read);
-                    if (r == 0) 
+                    if (r == 0)
                         return false;
                     read += r;
                 }
-                var span = new ReadOnlySpan<byte>(_buffer);
 
-                var value = span[0];
-                if (value == EndOfFile) return false;
-
-                IsDeleted = value == 0x2A;
-
-                foreach (var dbfValue in Values)
-                {
-                    var slice = span.Slice(dbfValue.Start, dbfValue.Length);
-                    dbfValue.Read(slice);
-                }
-                return true;
+                return ParseRecord(position);
             }
             catch (EndOfStreamException)
             {
                 return false;
             }
+        }
+
+        public async ValueTask<bool> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        {
+            var position = stream.Position;
+            if (position == stream.Length) return false;
+
+            try
+            {
+                var read = await stream.ReadAsync(_buffer.AsMemory(0, _recordLength), cancellationToken)
+                    .ConfigureAwait(false);
+                if (read <= 0)
+                    return false;
+                while (read < _recordLength)
+                {
+                    var r = await stream.ReadAsync(_buffer.AsMemory(read, _recordLength - read), cancellationToken)
+                        .ConfigureAwait(false);
+                    if (r == 0)
+                        return false;
+                    read += r;
+                }
+
+                return ParseRecord(position);
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
+            }
+        }
+
+        private bool ParseRecord(long position)
+        {
+            var span = new ReadOnlySpan<byte>(_buffer);
+
+            var value = span[0];
+            if (value == EndOfFile) return false;
+
+            IsDeleted = value == 0x2A;
+            RecordIndex = (int) ((position - _dataOffset) / _recordLength);
+
+            foreach (var dbfValue in Values)
+            {
+                var slice = span.Slice(dbfValue.Start, dbfValue.Length);
+                dbfValue.Read(slice);
+            }
+            return true;
         }
 
         public object GetValue(int ordinal)

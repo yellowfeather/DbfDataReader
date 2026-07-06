@@ -73,4 +73,13 @@ public class ReadFloatsAsDecimalsTests : DbaseTests
         var dbfValue = dbfRecord.Values[10];
         dbfValue.GetValue().ShouldBeOfType<float>();
     }
+
+    [Fact]
+    public void Should_read_floats_as_decimals_when_using_dbf_data_reader_with_options()
+    {
+        using var dbfDataReader = new DbfDataReader(Dbase31FixturePath, Options);
+
+        dbfDataReader.Read().ShouldBeTrue();
+        dbfDataReader.GetValue(10).ShouldBeOfType<decimal>();
+    }
 }

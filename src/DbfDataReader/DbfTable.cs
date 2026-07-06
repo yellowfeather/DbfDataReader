@@ -2,12 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
     public class DbfTable : Disposable
     {
         private const byte Terminator = 0x0d;
+
+        private readonly bool _leaveOpen;
+
+        // position of the start of the DBF data within the stream, to support
+        // streams where the DBF content does not begin at offset zero
+        private readonly long _startOffset;
 
         public DbfTable(string path, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
         {
@@ -26,18 +34,20 @@ namespace DbfDataReader
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
-        public DbfTable(Stream stream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
-            : this(stream, null, encoding, stringTrimming, readFloatsAsDecimals)
+        public DbfTable(Stream stream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
+            : this(stream, null, encoding, stringTrimming, readFloatsAsDecimals, leaveOpen)
         {
         }
 
-        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
+        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
             StringTrimming = stringTrimming;
             ReadFloatsAsDecimals = readFloatsAsDecimals;
+            _leaveOpen = leaveOpen;
             Stream = stream;
+            _startOffset = stream.CanSeek ? stream.Position : 0;
 
             Init();
 
@@ -70,6 +80,8 @@ namespace DbfDataReader
 
         public bool IsClosed => Stream == null;
 
+        internal long DataOffset => _startOffset + Header.HeaderLength;
+
         public void Close()
         {
             Dispose(true);
@@ -80,7 +92,7 @@ namespace DbfDataReader
             try
             {
                 if (!disposing) return;
-                Stream?.Dispose();
+                if (!_leaveOpen) Stream?.Dispose();
                 Memo?.Dispose();
             }
             finally
@@ -149,11 +161,7 @@ namespace DbfDataReader
         {
             var count = Header.HeaderLength - DbfHeader.DbfHeaderSize;
             var buffer = new byte[count];
-#if NETSTANDARD2_1
-            stream.Read(buffer, 0, count);
-#else
             stream.ReadExactly(buffer, 0, count);
-#endif
             var span = new ReadOnlySpan<byte>(buffer);
 
             var columns = new List<DbfColumn>();
@@ -181,9 +189,37 @@ namespace DbfDataReader
             return !dbfRecord.Read(Stream) ? null : dbfRecord;
         }
 
+        public async ValueTask<DbfRecord> ReadRecordAsync(CancellationToken cancellationToken = default)
+        {
+            var dbfRecord = new DbfRecord(this);
+            return !await dbfRecord.ReadAsync(Stream, cancellationToken).ConfigureAwait(false) ? null : dbfRecord;
+        }
+
         public bool Read(DbfRecord dbfRecord)
         {
             return dbfRecord.Read(Stream);
+        }
+
+        public ValueTask<bool> ReadAsync(DbfRecord dbfRecord, CancellationToken cancellationToken = default)
+        {
+            return dbfRecord.ReadAsync(Stream, cancellationToken);
+        }
+
+        public void Seek(int recordIndex)
+        {
+            if (recordIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(recordIndex), recordIndex,
+                    "Record index must not be negative.");
+            if (!Stream.CanSeek)
+                throw new NotSupportedException("The underlying stream does not support seeking.");
+
+            Stream.Seek(DataOffset + (long) recordIndex * Header.RecordLength, SeekOrigin.Begin);
+        }
+
+        // a typed query over this table; T's settable properties define the columns read
+        public DbfQuery<T> Query<T>() where T : class
+        {
+            return new DbfQuery<T>(this);
         }
     }
 }

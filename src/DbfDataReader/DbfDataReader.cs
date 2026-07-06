@@ -5,6 +5,8 @@ using System.Data;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
@@ -20,21 +22,21 @@ namespace DbfDataReader
         public DbfDataReader(string path, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(path, options.Encoding, options.StringTrimming);
+            DbfTable = new DbfTable(path, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfDataReader(Stream stream, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(stream, options.Encoding, options.StringTrimming);
+            DbfTable = new DbfTable(stream, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfDataReader(Stream stream, Stream memoStream, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(stream, memoStream, options.Encoding, options.StringTrimming);
+            DbfTable = new DbfTable(stream, memoStream, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
@@ -163,6 +165,29 @@ namespace DbfDataReader
             return result;
         }
 
+        public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
+        {
+            bool result;
+            bool skip;
+            do
+            {
+                result = await DbfTable.ReadAsync(DbfRecord, cancellationToken).ConfigureAwait(false);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
+        }
+
+        public void Seek(int recordIndex)
+        {
+            DbfTable.Seek(recordIndex);
+        }
+
+        public int RecordIndex => DbfRecord.RecordIndex;
+
         public override int Depth => throw new NotImplementedException();
 
         public override bool IsClosed => DbfTable.IsClosed;
@@ -273,68 +298,7 @@ namespace DbfDataReader
         public override DataTable GetSchemaTable()
         {
             var columnSchema = GetColumnSchema();
-            return GetSchemaTable(columnSchema);
+            return SchemaTableBuilder.Build(columnSchema);
         }
-
-        private static DataTable GetSchemaTable(ReadOnlyCollection<DbColumn> columnSchema)
-		{
-            var table = new DataTable("SchemaTable")
-            {
-                Columns =
-                {
-                    new DataColumn(SchemaTableColumn.ColumnName, typeof(string)),
-                    new DataColumn(SchemaTableColumn.ColumnOrdinal, typeof(int)),
-                    new DataColumn(SchemaTableColumn.ColumnSize, typeof(int)),
-                    new DataColumn(SchemaTableColumn.NumericPrecision, typeof(short)),
-                    new DataColumn(SchemaTableColumn.NumericScale, typeof(short)),
-                    new DataColumn(SchemaTableColumn.DataType, typeof(Type)),
-                    new DataColumn(SchemaTableColumn.AllowDBNull, typeof(bool)),
-                 
-                    new DataColumn(SchemaTableColumn.BaseColumnName, typeof(string)),
-                    new DataColumn(SchemaTableColumn.BaseSchemaName, typeof(string)),
-                    new DataColumn(SchemaTableColumn.BaseTableName, typeof(string)),
-
-                    new DataColumn(SchemaTableColumn.IsAliased, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsExpression, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsKey, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsLong, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsUnique, typeof(bool)),
-
-                    new DataColumn(SchemaTableColumn.ProviderType, typeof(int)),
-                    new DataColumn(SchemaTableColumn.NonVersionedProviderType, typeof(int)),
-                }
-            };
-
-            object dbNull = DBNull.Value;
-            foreach (var column in columnSchema)
-			{
-				var row = table.NewRow();
-				row[0] = column.ColumnName;
-				row[1] = column.ColumnOrdinal ?? dbNull;
-				row[2] = column.ColumnSize ?? dbNull;
-				row[3] = column.NumericPrecision ?? dbNull;
-				row[4] = column.NumericScale ?? dbNull;
-                row[5] = column.DataType ?? dbNull;
-				row[6] = column.AllowDBNull ?? dbNull;
-
-				row[7] = column.BaseColumnName ?? dbNull;
-				row[8] = column.BaseSchemaName ?? dbNull;
-				row[9] = column.BaseTableName ?? dbNull;
-
-				row[10] = column.IsAliased ?? dbNull;
-				row[11] = column.IsExpression ?? dbNull;
-				row[12] = column.IsKey ?? dbNull;
-				row[13] = column.IsLong ?? dbNull;
-				row[14] = column.IsUnique ?? dbNull;
-
-				var code = (int)Type.GetTypeCode(column.DataType);
-				row[15] = code;
-				row[16] = code;
-
-				table.Rows.Add(row);
-			}
-
-			return table;
-		}
     }
 }
