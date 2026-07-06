@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DbfDataReader.Cdx
 {
@@ -91,34 +92,10 @@ namespace DbfDataReader.Cdx
 
         private IEnumerable<CdxKeyEntry> SearchCore(Func<byte[], int> keyComparison)
         {
-            var node = _rootNode;
-            var depth = 0;
-
-            // Interior entry keys are the upper bound of their subtree, so descend into the
-            // first entry that is not below the wanted range.
-            while (node is InteriorCdxNode interiorNode)
-            {
-                if (interiorNode.KeyEntries.Count == 0)
-                    throw new CdxException(CdxErrorCode.InteriorNodeHasNoKeyEntries);
-
-                BaseCdxNode next = null;
-                foreach (var entry in interiorNode.KeyEntries)
-                {
-                    if (keyComparison(entry.KeyBytes) >= 0)
-                    {
-                        next = ReadNode(entry.NodePointer);
-                        break;
-                    }
-                }
-
-                if (next == null) yield break;
-
-                GuardNodeChain(ref depth);
-                node = next;
-            }
+            var leaf = FindFirstCandidateLeaf(keyComparison);
+            if (leaf == null) yield break;
 
             // Scan leaf entries, following right siblings while matches can continue across nodes.
-            var leaf = (LeafCdxNode)node;
             var chainLength = 0;
 
             while (true)
@@ -142,6 +119,28 @@ namespace DbfDataReader.Cdx
                 GuardNodeChain(ref chainLength);
                 leaf = (LeafCdxNode)ReadNode(leaf.RightSibling);
             }
+        }
+
+        // Interior entry keys are the upper bound of their subtree, so descend into the first
+        // entry that is not below the wanted range. Returns null when every entry is below it.
+        private LeafCdxNode FindFirstCandidateLeaf(Func<byte[], int> keyComparison)
+        {
+            var node = _rootNode;
+            var depth = 0;
+
+            while (node is InteriorCdxNode interiorNode)
+            {
+                if (interiorNode.KeyEntries.Count == 0)
+                    throw new CdxException(CdxErrorCode.InteriorNodeHasNoKeyEntries);
+
+                var entry = interiorNode.KeyEntries.FirstOrDefault(e => keyComparison(e.KeyBytes) >= 0);
+                if (entry == null) return null;
+
+                GuardNodeChain(ref depth);
+                node = ReadNode(entry.NodePointer);
+            }
+
+            return (LeafCdxNode)node;
         }
 
         private LeafCdxNode GetLeftmostLeafNode()

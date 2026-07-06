@@ -39,15 +39,18 @@ namespace DbfDataReader.Cdx
             if ((attributes | CdxNodeAttributes.All) != CdxNodeAttributes.All)
                 throw new CdxException(CdxErrorCode.InvalidNodeAttributes);
 
+            return attributes.HasFlag(CdxNodeAttributes.LeafNode)
+                ? LeafCdxNode.Read(indexHeader, offset, attributes, bytes, encoding)
+                : (BaseCdxNode)InteriorCdxNode.Read(indexHeader, offset, attributes, bytes);
+        }
+
+        internal static (int KeyCount, int LeftSibling, int RightSibling) ReadCommonFields(ReadOnlySpan<byte> bytes)
+        {
             var keyCount = BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(2, 2));
             var leftSibling = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(4, 4));
             var rightSibling = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(8, 4));
 
-            return attributes.HasFlag(CdxNodeAttributes.LeafNode)
-                ? LeafCdxNode.Read(indexHeader, offset, attributes, keyCount, leftSibling, rightSibling, bytes,
-                    encoding)
-                : (BaseCdxNode)InteriorCdxNode.Read(indexHeader, offset, attributes, keyCount, leftSibling,
-                    rightSibling, bytes);
+            return (keyCount, leftSibling, rightSibling);
         }
     }
 }

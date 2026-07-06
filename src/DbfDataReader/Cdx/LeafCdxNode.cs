@@ -20,8 +20,10 @@ namespace DbfDataReader.Cdx
         public IReadOnlyList<CdxKeyEntry> Entries { get; }
 
         public static LeafCdxNode Read(CdxIndexHeader indexHeader, long offset, CdxNodeAttributes attributes,
-            int keyCount, int leftSibling, int rightSibling, ReadOnlySpan<byte> bytes, Encoding encoding)
+            ReadOnlySpan<byte> bytes, Encoding encoding)
         {
+            var (keyCount, leftSibling, rightSibling) = ReadCommonFields(bytes);
+
             var recordNumberMask = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(14, 4));
             var duplicateCountMask = bytes[18];
             var trailingCountMask = bytes[19];
@@ -59,16 +61,20 @@ namespace DbfDataReader.Cdx
 
                 if (newBytesCount < 0 || keyValueSource < 0)
                     throw new CdxException(CdxErrorCode.InvalidLeafNodeCalculatedKeyStartIndex);
-                if (previousKey == null && duplicateBytes > 0)
-                    throw new CdxException(CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes);
 
                 var actualKeyLength = keyLength - trailingBytes;
                 var keyBytes = new byte[actualKeyLength];
 
-                var duplicated = Math.Min(duplicateBytes, actualKeyLength);
-                for (var d = 0; d < duplicated; d++)
+                if (duplicateBytes > 0)
                 {
-                    keyBytes[d] = previousKey[d];
+                    if (previousKey == null)
+                        throw new CdxException(CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes);
+
+                    var duplicated = Math.Min(duplicateBytes, actualKeyLength);
+                    for (var d = 0; d < duplicated; d++)
+                    {
+                        keyBytes[d] = previousKey[d];
+                    }
                 }
 
                 for (int b = duplicateBytes, source = 0; source < newBytesCount && b < actualKeyLength; b++, source++)

@@ -28,7 +28,8 @@ namespace DbfDataReader.Cdx
     [Flags]
     internal enum CdxNodeAttributes
     {
-        InteriorNode = 0,
+        // a node with neither RootNode nor LeafNode set is an interior node
+        None = 0,
         RootNode = 1,
         LeafNode = 2,
         // observed in real-world files, undocumented

@@ -19,8 +19,10 @@ namespace DbfDataReader.Cdx
         public IReadOnlyList<InteriorCdxKeyEntry> KeyEntries { get; }
 
         public static InteriorCdxNode Read(CdxIndexHeader indexHeader, long offset, CdxNodeAttributes attributes,
-            int keyCount, int leftSibling, int rightSibling, ReadOnlySpan<byte> bytes)
+            ReadOnlySpan<byte> bytes)
         {
+            var (keyCount, leftSibling, rightSibling) = ReadCommonFields(bytes);
+
             if (leftSibling < NoSibling || rightSibling < NoSibling)
                 throw new CdxException(CdxErrorCode.InvalidInteriorNodeSibling);
 
