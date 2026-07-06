@@ -129,11 +129,10 @@ namespace DbfDataReader.Query
                 ? (bool?)null
                 : CompareValues(value, high, between.Position) <= 0;
 
-            var result = lowerBound == true && upperBound == true
-                ? true
-                : upperBound == false
-                    ? false
-                    : (bool?)null;
+            bool? result;
+            if (upperBound == false) result = false;
+            else if (lowerBound == true && upperBound == true) result = true;
+            else result = null;
 
             return ApplyNegation(result, between.Negated);
         }
@@ -164,7 +163,11 @@ namespace DbfDataReader.Query
                 }
             }
 
-            var result = found ? true : sawUnknown ? (bool?)null : false;
+            bool? result;
+            if (found) result = true;
+            else if (sawUnknown) result = null;
+            else result = false;
+
             return ApplyNegation(result, inExpression.Negated);
         }
 

@@ -75,8 +75,8 @@ namespace DbfDataReader
             var options = dbfDbConnection.Options;
             var reader = new DbfDataReader(filePath, options);
 
-            // a plain unfiltered SELECT * needs no projection, filter or row limit;
-            // return the raw reader
+            // a plain unfiltered select-all needs no projection, filter or row limit,
+            // so it stays on the raw reader
             if (statement.IsSelectAll && statement.Top == null && statement.Where == null) return reader;
 
             try
