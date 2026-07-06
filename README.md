@@ -167,6 +167,35 @@ only ascending indexes with byte-wise (MACHINE collation) character keys are sea
 index key expressions are exposed as text but not evaluated, and index entries include
 deleted records (check `DbfRecord.IsDeleted` after seeking).
 
+Rows can be mapped straight to your own types. `DbfTable.Query<T>()` is a typed query
+builder whose `Where`/`OrderBy` lambdas are translated into the same query engine — the
+type's public settable properties define which columns are read, matched by name
+(exact first, then case-insensitively):
+
+```csharp
+public class GpsPoint
+{
+    public string Point_ID { get; set; }
+    public decimal? Max_PDOP { get; set; }
+    public DateTime? Date_Visit { get; set; }
+}
+
+using (var dbfTable = new DbfTable("path/dbase_03.dbf"))
+{
+    var points = dbfTable.Query<GpsPoint>()
+        .Where(p => p.Max_PDOP >= 3.5m && p.Point_ID.StartsWith("A"))
+        .OrderByDescending(p => p.Date_Visit)
+        .Take(10)
+        .ToList(); // also foreach, First/FirstOrDefault, Count, ToListAsync, AsAsyncEnumerable
+}
+```
+
+Supported inside `Where`: comparisons, `&&`/`||`/`!`, `== null`/`!= null` (translated to
+`IS [NOT] NULL`), `string.StartsWith`/`EndsWith`/`Contains` (translated to `LIKE`), and
+`collection.Contains(p.Column)` (translated to `IN`). Deleted records are skipped unless
+`.IncludeDeleted()` is called. Anything that cannot be translated throws
+`NotSupportedException` — nothing falls back to silent in-memory evaluation.
+
 There is also an implementation of DbConnection so you can query a folder of files e.g.
 
 ```csharp
@@ -202,6 +231,17 @@ var command = (DbfDbCommand)dbConnection.CreateCommand();
 command.CommandText = "select Point_ID from dbase_03.dbf where Point_ID = @id";
 command.Parameters.AddWithValue("@id", "A1");
 var value = command.ExecuteScalar();
+```
+
+`DbfDbConnection` also offers the same row-to-type mapping over SQL text in the style of
+Dapper — and the provider is Dapper-compatible if you prefer the real thing:
+
+```csharp
+var points = dbConnection.Query<GpsPoint>(
+    "select Point_ID, Max_PDOP, Date_Visit from dbase_03.dbf where Point_ID = @id",
+    new { id = "A1" });
+var ids = dbConnection.Query<string>("select Point_ID from dbase_03.dbf"); // scalar rows
+// also QueryAsync<T> and QueryFirstOrDefault<T>
 ```
 
 Predicates support `=`, `<>`, `!=`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `LIKE`

@@ -20,6 +20,7 @@ namespace DbfDataReader.Query
         private readonly IReadOnlyList<int> _ordinals; // projected ordinal -> underlying ordinal
         private readonly IReadOnlyList<string> _names; // output names (aliases applied)
         private readonly SqlExpressionEvaluator _filter; // null when there is no WHERE clause
+        private readonly Func<int, object> _readerValueAccessor;
         private readonly IReadOnlyList<OrderByItem> _orderBy;
         private readonly int _limit; // -1 when unlimited
         private int _rowsReturned;
@@ -32,6 +33,7 @@ namespace DbfDataReader.Query
         {
             _reader = reader;
             _filter = filter;
+            _readerValueAccessor = reader.GetValue;
             _orderBy = statement.OrderBy;
 
             var tableColumns = reader.DbfTable.Columns;
@@ -90,7 +92,7 @@ namespace DbfDataReader.Query
 
             while (_reader.Read())
             {
-                if (_filter != null && !_filter.Matches(_reader)) continue;
+                if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 
                 _rowsReturned++;
                 return true;
@@ -111,7 +113,7 @@ namespace DbfDataReader.Query
 
             while (await _reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
-                if (_filter != null && !_filter.Matches(_reader)) continue;
+                if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 
                 _rowsReturned++;
                 return true;
@@ -135,7 +137,7 @@ namespace DbfDataReader.Query
             var rows = new List<object[]>();
             while (_reader.Read())
             {
-                if (_filter != null && !_filter.Matches(_reader)) continue;
+                if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 
                 rows.Add(SnapshotCurrentRow());
             }
@@ -149,7 +151,7 @@ namespace DbfDataReader.Query
             var rows = new List<object[]>();
             while (await _reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
-                if (_filter != null && !_filter.Matches(_reader)) continue;
+                if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 
                 rows.Add(SnapshotCurrentRow());
             }

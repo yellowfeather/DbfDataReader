@@ -24,12 +24,13 @@ namespace DbfDataReader.Query
             _positionalParameters = positionalParameters;
         }
 
-        public bool Matches(DbfDataReader reader)
+        // getValue returns the current row's value for an underlying column ordinal
+        public bool Matches(Func<int, object> getValue)
         {
-            return EvaluateCondition(_expression, reader) == true;
+            return EvaluateCondition(_expression, getValue) == true;
         }
 
-        private bool? EvaluateCondition(SqlExpression expression, DbfDataReader reader)
+        private bool? EvaluateCondition(SqlExpression expression, Func<int, object> reader)
         {
             switch (expression)
             {
@@ -51,7 +52,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private bool? EvaluateBinary(SqlBinaryExpression binary, DbfDataReader reader)
+        private bool? EvaluateBinary(SqlBinaryExpression binary, Func<int, object> reader)
         {
             switch (binary.Operator)
             {
@@ -64,7 +65,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private bool? EvaluateAnd(SqlBinaryExpression binary, DbfDataReader reader)
+        private bool? EvaluateAnd(SqlBinaryExpression binary, Func<int, object> reader)
         {
             var left = EvaluateCondition(binary.Left, reader);
             if (left == false) return false;
@@ -75,7 +76,7 @@ namespace DbfDataReader.Query
             return left == true && right == true ? true : (bool?)null;
         }
 
-        private bool? EvaluateOr(SqlBinaryExpression binary, DbfDataReader reader)
+        private bool? EvaluateOr(SqlBinaryExpression binary, Func<int, object> reader)
         {
             var left = EvaluateCondition(binary.Left, reader);
             if (left == true) return true;
@@ -86,7 +87,7 @@ namespace DbfDataReader.Query
             return left == false && right == false ? false : (bool?)null;
         }
 
-        private bool? EvaluateComparison(SqlBinaryExpression binary, DbfDataReader reader)
+        private bool? EvaluateComparison(SqlBinaryExpression binary, Func<int, object> reader)
         {
             var left = EvaluateOperand(binary.Left, reader);
             var right = EvaluateOperand(binary.Right, reader);
@@ -107,7 +108,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private bool? EvaluateBetween(SqlBetweenExpression between, DbfDataReader reader)
+        private bool? EvaluateBetween(SqlBetweenExpression between, Func<int, object> reader)
         {
             var value = EvaluateOperand(between.Operand, reader);
             var low = EvaluateOperand(between.Low, reader);
@@ -130,7 +131,7 @@ namespace DbfDataReader.Query
             return ApplyNegation(result, between.Negated);
         }
 
-        private bool? EvaluateIn(SqlInExpression inExpression, DbfDataReader reader)
+        private bool? EvaluateIn(SqlInExpression inExpression, Func<int, object> reader)
         {
             var value = EvaluateOperand(inExpression.Operand, reader);
 
@@ -164,7 +165,7 @@ namespace DbfDataReader.Query
             return ApplyNegation(result, inExpression.Negated);
         }
 
-        private bool? EvaluateLike(SqlLikeExpression like, DbfDataReader reader)
+        private bool? EvaluateLike(SqlLikeExpression like, Func<int, object> reader)
         {
             var value = EvaluateOperand(like.Operand, reader);
             var pattern = EvaluateOperand(like.Pattern, reader);
@@ -181,20 +182,20 @@ namespace DbfDataReader.Query
             return ApplyNegation(result, like.Negated);
         }
 
-        private bool? EvaluateIsNull(SqlIsNullExpression isNull, DbfDataReader reader)
+        private bool? EvaluateIsNull(SqlIsNullExpression isNull, Func<int, object> reader)
         {
             var value = EvaluateOperand(isNull.Operand, reader);
             return isNull.Negated ? value != null : value == null;
         }
 
-        private object EvaluateOperand(SqlExpression expression, DbfDataReader reader)
+        private object EvaluateOperand(SqlExpression expression, Func<int, object> reader)
         {
             switch (expression)
             {
                 case SqlLiteralExpression literal:
                     return literal.Value;
                 case SqlColumnExpression column:
-                    return reader.GetValue(column.Ordinal);
+                    return reader(column.Ordinal);
                 case SqlParameterExpression parameter:
                     return GetParameterValue(parameter);
                 default:
