@@ -23,6 +23,7 @@ namespace DbfDataReader
             new List<(LambdaExpression, bool)>();
         private int? _take;
         private bool _includeDeleted;
+        private bool _useIndexes = true;
 
         internal DbfQuery(DbfTable table)
         {
@@ -68,6 +69,22 @@ namespace DbfDataReader
         {
             _includeDeleted = true;
             return this;
+        }
+
+        // a sidecar .cdx index is used automatically when it can serve the query;
+        // this forces a sequential scan instead
+        public DbfQuery<T> WithoutIndexes()
+        {
+            _useIndexes = false;
+            return this;
+        }
+
+        // describes how the query would fetch its rows, without reading any
+        public string ExplainPlan()
+        {
+            var plan = Prepare();
+            var sortNote = plan.SortKeys.Count > 0 && !plan.AccessPlan.SortSatisfied ? "; in-memory sort" : "";
+            return plan.AccessPlan.Description + sortNote;
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -117,17 +134,34 @@ namespace DbfDataReader
 
             _table.Seek(0);
 
+            var position = 0;
             var count = 0;
-            while (_table.Read(record))
+            while (ReadNextRow(plan, record, ref position))
             {
-                if (!_includeDeleted && record.IsDeleted) continue;
-                if (plan.Filter != null && !plan.Filter.Matches(accessor)) continue;
+                if (!Accept(record, plan, accessor)) continue;
 
                 count++;
                 if (_take != null && count >= _take.Value) break;
             }
 
             return count;
+        }
+
+        // advances to the next candidate row: sequentially, or by seeking the next
+        // record index supplied by the access plan
+        private bool ReadNextRow(QueryPlan plan, DbfRecord record, ref int position)
+        {
+            var recordIndexes = plan.AccessPlan.RecordIndexes;
+            if (recordIndexes == null) return _table.Read(record);
+
+            while (position < recordIndexes.Count)
+            {
+                _table.Seek(recordIndexes[position]);
+                position++;
+                if (_table.Read(record)) return true; // false: entry beyond the table
+            }
+
+            return false;
         }
 
         public async Task<List<T>> ToListAsync(CancellationToken cancellationToken = default)
@@ -147,14 +181,30 @@ namespace DbfDataReader
             var plan = Prepare();
             var record = new DbfRecord(_table);
             Func<int, object> accessor = record.GetValue;
+            var recordIndexes = plan.AccessPlan.RecordIndexes;
+            var position = 0;
+
+            async Task<bool> MoveNextAsync()
+            {
+                if (recordIndexes == null)
+                    return await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false);
+
+                while (position < recordIndexes.Count)
+                {
+                    _table.Seek(recordIndexes[position]);
+                    position++;
+                    if (await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false)) return true;
+                }
+
+                return false;
+            }
 
             _table.Seek(0);
 
-            if (plan.SortKeys.Count == 0)
+            if (!SortRequired(plan))
             {
                 var returned = 0;
-                while (NotLimited(returned) &&
-                       await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false))
+                while (NotLimited(returned) && await MoveNextAsync().ConfigureAwait(false))
                 {
                     if (!Accept(record, plan, accessor)) continue;
 
@@ -166,7 +216,7 @@ namespace DbfDataReader
             }
 
             var buffer = new List<(T Item, object[] Keys)>();
-            while (await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false))
+            while (await MoveNextAsync().ConfigureAwait(false))
             {
                 if (!Accept(record, plan, accessor)) continue;
 
@@ -187,10 +237,11 @@ namespace DbfDataReader
 
             _table.Seek(0);
 
-            if (plan.SortKeys.Count == 0)
+            var position = 0;
+            if (!SortRequired(plan))
             {
                 var returned = 0;
-                while (NotLimited(returned) && _table.Read(record))
+                while (NotLimited(returned) && ReadNextRow(plan, record, ref position))
                 {
                     if (!Accept(record, plan, accessor)) continue;
 
@@ -202,7 +253,7 @@ namespace DbfDataReader
             }
 
             var buffer = new List<(T Item, object[] Keys)>();
-            while (_table.Read(record))
+            while (ReadNextRow(plan, record, ref position))
             {
                 if (!Accept(record, plan, accessor)) continue;
 
@@ -213,6 +264,11 @@ namespace DbfDataReader
             {
                 yield return item;
             }
+        }
+
+        private static bool SortRequired(QueryPlan plan)
+        {
+            return plan.SortKeys.Count > 0 && !plan.AccessPlan.SortSatisfied;
         }
 
         private bool NotLimited(int returned)
@@ -323,20 +379,16 @@ namespace DbfDataReader
                     $"Property '{propertyName}' is not mapped to a column.");
             }
 
-            SqlExpressionEvaluator filter = null;
-            if (_predicates.Count > 0)
+            SqlExpression combinedWhere = null;
+            foreach (var predicate in _predicates)
             {
-                SqlExpression combined = null;
-                foreach (var predicate in _predicates)
-                {
-                    var translated = QueryExpressionTranslator.TranslatePredicate(predicate, ResolveOrdinal);
-                    combined = combined == null
-                        ? translated
-                        : new SqlBinaryExpression(SqlBinaryOperator.And, combined, translated);
-                }
-
-                filter = new SqlExpressionEvaluator(combined, null, null);
+                var translated = QueryExpressionTranslator.TranslatePredicate(predicate, ResolveOrdinal);
+                combinedWhere = combinedWhere == null
+                    ? translated
+                    : new SqlBinaryExpression(SqlBinaryOperator.And, combinedWhere, translated);
             }
+
+            var filter = combinedWhere == null ? null : new SqlExpressionEvaluator(combinedWhere, null, null);
 
             var sortKeys = new List<(int Ordinal, bool Descending)>();
             foreach (var (key, descending) in _orderBy)
@@ -345,24 +397,29 @@ namespace DbfDataReader
                 sortKeys.Add((ordinal, descending));
             }
 
+            var accessPlan = QueryPlanner.CreatePlan(combinedWhere, sortKeys, _table, _useIndexes, null, null);
+
             return new QueryPlan(
                 RowMaterializer.Create<T>(mappedNames),
                 mappedOrdinals,
                 new object[mappedOrdinals.Count],
                 filter,
-                sortKeys);
+                sortKeys,
+                accessPlan);
         }
 
         private sealed class QueryPlan
         {
             public QueryPlan(Func<object[], T> materializer, IReadOnlyList<int> mappedOrdinals, object[] rowBuffer,
-                SqlExpressionEvaluator filter, IReadOnlyList<(int Ordinal, bool Descending)> sortKeys)
+                SqlExpressionEvaluator filter, IReadOnlyList<(int Ordinal, bool Descending)> sortKeys,
+                QueryAccessPlan accessPlan)
             {
                 Materializer = materializer;
                 MappedOrdinals = mappedOrdinals;
                 RowBuffer = rowBuffer;
                 Filter = filter;
                 SortKeys = sortKeys;
+                AccessPlan = accessPlan;
             }
 
             public Func<object[], T> Materializer { get; }
@@ -374,6 +431,8 @@ namespace DbfDataReader
             public SqlExpressionEvaluator Filter { get; }
 
             public IReadOnlyList<(int Ordinal, bool Descending)> SortKeys { get; }
+
+            public QueryAccessPlan AccessPlan { get; }
         }
     }
 }

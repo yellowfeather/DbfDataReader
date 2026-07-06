@@ -22,19 +22,25 @@ namespace DbfDataReader.Query
         private readonly SqlExpressionEvaluator _filter; // null when there is no WHERE clause
         private readonly Func<int, object> _readerValueAccessor;
         private readonly IReadOnlyList<OrderByItem> _orderBy;
+        private readonly QueryAccessPlan _plan;
+        private readonly bool _skipDeletedRecords;
         private readonly int _limit; // -1 when unlimited
         private int _rowsReturned;
+        private int _planPosition; // cursor into the plan's record indexes
 
         private List<object[]> _sortedRows; // built on first read when sorting
         private int _sortedRowIndex;
         private object[] _currentRow; // non-null when the current row comes from the sort buffer
 
-        public DbfQueryDataReader(DbfDataReader reader, SelectStatement statement, SqlExpressionEvaluator filter)
+        public DbfQueryDataReader(DbfDataReader reader, SelectStatement statement, SqlExpressionEvaluator filter,
+            QueryAccessPlan plan, bool skipDeletedRecords)
         {
             _reader = reader;
             _filter = filter;
             _readerValueAccessor = reader.GetValue;
             _orderBy = statement.OrderBy;
+            _plan = plan;
+            _skipDeletedRecords = skipDeletedRecords;
 
             var tableColumns = reader.DbfTable.Columns;
             var columns = new List<DbfColumn>();
@@ -68,7 +74,12 @@ namespace DbfDataReader.Query
 
         public override int FieldCount => _names.Count;
 
-        public override bool HasRows => _limit != 0 && _reader.HasRows;
+        public override bool HasRows => _limit != 0 && (_plan?.RecordIndexes == null
+            ? _reader.HasRows
+            : _plan.RecordIndexes.Count > 0);
+
+        // rows must be buffered and sorted unless the index already supplies the order
+        private bool SortRequired => _orderBy.Count > 0 && (_plan == null || !_plan.SortSatisfied);
 
         public override bool IsClosed => _reader.IsClosed;
 
@@ -82,7 +93,7 @@ namespace DbfDataReader.Query
 
         public override bool Read()
         {
-            if (_orderBy.Count > 0)
+            if (SortRequired)
             {
                 _sortedRows ??= BuildSortedRows();
                 return AdvanceSorted();
@@ -90,7 +101,7 @@ namespace DbfDataReader.Query
 
             if (LimitReached()) return false;
 
-            while (_reader.Read())
+            while (ReadNextRow())
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 
@@ -103,7 +114,7 @@ namespace DbfDataReader.Query
 
         public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
         {
-            if (_orderBy.Count > 0)
+            if (SortRequired)
             {
                 _sortedRows ??= await BuildSortedRowsAsync(cancellationToken).ConfigureAwait(false);
                 return AdvanceSorted();
@@ -111,11 +122,54 @@ namespace DbfDataReader.Query
 
             if (LimitReached()) return false;
 
-            while (await _reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            while (await ReadNextRowAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 
                 _rowsReturned++;
+                return true;
+            }
+
+            return false;
+        }
+
+        // advances the underlying reader to the next candidate row: sequentially, or by
+        // seeking the next record index supplied by the access plan (re-checking the
+        // deleted flag, which sequential reads handle inside the raw reader)
+        private bool ReadNextRow()
+        {
+            if (_plan?.RecordIndexes == null) return _reader.Read();
+
+            while (_planPosition < _plan.RecordIndexes.Count)
+            {
+                var recordIndex = _plan.RecordIndexes[_planPosition];
+                _planPosition++;
+
+                _reader.Seek(recordIndex);
+                if (!_reader.DbfTable.Read(_reader.DbfRecord)) continue; // entry beyond the table
+                if (_skipDeletedRecords && _reader.DbfRecord.IsDeleted) continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task<bool> ReadNextRowAsync(CancellationToken cancellationToken)
+        {
+            if (_plan?.RecordIndexes == null)
+                return await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+
+            while (_planPosition < _plan.RecordIndexes.Count)
+            {
+                var recordIndex = _plan.RecordIndexes[_planPosition];
+                _planPosition++;
+
+                _reader.Seek(recordIndex);
+                if (!await _reader.DbfTable.ReadAsync(_reader.DbfRecord, cancellationToken).ConfigureAwait(false))
+                    continue;
+                if (_skipDeletedRecords && _reader.DbfRecord.IsDeleted) continue;
+
                 return true;
             }
 
@@ -135,7 +189,7 @@ namespace DbfDataReader.Query
         private List<object[]> BuildSortedRows()
         {
             var rows = new List<object[]>();
-            while (_reader.Read())
+            while (ReadNextRow())
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 
@@ -149,7 +203,7 @@ namespace DbfDataReader.Query
         private async Task<List<object[]>> BuildSortedRowsAsync(CancellationToken cancellationToken)
         {
             var rows = new List<object[]>();
-            while (await _reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            while (await ReadNextRowAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
 

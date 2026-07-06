@@ -14,6 +14,7 @@ namespace DbfDataReader
             ReadFloatsAsDecimals,
             SkipDeletedRecords,
             StringTrimming,
+            UseIndexes,
             
             // keep the count value last
             KeywordsCount
@@ -29,6 +30,7 @@ namespace DbfDataReader
         private bool _readFloatsAsDecimals;
         private bool _skipDeletedRecords = true;
         private StringTrimmingOption _stringTrimming = StringTrimmingOption.Trim;
+        private bool _useIndexes = true;
 
         public DbfDbConnectionStringBuilder() : this(null)
         {
@@ -61,6 +63,7 @@ namespace DbfDataReader
                         case Keywords.ReadFloatsAsDecimals: ReadFloatsAsDecimals = DbfDbConnectionStringBuilderUtil.ConvertToBoolean(value); break;
                         case Keywords.SkipDeletedRecords: SkipDeletedRecords = DbfDbConnectionStringBuilderUtil.ConvertToBoolean(value); break;
                         case Keywords.StringTrimming: StringTrimming = DbfDbConnectionStringBuilderUtil.ConvertToStringTrimmingOption(keyword, value); break;
+                        case Keywords.UseIndexes: UseIndexes = DbfDbConnectionStringBuilderUtil.ConvertToBoolean(value); break;
                         default:
                             Debug.Assert(false, "unexpected keyword");
                             throw DbfDbConnectionStringBuilderUtil.KeywordNotSupported(keyword);
@@ -128,6 +131,16 @@ namespace DbfDataReader
             }
         }
         
+        public bool UseIndexes
+        {
+            get => _useIndexes;
+            set
+            {
+                SetValue(DbfDbConnectionStringKeywords.UseIndexes, value);
+                _useIndexes = value;
+            }
+        }
+
         public override bool Remove(string keyword)
         {
             DbfDbConnectionStringBuilderUtil.CheckArgumentNull(keyword, "keyword");
@@ -179,6 +192,7 @@ namespace DbfDataReader
                 case Keywords.ReadFloatsAsDecimals:	return ReadFloatsAsDecimals;
                 case Keywords.SkipDeletedRecords:	return SkipDeletedRecords;
                 case Keywords.StringTrimming:       return StringTrimming;
+                case Keywords.UseIndexes:           return UseIndexes;
                 default:
                     Debug.Assert(false, "unexpected keyword");
                     throw DbfDbConnectionStringBuilderUtil.KeywordNotSupported(ValidKeywords[(int)index]);
@@ -214,6 +228,9 @@ namespace DbfDataReader
                 case Keywords.StringTrimming:
                     _stringTrimming = StringTrimmingOption.Trim;
                     break;
+                case Keywords.UseIndexes:
+                    _useIndexes = true;
+                    break;
                 default:
                     Debug.Assert(false, "unexpected keyword");
                     throw DbfDbConnectionStringBuilderUtil.KeywordNotSupported(ValidKeywords[(int)index]);
@@ -228,6 +245,7 @@ namespace DbfDataReader
             validKeywords[(int)Keywords.ReadFloatsAsDecimals] = DbfDbConnectionStringKeywords.ReadFloatsAsDecimals;
             validKeywords[(int)Keywords.SkipDeletedRecords]   = DbfDbConnectionStringKeywords.SkipDeletedRecords;
             validKeywords[(int)Keywords.StringTrimming]       = DbfDbConnectionStringKeywords.StringTrimming;
+            validKeywords[(int)Keywords.UseIndexes]           = DbfDbConnectionStringKeywords.UseIndexes;
             return validKeywords;
         }
         
@@ -239,7 +257,8 @@ namespace DbfDataReader
                 { DbfDbConnectionStringKeywords.Folder, Keywords.Folder },
                 { DbfDbConnectionStringKeywords.ReadFloatsAsDecimals, Keywords.ReadFloatsAsDecimals },
                 { DbfDbConnectionStringKeywords.SkipDeletedRecords, Keywords.SkipDeletedRecords },
-                { DbfDbConnectionStringKeywords.StringTrimming, Keywords.StringTrimming }
+                { DbfDbConnectionStringKeywords.StringTrimming, Keywords.StringTrimming },
+                { DbfDbConnectionStringKeywords.UseIndexes, Keywords.UseIndexes }
             };
             Debug.Assert(KeywordsCount == hash.Count, "initial expected size is incorrect");
             return hash;

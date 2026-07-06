@@ -252,6 +252,24 @@ SQL three-valued logic; date columns compare against `'yyyy-MM-dd'` or
 (multiple keys, `ASC`/`DESC`, select-list aliases allowed, nulls first ascending) using
 a stable in-memory sort of the matching rows; `TOP`/`LIMIT` applies after the sort.
 
+When a sidecar compound index (`file.cdx`) exists next to the table, queries use it
+automatically: equality, range, `BETWEEN` and prefix `LIKE` predicates on indexed
+character columns become index seeks, and an `ORDER BY` matching an index tag reads in
+index order instead of sorting. This applies to SQL text and to the `Query<T>` builder
+alike. The planner is conservative — index tags with dBASE `UNIQUE` or `FOR` filters,
+descending or non-character keys, expression keys, or non-ASCII search values fall back
+to a full table scan, and the full `WHERE` clause is always re-applied to every row an
+index returns. Set `UseIndexes=false` in the connection string (or call
+`.WithoutIndexes()` on the builder) to force scans, and use
+`DbfDbCommand.ExplainPlan()` or `DbfQuery<T>.ExplainPlan()` to see which path a query
+takes:
+
+```csharp
+var command = (DbfDbCommand)dbConnection.CreateCommand();
+command.CommandText = "select * from setup.dbf where KEY_NAME = 'CONTACTS'";
+Console.WriteLine(command.ExplainPlan()); // index seek (=) on tag 'KEY_NAME'
+```
+
 The connection string supports the options available in `DbfDataReaderOptions`:
 
 - Folder - the folder containing the files to be queried
@@ -275,6 +293,10 @@ The connection string supports the options available in `DbfDataReaderOptions`:
   - string
   - defaults to 'None'
   - one of 'None', 'Trim', 'TrimStart', 'TrimEnd'
+- UseIndexes - whether to use sidecar .cdx compound indexes automatically
+  - optional
+  - boolean
+  - defaults to true
 
 
 Used by 

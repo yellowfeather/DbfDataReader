@@ -79,6 +79,11 @@ namespace DbfDataReader
                 options.StringTrimming = stringTrimming;
             }
 
+            if (builder.UseIndexes is var useIndexes)
+            {
+                options.UseIndexes = useIndexes;
+            }
+
             Options = options;
             _state = ConnectionState.Open;
         }
