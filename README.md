@@ -1,16 +1,54 @@
 # DbfDataReader
 
 [![CI](https://github.com/yellowfeather/DbfDataReader/actions/workflows/ci.yml/badge.svg)](https://github.com/yellowfeather/DbfDataReader/actions/workflows/ci.yml)
-[![NuGet](https://img.shields.io/nuget/dt/DbfDataReader.svg)](https://www.nuget.org/packages/DbfDataReader) 
+[![NuGet](https://img.shields.io/nuget/dt/DbfDataReader.svg)](https://www.nuget.org/packages/DbfDataReader)
 [![NuGet](https://img.shields.io/nuget/vpre/DbfDataReader.svg)](https://www.nuget.org/packages/DbfDataReader)
 [![MyGet Build Status](https://www.myget.org/BuildSource/Badge/dbfdatareader?identifier=54ae0096-55d5-418c-8eb9-54a35df720fb)](https://www.myget.org/)
 
-DbfDataReader is a small fast .Net Core library for reading dBase, xBase, Clipper and FoxPro database files
+DbfDataReader is a small, fast .NET library for reading dBase, xBase, Clipper and FoxPro
+database files (`.dbf`), with support for memo files, Visual FoxPro compound indexes
+(`.cdx`), a `DbDataReader` implementation for easy integration (e.g. `SqlBulkCopy`), an
+ADO.NET provider with a SQL `SELECT` dialect, and typed queries in the style of LINQ and
+Dapper.
 
-Usage, to get summary info:
+## Table of contents
+
+- [Installation](#installation)
+- [Reading a DBF file](#reading-a-dbf-file)
+  - [Table and column information](#table-and-column-information)
+  - [Iterating over rows](#iterating-over-rows)
+- [DbDataReader implementation](#dbdatareader-implementation)
+  - [Bulk copy to SQL Server](#bulk-copy-to-sql-server)
+- [Async reading](#async-reading)
+- [Random access with Seek](#random-access-with-seek)
+- [Compound index (.cdx) support](#compound-index-cdx-support)
+- [Typed queries with Query&lt;T&gt;](#typed-queries-with-queryt)
+- [SQL queries with DbfDbConnection](#sql-queries-with-dbfdbconnection)
+  - [Supported SQL](#supported-sql)
+  - [Dapper-style typed queries](#dapper-style-typed-queries)
+  - [Automatic index usage](#automatic-index-usage)
+  - [Connection string options](#connection-string-options)
+- [Used by](#used-by)
+- [License](#license)
+
+## Installation
+
+Install the [NuGet package](https://www.nuget.org/packages/DbfDataReader):
+
+```
+dotnet add package DbfDataReader
+```
+
+The library targets `net10.0` and `netstandard2.1`.
+
+## Reading a DBF file
+
+### Table and column information
+
+Open a table with `DbfTable` to inspect the header and columns:
 
 ```csharp
-var dbfPath = "path\\file.dbf";
+var dbfPath = "path/file.dbf";
 using (var dbfTable = new DbfTable(dbfPath, Encoding.UTF8))
 {
     var header = dbfTable.Header;
@@ -29,14 +67,14 @@ using (var dbfTable = new DbfTable(dbfPath, Encoding.UTF8))
 }
 ```
 
-and to iterate over the rows:
+### Iterating over rows
 
 ```csharp
 var skipDeleted = true;
 
 var dbfPath = "path/file.dbf";
 using (var dbfTable = new DbfTable(dbfPath, Encoding.UTF8))
-{        
+{
     var dbfRecord = new DbfRecord(dbfTable);
 
     while (dbfTable.Read(dbfRecord))
@@ -55,7 +93,9 @@ using (var dbfTable = new DbfTable(dbfPath, Encoding.UTF8))
 }
 ```
 
-There is also an implementation of DbDataReader:
+## DbDataReader implementation
+
+There is also an implementation of `DbDataReader`:
 
 ```csharp
 var options = new DbfDataReaderOptions
@@ -77,7 +117,9 @@ using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 }
 ```
 
-which also means you can bulk copy to MS SqlServer:
+### Bulk copy to SQL Server
+
+Because `DbfDataReader` is a `DbDataReader`, you can bulk copy to MS SQL Server:
 
 ```csharp
 var options = new DbfDataReaderOptions
@@ -105,7 +147,11 @@ using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 }
 ```
 
-Records can also be read asynchronously — `DbfDataReader` overrides `ReadAsync`, and `DbfTable` has `ReadAsync`/`ReadRecordAsync` counterparts. Each record is fetched with a single buffered asynchronous read and parsed in memory:
+## Async reading
+
+Records can also be read asynchronously — `DbfDataReader` overrides `ReadAsync`, and
+`DbfTable` has `ReadAsync`/`ReadRecordAsync` counterparts. Each record is fetched with a
+single buffered asynchronous read and parsed in memory:
 
 ```csharp
 var dbfPath = "path/file.dbf";
@@ -118,7 +164,11 @@ using (var dbfDataReader = new DbfDataReader(dbfPath))
 }
 ```
 
-Records can be accessed randomly by zero-based index using `Seek`, available on both `DbfTable` and `DbfDataReader`. The index of the record most recently read is available as `RecordIndex`:
+## Random access with Seek
+
+Records can be accessed randomly by zero-based index using `Seek`, available on both
+`DbfTable` and `DbfDataReader`. The index of the record most recently read is available
+as `RecordIndex`:
 
 ```csharp
 var dbfPath = "path/file.dbf";
@@ -133,6 +183,8 @@ using (var dbfDataReader = new DbfDataReader(dbfPath))
     }
 }
 ```
+
+## Compound index (.cdx) support
 
 Visual FoxPro compound index files (`.cdx`) can be opened and searched, and search results
 combined with `Seek` to jump straight to the matching records — `CdxKeyEntry.RecordIndex`
@@ -162,10 +214,13 @@ using (var cdxFile = new CdxFile(cdxPath, dbfTable.CurrentEncoding))
 ```
 
 `CdxIndex` also supports `EnumerateEntries()` (full in-order scan), `Count()`, and a
-`Search(Func<byte[], int>)` overload for range or prefix searches. Current limitations:
-only ascending indexes with byte-wise (MACHINE collation) character keys are searchable,
-index key expressions are exposed as text but not evaluated, and index entries include
-deleted records (check `DbfRecord.IsDeleted` after seeking).
+`Search(Func<byte[], int>)` overload for range or prefix searches.
+
+Current limitations: only ascending indexes with byte-wise (MACHINE collation) character
+keys are searchable, index key expressions are exposed as text but not evaluated, and
+index entries include deleted records (check `DbfRecord.IsDeleted` after seeking).
+
+## Typed queries with Query&lt;T&gt;
 
 Rows can be mapped straight to your own types. `DbfTable.Query<T>()` is a typed query
 builder whose `Where`/`OrderBy` lambdas are translated into the same query engine — the
@@ -196,7 +251,9 @@ Supported inside `Where`: comparisons, `&&`/`||`/`!`, `== null`/`!= null` (trans
 `.IncludeDeleted()` is called. Anything that cannot be translated throws
 `NotSupportedException` — nothing falls back to silent in-memory evaluation.
 
-There is also an implementation of DbConnection so you can query a folder of files e.g.
+## SQL queries with DbfDbConnection
+
+There is also an implementation of `DbConnection` so you can query a folder of files:
 
 ```csharp
 var dbConnection = new DbfDbConnection(string.Empty, string.Empty);
@@ -213,6 +270,8 @@ while (await reader.ReadAsync())
     var valueCol11 = reader.GetDecimal(10);
 }
 ```
+
+### Supported SQL
 
 The command text supports column lists with optional aliases, a row limit, `WHERE`
 clauses with named (`@name`) or positional (`?`) parameters, and `ORDER BY`:
@@ -234,17 +293,6 @@ command.Parameters.AddWithValue("@id", "A1");
 var value = command.ExecuteScalar();
 ```
 
-`DbfDbConnection` also offers the same row-to-type mapping over SQL text in the style of
-Dapper — and the provider is Dapper-compatible if you prefer the real thing:
-
-```csharp
-var points = dbConnection.Query<GpsPoint>(
-    "select Point_ID, Max_PDOP, Date_Visit from dbase_03.dbf where Point_ID = @id",
-    new { id = "A1" });
-var ids = dbConnection.Query<string>("select Point_ID from dbase_03.dbf"); // scalar rows
-// also QueryAsync<T> and QueryFirstOrDefault<T>
-```
-
 Predicates support `=`, `<>`, `!=`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `LIKE`
 (`%` and `_`), `IS [NOT] NULL`, `AND`/`OR`/`NOT` and parentheses. String comparisons are
 ordinal, case-sensitive and ignore trailing spaces; comparisons involving `NULL` follow
@@ -258,19 +306,36 @@ trusted); when an index covers the `WHERE` exactly, the count comes from the ind
 without reading any rows; otherwise rows are read and filtered without being projected.
 The same fast paths back `DbfQuery<T>.Count()`.
 
+### Dapper-style typed queries
+
+`DbfDbConnection` also offers the same row-to-type mapping over SQL text in the style of
+Dapper — and the provider is Dapper-compatible if you prefer the real thing:
+
+```csharp
+var points = dbConnection.Query<GpsPoint>(
+    "select Point_ID, Max_PDOP, Date_Visit from dbase_03.dbf where Point_ID = @id",
+    new { id = "A1" });
+var ids = dbConnection.Query<string>("select Point_ID from dbase_03.dbf"); // scalar rows
+// also QueryAsync<T> and QueryFirstOrDefault<T>
+```
+
+### Automatic index usage
+
 When a sidecar compound index (`file.cdx`) exists next to the table, queries use it
 automatically: equality, range and `BETWEEN` predicates on indexed character, integer,
 numeric, double and date columns (plus prefix `LIKE` on character columns) become index
 seeks, and an `ORDER BY` matching an index tag — ascending or descending — reads in
 index order instead of sorting (descending order is served by reversing the ascending
-tag). This applies to SQL text and to the `Query<T>` builder alike. The planner is
-conservative — index tags with dBASE `UNIQUE` or `FOR` filters, descending keys,
-expression keys, unsupported key types (datetime, currency), or non-ASCII character
-search values fall back to a full table scan, and the full `WHERE` clause is always
-re-applied to every row an index returns. Set `UseIndexes=false` in the connection string (or call
-`.WithoutIndexes()` on the builder) to force scans, and use
-`DbfDbCommand.ExplainPlan()` or `DbfQuery<T>.ExplainPlan()` to see which path a query
-takes:
+tag). This applies to SQL text and to the `Query<T>` builder alike.
+
+The planner is conservative — index tags with dBASE `UNIQUE` or `FOR` filters,
+descending keys, expression keys, unsupported key types (datetime, currency), or
+non-ASCII character search values fall back to a full table scan, and the full `WHERE`
+clause is always re-applied to every row an index returns.
+
+Set `UseIndexes=false` in the connection string (or call `.WithoutIndexes()` on the
+builder) to force scans, and use `DbfDbCommand.ExplainPlan()` or
+`DbfQuery<T>.ExplainPlan()` to see which path a query takes:
 
 ```csharp
 var command = (DbfDbCommand)dbConnection.CreateCommand();
@@ -278,45 +343,26 @@ command.CommandText = "select * from setup.dbf where KEY_NAME = 'CONTACTS'";
 Console.WriteLine(command.ExplainPlan()); // index seek (=) on tag 'KEY_NAME'
 ```
 
+### Connection string options
+
 The connection string supports the options available in `DbfDataReaderOptions`:
 
-- Folder - the folder containing the files to be queried
-  - required
-  - string
-- Encoding - the encoding to be used
-  - optional
-  - string
-  - defaults to null and uses the language from the DBF header
-  - valid Encoding web name from [Encoding](https://learn.microsoft.com/en-us/dotnet/api/System.Text.Encoding) e.g. 'ascii'
-- ReadFloatsAsDecimals - whether to read floats as decimals
-  - optional
-  - boolean
-  - defaults to false
-- SkipDeletedRecords - whether to skip deleted records
-  - optional
-  - boolean
-  - defaults to true
-- StringTrimming - string timming behaviour
-  - optional
-  - string
-  - defaults to 'None'
-  - one of 'None', 'Trim', 'TrimStart', 'TrimEnd'
-- UseIndexes - whether to use sidecar .cdx compound indexes automatically
-  - optional
-  - boolean
-  - defaults to true
+| Option | Required | Type | Default | Description |
+| --- | --- | --- | --- | --- |
+| `Folder` | yes | string | — | The folder containing the files to be queried |
+| `Encoding` | no | string | `null` (uses the language from the DBF header) | A valid encoding web name from [Encoding](https://learn.microsoft.com/en-us/dotnet/api/System.Text.Encoding), e.g. `ascii` |
+| `ReadFloatsAsDecimals` | no | boolean | `false` | Whether to read floats as decimals |
+| `SkipDeletedRecords` | no | boolean | `true` | Whether to skip deleted records |
+| `StringTrimming` | no | string | `None` | String trimming behaviour: one of `None`, `Trim`, `TrimStart`, `TrimEnd` |
+| `UseIndexes` | no | boolean | `true` | Whether to use sidecar `.cdx` compound indexes automatically |
 
+## Used by
 
-Used by 
+- [DbfBulkCopy](https://github.com/yellowfeather/DbfBulkCopy) — command line application
+  to bulk copy from DBF files to MS SQL Server
+- [dbf](https://github.com/yellowfeather/dbf) — command line utility to display DBF info
+  and contents
 
-- DbfBulkCopy
+## License
 
-    Command line application to bulk copy from DBF files to MS SqlServer
-    
-    https://github.com/yellowfeather/DbfBulkCopy
-
-- dbf
-
-    Command line utility to display DBF info and contents
-    
-    https://github.com/yellowfeather/dbf
+DbfDataReader is released under the [MIT License](LICENSE).
