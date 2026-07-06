@@ -105,6 +105,19 @@ using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 }
 ```
 
+Records can also be read asynchronously — `DbfDataReader` overrides `ReadAsync`, and `DbfTable` has `ReadAsync`/`ReadRecordAsync` counterparts. Each record is fetched with a single buffered asynchronous read and parsed in memory:
+
+```csharp
+var dbfPath = "path/file.dbf";
+using (var dbfDataReader = new DbfDataReader(dbfPath))
+{
+    while (await dbfDataReader.ReadAsync(cancellationToken))
+    {
+        var valueCol1 = dbfDataReader.GetString(0);
+    }
+}
+```
+
 Records can be accessed randomly by zero-based index using `Seek`, available on both `DbfTable` and `DbfDataReader`. The index of the record most recently read is available as `RecordIndex`:
 
 ```csharp

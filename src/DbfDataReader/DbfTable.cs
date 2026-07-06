@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
@@ -187,9 +189,20 @@ namespace DbfDataReader
             return !dbfRecord.Read(Stream) ? null : dbfRecord;
         }
 
+        public async ValueTask<DbfRecord> ReadRecordAsync(CancellationToken cancellationToken = default)
+        {
+            var dbfRecord = new DbfRecord(this);
+            return !await dbfRecord.ReadAsync(Stream, cancellationToken).ConfigureAwait(false) ? null : dbfRecord;
+        }
+
         public bool Read(DbfRecord dbfRecord)
         {
             return dbfRecord.Read(Stream);
+        }
+
+        public ValueTask<bool> ReadAsync(DbfRecord dbfRecord, CancellationToken cancellationToken = default)
+        {
+            return dbfRecord.ReadAsync(Stream, cancellationToken);
         }
 
         public void Seek(int recordIndex)
