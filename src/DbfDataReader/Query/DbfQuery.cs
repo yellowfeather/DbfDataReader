@@ -130,18 +130,69 @@ namespace DbfDataReader
         {
             var plan = Prepare();
             var record = new DbfRecord(_table);
-            Func<int, object> accessor = record.GetValue;
 
             _table.Seek(0);
 
+            var limit = _take ?? int.MaxValue;
+            var recordIndexes = plan.AccessPlan.RecordIndexes;
+
+            // an index result that is exactly the matching rows (or any index result
+            // when there is no filter) can be counted without reading row values
+            var indexCountsRows = recordIndexes != null &&
+                                  (plan.Filter == null || plan.AccessPlan.CoversWhereExactly);
+            if (indexCountsRows)
+            {
+                return _includeDeleted
+                    ? Math.Min(recordIndexes.Count, limit)
+                    : CountWithStatusChecks(recordIndexes, record, limit);
+            }
+
+            // no filter: a status-only scan skips value parsing entirely
+            if (plan.Filter == null) return CountByStatusScan(record, limit);
+
+            return CountByReadingRows(plan, record, limit);
+        }
+
+        private int CountWithStatusChecks(IReadOnlyList<int> recordIndexes, DbfRecord record, int limit)
+        {
+            var count = 0;
+            foreach (var recordIndex in recordIndexes)
+            {
+                if (count >= limit) break;
+
+                _table.Seek(recordIndex);
+                if (!_table.ReadRaw(record) || record.IsDeleted) continue;
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private int CountByStatusScan(DbfRecord record, int limit)
+        {
+            var count = 0;
+            while (count < limit && _table.ReadRaw(record))
+            {
+                if (!_includeDeleted && record.IsDeleted) continue;
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private int CountByReadingRows(QueryPlan plan, DbfRecord record, int limit)
+        {
+            Func<int, object> accessor = record.GetValue;
+
             var position = 0;
             var count = 0;
-            while (ReadNextRow(plan, record, ref position))
+            while (count < limit && ReadNextRow(plan, record, ref position))
             {
                 if (!Accept(record, plan, accessor)) continue;
 
                 count++;
-                if (_take != null && count >= _take.Value) break;
             }
 
             return count;

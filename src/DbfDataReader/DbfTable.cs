@@ -200,6 +200,13 @@ namespace DbfDataReader
             return dbfRecord.Read(Stream);
         }
 
+        // advances to the next record reading only its status byte, without parsing
+        // column values
+        internal bool ReadRaw(DbfRecord dbfRecord)
+        {
+            return dbfRecord.ReadRaw(Stream);
+        }
+
         public ValueTask<bool> ReadAsync(DbfRecord dbfRecord, CancellationToken cancellationToken = default)
         {
             return dbfRecord.ReadAsync(Stream, cancellationToken);

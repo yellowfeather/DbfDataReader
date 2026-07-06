@@ -73,6 +73,9 @@ namespace DbfDataReader
             var filePath = GetFilePath(folder, statement.TableName);
 
             var options = dbfDbConnection.Options;
+
+            if (statement.IsCountAll) return ExecuteCount(statement, filePath, options);
+
             var reader = new DbfDataReader(filePath, options);
 
             // a plain unfiltered select-all needs no projection, filter, ordering or row
@@ -117,6 +120,18 @@ namespace DbfDataReader
             using (var table = new DbfTable(filePath, options.Encoding, options.StringTrimming,
                        options.ReadFloatsAsDecimals))
             {
+                if (statement.IsCountAll)
+                {
+                    SqlBinder.Bind(statement, table.Columns);
+                    if (statement.Where == null) return CountExecutor.StatusScanDescription;
+
+                    var (namedCount, positionalCount) = CollectParameters();
+                    var countPlan = QueryPlanner.CreatePlan(statement.Where,
+                        Array.Empty<(int Ordinal, bool Descending)>(), table, options.UseIndexes, namedCount,
+                        positionalCount);
+                    return CountExecutor.DescribeStrategy(countPlan, options.SkipDeletedRecords);
+                }
+
                 if (statement.IsSelectAll && statement.Top == null && statement.Where == null &&
                     statement.OrderBy.Count == 0)
                     return "full scan (select all)";
@@ -128,6 +143,20 @@ namespace DbfDataReader
 
                 var sortNote = statement.OrderBy.Count > 0 && !plan.SortSatisfied ? "; in-memory sort" : "";
                 return plan.Description + sortNote;
+            }
+        }
+
+        private DbDataReader ExecuteCount(SelectStatement statement, string filePath, DbfDataReaderOptions options)
+        {
+            using (var reader = new DbfDataReader(filePath, options))
+            {
+                SqlBinder.Bind(statement, reader.DbfTable.Columns);
+
+                var (namedParameters, positionalParameters) = CollectParameters();
+                var (count, _) = CountExecutor.Execute(statement, reader, options, namedParameters,
+                    positionalParameters);
+
+                return new ScalarDataReader("count", count, statement.Top == 0 ? 0 : 1);
             }
         }
 

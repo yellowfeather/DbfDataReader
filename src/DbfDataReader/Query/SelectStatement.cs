@@ -4,10 +4,11 @@ namespace DbfDataReader.Query
 {
     internal sealed class SelectStatement
     {
-        public SelectStatement(bool isSelectAll, IReadOnlyList<SelectColumn> columns, string tableName,
-            SqlExpression where, IReadOnlyList<OrderByItem> orderBy, int? top)
+        public SelectStatement(bool isSelectAll, bool isCountAll, IReadOnlyList<SelectColumn> columns,
+            string tableName, SqlExpression where, IReadOnlyList<OrderByItem> orderBy, int? top)
         {
             IsSelectAll = isSelectAll;
+            IsCountAll = isCountAll;
             Columns = columns;
             TableName = tableName;
             Where = where;
@@ -16,6 +17,9 @@ namespace DbfDataReader.Query
         }
 
         public bool IsSelectAll { get; }
+
+        // the statement is SELECT COUNT(*); Columns is empty
+        public bool IsCountAll { get; }
 
         // empty when IsSelectAll
         public IReadOnlyList<SelectColumn> Columns { get; }

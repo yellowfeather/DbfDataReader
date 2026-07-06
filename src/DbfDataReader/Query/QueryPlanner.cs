@@ -63,13 +63,16 @@ namespace DbfDataReader.Query
 
                 if (where != null)
                 {
-                    var candidate = FindBestCandidate(where, tags, table.CurrentEncoding, namedParameters,
+                    var conjuncts = FlattenConjuncts(where).ToList();
+                    var candidate = FindBestCandidate(conjuncts, tags, table.CurrentEncoding, namedParameters,
                         positionalParameters);
                     if (candidate != null)
                     {
                         var sortSatisfied = candidate.Ordinal == orderOrdinal;
+                        var coversWhereExactly = candidate.IsExact && conjuncts.Count == 1;
                         var recordIndexes = ExecuteSearch(candidate, sortSatisfied);
-                        return QueryAccessPlan.Index(recordIndexes, sortSatisfied, candidate.Description);
+                        return QueryAccessPlan.Index(recordIndexes, sortSatisfied, coversWhereExactly,
+                            candidate.Description);
                     }
                 }
 
@@ -78,7 +81,8 @@ namespace DbfDataReader.Query
                     var entries = orderTag.Index.EnumerateEntries().ToList();
                     StabilizeDuplicateKeyRuns(entries, orderTag.Index.Header.KeyLength, orderTag.PadByte);
                     var recordIndexes = ToRecordIndexes(entries, sortSatisfied: true);
-                    return QueryAccessPlan.Index(recordIndexes, true, $"index order scan on tag '{orderTag.Name}'");
+                    return QueryAccessPlan.Index(recordIndexes, true, false,
+                        $"index order scan on tag '{orderTag.Name}'");
                 }
 
                 return QueryAccessPlan.FullScan("no matching index tag");
@@ -161,7 +165,7 @@ namespace DbfDataReader.Query
         private sealed class Candidate
         {
             public Candidate(CandidateKind kind, int ordinal, CdxIndex index, string description, byte padByte,
-                byte[] equalityKey, Func<byte[], int> comparison)
+                byte[] equalityKey, Func<byte[], int> comparison, bool isExact)
             {
                 Kind = kind;
                 Ordinal = ordinal;
@@ -170,6 +174,7 @@ namespace DbfDataReader.Query
                 PadByte = padByte;
                 EqualityKey = equalityKey;
                 Comparison = comparison;
+                IsExact = isExact;
             }
 
             public CandidateKind Kind { get; }
@@ -180,20 +185,26 @@ namespace DbfDataReader.Query
             public byte[] EqualityKey { get; } // character equality searches
             public Func<byte[], int> Comparison { get; }
 
-            // no key and no comparison: a provably empty result
+            // the search returns exactly the rows matching this conjunct, with no need
+            // for a residual filter; double and date keys are inexact because decimal
+            // bounds can collapse when converted to doubles, and LIKE always needs the
+            // pattern re-applied
+            public bool IsExact { get; }
+
+            // no key and no comparison: a provably empty result (exact by definition)
             public static Candidate Empty(CandidateKind kind, IndexTag tag, int ordinal, string description)
             {
-                return new Candidate(kind, ordinal, tag.Index, description, tag.PadByte, null, null);
+                return new Candidate(kind, ordinal, tag.Index, description, tag.PadByte, null, null, true);
             }
         }
 
-        private static Candidate FindBestCandidate(SqlExpression where, Dictionary<int, IndexTag> tags,
-            Encoding encoding, IReadOnlyDictionary<string, object> namedParameters,
-            IReadOnlyList<object> positionalParameters)
+        private static Candidate FindBestCandidate(IReadOnlyList<SqlExpression> conjuncts,
+            Dictionary<int, IndexTag> tags, Encoding encoding,
+            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
         {
             Candidate best = null;
 
-            foreach (var conjunct in FlattenConjuncts(where))
+            foreach (var conjunct in conjuncts)
             {
                 var candidate = TryCreateCandidate(conjunct, tags, encoding, namedParameters, positionalParameters);
                 if (candidate == null) continue;
@@ -316,7 +327,7 @@ namespace DbfDataReader.Query
                 // an equality value that cannot fit in the key is provably empty
                 return fits
                     ? new Candidate(CandidateKind.Equality, column.Ordinal, tag.Index,
-                        $"index seek (=) on tag '{tag.Name}'", tag.PadByte, target, null)
+                        $"index seek (=) on tag '{tag.Name}'", tag.PadByte, target, null, true)
                     : Candidate.Empty(CandidateKind.Equality, tag, column.Ordinal,
                         $"index seek (=) on tag '{tag.Name}'");
             }
@@ -327,7 +338,7 @@ namespace DbfDataReader.Query
             if (comparison == null) return null;
 
             return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index,
-                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison);
+                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison, true);
         }
 
         private static Func<byte[], int> CreateTextRangeComparison(SqlBinaryOperator op, byte[] target)
@@ -362,7 +373,7 @@ namespace DbfDataReader.Query
                 var target = CdxKeyEncoder.EncodeInteger((int)number);
                 return new Candidate(CandidateKind.Equality, column.Ordinal, tag.Index,
                     $"index seek (=) on tag '{tag.Name}'", tag.PadByte, null,
-                    stored => CompareBinary(stored, target));
+                    stored => CompareBinary(stored, target), true);
             }
 
             // convert the bound to the integer domain; strict operators become
@@ -385,7 +396,7 @@ namespace DbfDataReader.Query
             var comparison = isLowerBound ? GreaterOrEqual(key) : LessOrEqual(key);
 
             return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index,
-                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison);
+                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison, true);
         }
 
         private static decimal AdjustIntegerBound(decimal number, SqlBinaryOperator op)
@@ -422,7 +433,7 @@ namespace DbfDataReader.Query
             {
                 return new Candidate(CandidateKind.Equality, column.Ordinal, tag.Index,
                     $"index seek (=) on tag '{tag.Name}'", tag.PadByte, null,
-                    stored => CompareBinary(stored, target));
+                    stored => CompareBinary(stored, target), false);
             }
 
             // strict bounds stay inclusive at the key level: converting decimals to
@@ -432,7 +443,7 @@ namespace DbfDataReader.Query
             var comparison = isLowerBound ? GreaterOrEqual(target) : LessOrEqual(target);
 
             return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index,
-                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison);
+                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison, false);
         }
 
         private static Candidate TryCreateBetweenCandidate(SqlColumnExpression column, SqlBetweenExpression between,
@@ -456,12 +467,12 @@ namespace DbfDataReader.Query
                 case DbfColumnType.Double:
                     return TryGetNumber(lowValue, out var lowNumber) && TryGetNumber(highValue, out var highNumber)
                         ? CreateBinaryBetweenCandidate(column, CdxKeyEncoder.EncodeDouble((double)lowNumber),
-                            CdxKeyEncoder.EncodeDouble((double)highNumber), tag, description)
+                            CdxKeyEncoder.EncodeDouble((double)highNumber), tag, description, isExact: false)
                         : null;
                 case DbfColumnType.Date:
                     return TryGetDate(lowValue, out var lowDate) && TryGetDate(highValue, out var highDate)
                         ? CreateBinaryBetweenCandidate(column, CdxKeyEncoder.EncodeDate(lowDate),
-                            CdxKeyEncoder.EncodeDate(highDate), tag, description)
+                            CdxKeyEncoder.EncodeDate(highDate), tag, description, isExact: false)
                         : null;
                 default:
                     return null;
@@ -485,7 +496,7 @@ namespace DbfDataReader.Query
             }
 
             return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index, description, tag.PadByte, null,
-                Comparison);
+                Comparison, true);
         }
 
         private static Candidate TryCreateIntegerBetweenCandidate(SqlColumnExpression column, object lowValue,
@@ -503,11 +514,11 @@ namespace DbfDataReader.Query
             var lowKey = CdxKeyEncoder.EncodeInteger((int)Math.Max(low, int.MinValue));
             var highKey = CdxKeyEncoder.EncodeInteger((int)Math.Min(high, int.MaxValue));
 
-            return CreateBinaryBetweenCandidate(column, lowKey, highKey, tag, description);
+            return CreateBinaryBetweenCandidate(column, lowKey, highKey, tag, description, isExact: true);
         }
 
         private static Candidate CreateBinaryBetweenCandidate(SqlColumnExpression column, byte[] low, byte[] high,
-            IndexTag tag, string description)
+            IndexTag tag, string description, bool isExact)
         {
             int Comparison(byte[] stored)
             {
@@ -516,7 +527,7 @@ namespace DbfDataReader.Query
             }
 
             return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index, description, tag.PadByte, null,
-                Comparison);
+                Comparison, isExact);
         }
 
         private static Candidate TryCreateLikeCandidate(SqlColumnExpression column, SqlLikeExpression like,
@@ -545,7 +556,7 @@ namespace DbfDataReader.Query
 
             return new Candidate(CandidateKind.LikePrefix, column.Ordinal, tag.Index,
                 $"index prefix scan (like) on tag '{tag.Name}'", tag.PadByte, null,
-                stored => CdxKeyComparer.Compare(stored, prefixBytes));
+                stored => CdxKeyComparer.Compare(stored, prefixBytes), false);
         }
 
         private static int CompareBinary(byte[] stored, byte[] target)
