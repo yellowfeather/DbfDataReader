@@ -69,6 +69,12 @@ namespace DbfDataReader.Query
             }
         }
 
+        internal static bool TryParseDateTime(string text, out DateTime value)
+        {
+            return DateTime.TryParseExact(text, DateTimeFormats, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out value);
+        }
+
         private static DateTime ToDateTime(object value, int position)
         {
             switch (value)
@@ -76,9 +82,7 @@ namespace DbfDataReader.Query
                 case DateTime dateTime:
                     return dateTime;
                 case string text:
-                    if (DateTime.TryParseExact(text, DateTimeFormats, CultureInfo.InvariantCulture,
-                            DateTimeStyles.None, out var parsed))
-                        return parsed;
+                    if (TryParseDateTime(text, out var parsed)) return parsed;
 
                     throw new InvalidOperationException(
                         $"Cannot convert '{text}' to a date at position {position}; " +
