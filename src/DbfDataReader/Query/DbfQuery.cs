@@ -71,8 +71,8 @@ namespace DbfDataReader
             return this;
         }
 
-        // a sidecar .cdx index is used automatically when it can serve the query;
-        // this forces a sequential scan instead
+        // by default a sidecar compound index file is used automatically when it can
+        // serve the query. Calling this method forces a sequential table scan.
         public DbfQuery<T> WithoutIndexes()
         {
             _useIndexes = false;
@@ -181,30 +181,15 @@ namespace DbfDataReader
             var plan = Prepare();
             var record = new DbfRecord(_table);
             Func<int, object> accessor = record.GetValue;
-            var recordIndexes = plan.AccessPlan.RecordIndexes;
-            var position = 0;
-
-            async Task<bool> MoveNextAsync()
-            {
-                if (recordIndexes == null)
-                    return await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false);
-
-                while (position < recordIndexes.Count)
-                {
-                    _table.Seek(recordIndexes[position]);
-                    position++;
-                    if (await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false)) return true;
-                }
-
-                return false;
-            }
+            var cursor = new RowCursor();
 
             _table.Seek(0);
 
             if (!SortRequired(plan))
             {
                 var returned = 0;
-                while (NotLimited(returned) && await MoveNextAsync().ConfigureAwait(false))
+                while (NotLimited(returned) &&
+                       await ReadNextRowAsync(plan, record, cursor, cancellationToken).ConfigureAwait(false))
                 {
                     if (!Accept(record, plan, accessor)) continue;
 
@@ -216,7 +201,7 @@ namespace DbfDataReader
             }
 
             var buffer = new List<(T Item, object[] Keys)>();
-            while (await MoveNextAsync().ConfigureAwait(false))
+            while (await ReadNextRowAsync(plan, record, cursor, cancellationToken).ConfigureAwait(false))
             {
                 if (!Accept(record, plan, accessor)) continue;
 
@@ -227,6 +212,28 @@ namespace DbfDataReader
             {
                 yield return item;
             }
+        }
+
+        private sealed class RowCursor
+        {
+            public int Position;
+        }
+
+        private async Task<bool> ReadNextRowAsync(QueryPlan plan, DbfRecord record, RowCursor cursor,
+            CancellationToken cancellationToken)
+        {
+            var recordIndexes = plan.AccessPlan.RecordIndexes;
+            if (recordIndexes == null)
+                return await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false);
+
+            while (cursor.Position < recordIndexes.Count)
+            {
+                _table.Seek(recordIndexes[cursor.Position]);
+                cursor.Position++;
+                if (await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false)) return true;
+            }
+
+            return false;
         }
 
         private IEnumerable<T> Execute()

@@ -243,38 +243,39 @@ namespace DbfDataReader.Query
                 return null;
 
             var keyLength = tag.Index.Header.KeyLength;
+            var fits = TryPadKey(text, keyLength, encoding, out var target);
 
             if (op == SqlBinaryOperator.Equal)
             {
-                var key = TryPadKey(text, keyLength, encoding);
+                // an equality value that cannot fit in the key is provably empty
                 return new Candidate(CandidateKind.Equality, column.Ordinal, tag.Index,
-                    $"index seek (=) on tag '{tag.Name}'", key, null);
+                    $"index seek (=) on tag '{tag.Name}'", fits ? target : null, null);
             }
 
-            var target = TryPadKey(text, keyLength, encoding);
-            if (target == null) return null; // over-long bound: leave it to the scan
+            if (!fits) return null; // over-long bound: leave it to the scan
 
-            Func<byte[], int> comparison;
-            switch (op)
-            {
-                case SqlBinaryOperator.GreaterThanOrEqual:
-                    comparison = stored => CdxKeyComparer.Compare(stored, target) >= 0 ? 0 : -1;
-                    break;
-                case SqlBinaryOperator.GreaterThan:
-                    comparison = stored => CdxKeyComparer.Compare(stored, target) > 0 ? 0 : -1;
-                    break;
-                case SqlBinaryOperator.LessThanOrEqual:
-                    comparison = stored => CdxKeyComparer.Compare(stored, target) <= 0 ? 0 : 1;
-                    break;
-                case SqlBinaryOperator.LessThan:
-                    comparison = stored => CdxKeyComparer.Compare(stored, target) < 0 ? 0 : 1;
-                    break;
-                default:
-                    return null;
-            }
+            var comparison = CreateRangeComparison(op, target);
+            if (comparison == null) return null;
 
             return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index,
                 $"index range scan on tag '{tag.Name}'", null, comparison);
+        }
+
+        private static Func<byte[], int> CreateRangeComparison(SqlBinaryOperator op, byte[] target)
+        {
+            switch (op)
+            {
+                case SqlBinaryOperator.GreaterThanOrEqual:
+                    return stored => CdxKeyComparer.Compare(stored, target) >= 0 ? 0 : -1;
+                case SqlBinaryOperator.GreaterThan:
+                    return stored => CdxKeyComparer.Compare(stored, target) > 0 ? 0 : -1;
+                case SqlBinaryOperator.LessThanOrEqual:
+                    return stored => CdxKeyComparer.Compare(stored, target) <= 0 ? 0 : 1;
+                case SqlBinaryOperator.LessThan:
+                    return stored => CdxKeyComparer.Compare(stored, target) < 0 ? 0 : 1;
+                default:
+                    return null;
+            }
         }
 
         private static Candidate TryCreateBetweenCandidate(SqlColumnExpression column, SqlBetweenExpression between,
@@ -288,9 +289,8 @@ namespace DbfDataReader.Query
                 return null;
 
             var keyLength = tag.Index.Header.KeyLength;
-            var low = TryPadKey(lowText, keyLength, encoding);
-            var high = TryPadKey(highText, keyLength, encoding);
-            if (low == null || high == null) return null;
+            if (!TryPadKey(lowText, keyLength, encoding, out var low)) return null;
+            if (!TryPadKey(highText, keyLength, encoding, out var high)) return null;
 
             int Comparison(byte[] stored)
             {
@@ -359,29 +359,33 @@ namespace DbfDataReader.Query
 
             if (value is char character) value = character.ToString();
             if (!(value is string candidate)) return false;
-
-            foreach (var c in candidate)
-            {
-                if (c < 0x20 || c > 0x7E) return false;
-            }
+            if (!candidate.All(c => c >= 0x20 && c <= 0x7E)) return false;
 
             text = candidate;
             return true;
         }
 
-        // trims trailing spaces (the dialect ignores them) and pads to the key length;
-        // null when the trimmed value cannot fit in a key
-        private static byte[] TryPadKey(string text, int keyLength, Encoding encoding)
+        // trims trailing spaces, which the dialect ignores, and pads the value to the
+        // key length. Fails when the trimmed value cannot fit in a key.
+        private static bool TryPadKey(string text, int keyLength, Encoding encoding, out byte[] key)
         {
+            key = null;
+
             var bytes = encoding.GetBytes(text.TrimEnd(' '));
-            if (bytes.Length > keyLength) return null;
-            if (bytes.Length == keyLength) return bytes;
+            if (bytes.Length > keyLength) return false;
+
+            if (bytes.Length == keyLength)
+            {
+                key = bytes;
+                return true;
+            }
 
             var padded = new byte[keyLength];
             Array.Copy(bytes, padded, bytes.Length);
             for (var i = bytes.Length; i < keyLength; i++) padded[i] = Pad;
 
-            return padded;
+            key = padded;
+            return true;
         }
 
         private static IReadOnlyList<int> ExecuteSearch(Candidate candidate, bool sortSatisfied)
@@ -444,11 +448,7 @@ namespace DbfDataReader.Query
 
         private static IReadOnlyList<int> ToRecordIndexes(List<CdxKeyEntry> entries, bool sortSatisfied)
         {
-            var recordIndexes = new List<int>(entries.Count);
-            foreach (var entry in entries)
-            {
-                if (entry.RecordIndex >= 0) recordIndexes.Add(entry.RecordIndex);
-            }
+            var recordIndexes = entries.Select(entry => entry.RecordIndex).Where(index => index >= 0).ToList();
 
             // when the caller sorts anyway, reading in record order is better for I/O
             if (!sortSatisfied) recordIndexes.Sort();
@@ -461,12 +461,7 @@ namespace DbfDataReader.Query
             if (string.IsNullOrEmpty(keyExpression)) return false;
             if (!char.IsLetter(keyExpression[0]) && keyExpression[0] != '_') return false;
 
-            foreach (var c in keyExpression)
-            {
-                if (!char.IsLetterOrDigit(c) && c != '_') return false;
-            }
-
-            return true;
+            return keyExpression.All(c => char.IsLetterOrDigit(c) || c == '_');
         }
 
         private static int FindColumn(IList<DbfColumn> columns, string name)
@@ -490,12 +485,7 @@ namespace DbfDataReader.Query
                 Path.ChangeExtension(dbfPath, "CDX")
             };
 
-            foreach (var path in paths)
-            {
-                if (File.Exists(path)) return path;
-            }
-
-            return null;
+            return paths.FirstOrDefault(File.Exists);
         }
     }
 }
