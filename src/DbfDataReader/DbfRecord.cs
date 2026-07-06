@@ -19,6 +19,12 @@ namespace DbfDataReader
         private readonly long _dataOffset;
         private readonly byte[] _buffer;
 
+        // column-subset parsing (issue #296): when enabled, an ordinal's value is only
+        // readable after it has been parsed for the current row; the stamps guard
+        // against exposing the previous row's content through the reused value objects
+        private int[] _parsedVersions;
+        private int _rowVersion;
+
         public DbfRecord(DbfTable dbfTable)
         {
             _encoding = dbfTable.CurrentEncoding;
@@ -194,6 +200,8 @@ namespace DbfDataReader
 
         private bool ReadStatus(long position)
         {
+            _rowVersion++;
+
             var status = _buffer[0];
             if (status == EndOfFile) return false;
 
@@ -212,21 +220,79 @@ namespace DbfDataReader
                 var slice = span.Slice(dbfValue.Start, dbfValue.Length);
                 dbfValue.Read(slice);
             }
+
+            MarkAllParsed();
+        }
+
+        // restricts value access to ordinals parsed for the current row; used by the
+        // query engine, which parses only the columns a query references
+        internal void EnableSubsetParsing()
+        {
+            _parsedVersions ??= new int[Values.Count];
+        }
+
+        // parses only the given ordinals for the current row; may be called again with
+        // further ordinals once the row is known to be needed. Returns false when the
+        // record data extends past the end of a stream (matching Read's contract).
+        internal bool TryParseValues(int[] ordinals)
+        {
+            if (_parsedVersions == null)
+                throw new InvalidOperationException(
+                    "EnableSubsetParsing must be called before parsing column subsets.");
+
+            try
+            {
+                var span = new ReadOnlySpan<byte>(_buffer);
+                foreach (var ordinal in ordinals)
+                {
+                    var dbfValue = Values[ordinal];
+                    dbfValue.Read(span.Slice(dbfValue.Start, dbfValue.Length));
+                    _parsedVersions[ordinal] = _rowVersion;
+                }
+
+                return true;
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
+            }
+        }
+
+        private void MarkAllParsed()
+        {
+            if (_parsedVersions == null) return;
+
+            for (var ordinal = 0; ordinal < _parsedVersions.Length; ordinal++)
+            {
+                _parsedVersions[ordinal] = _rowVersion;
+            }
+        }
+
+        private void EnsureParsed(int ordinal)
+        {
+            if (_parsedVersions != null && _parsedVersions[ordinal] != _rowVersion)
+            {
+                throw new InvalidOperationException(
+                    $"The value at ordinal {ordinal} was not parsed for the current row; the query's column subset does not include it.");
+            }
         }
 
         public object GetValue(int ordinal)
         {
+            EnsureParsed(ordinal);
             var dbfValue = Values[ordinal];
             return dbfValue.GetValue();
         }
 
         public bool IsNull(int ordinal)
         {
+            EnsureParsed(ordinal);
             return Values[ordinal].IsNull;
         }
 
         public T GetValue<T>(int ordinal)
         {
+            EnsureParsed(ordinal);
             var dbfValue = Values[ordinal];
             if (dbfValue is DbfValue<T> typedValue)
             {
@@ -242,6 +308,7 @@ namespace DbfDataReader
         // avoids boxing the value on the way out
         internal T GetStructValue<T>(int ordinal) where T : struct
         {
+            EnsureParsed(ordinal);
             if (Values[ordinal] is DbfValue<T?> typedValue)
             {
                 var value = typedValue.Value;
@@ -275,6 +342,7 @@ namespace DbfDataReader
 
         public string GetStringValue(int ordinal)
         {
+            EnsureParsed(ordinal);
             var dbfValue = Values[ordinal];
             try
             {

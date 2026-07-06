@@ -207,6 +207,11 @@ namespace DbfDataReader
             return dbfRecord.ReadRaw(Stream);
         }
 
+        internal ValueTask<bool> ReadRawAsync(DbfRecord dbfRecord, CancellationToken cancellationToken = default)
+        {
+            return dbfRecord.ReadRawAsync(Stream, cancellationToken);
+        }
+
         public ValueTask<bool> ReadAsync(DbfRecord dbfRecord, CancellationToken cancellationToken = default)
         {
             return dbfRecord.ReadAsync(Stream, cancellationToken);
