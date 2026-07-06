@@ -153,8 +153,7 @@ public class QueryIndexTests
     }
 
     [Theory]
-    [InlineData("select * from setup.dbf where VALUE = 1", "no matching index tag")] // integer-keyed tags unsupported
-    [InlineData("select * from calls.dbf where CONTACT_ID = 1", "no usable index tags")]
+    [InlineData("select * from setup.dbf where VALUE = 1", "no matching index tag")] // VALUE has no tag
     [InlineData("select * from setup.dbf where KEY_NAME <> 'CALLS'", "no matching index tag")]
     [InlineData("select * from setup.dbf where KEY_NAME like '%S'", "no matching index tag")] // no usable prefix
     public void Should_fall_back_to_a_scan_for_unindexable_predicates(string commandText, string expectedReason)
