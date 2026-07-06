@@ -215,5 +215,11 @@ namespace DbfDataReader
 
             Stream.Seek(DataOffset + (long) recordIndex * Header.RecordLength, SeekOrigin.Begin);
         }
+
+        // a typed query over this table; T's settable properties define the columns read
+        public DbfQuery<T> Query<T>() where T : class
+        {
+            return new DbfQuery<T>(this);
+        }
     }
 }
