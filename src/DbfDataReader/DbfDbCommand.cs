@@ -68,16 +68,17 @@ namespace DbfDataReader
             }
             
             var statement = SqlParser.Parse(CommandText);
-            EnsureSupported(statement);
 
             var filePath = GetFilePath(folder, statement.TableName);
 
             var options = dbfDbConnection.Options;
             var reader = new DbfDataReader(filePath, options);
 
-            // a plain unfiltered select-all needs no projection, filter or row limit,
-            // so it stays on the raw reader
-            if (statement.IsSelectAll && statement.Top == null && statement.Where == null) return reader;
+            // a plain unfiltered select-all needs no projection, filter, ordering or row
+            // limit, so it stays on the raw reader
+            if (statement.IsSelectAll && statement.Top == null && statement.Where == null &&
+                statement.OrderBy.Count == 0)
+                return reader;
 
             try
             {
@@ -107,14 +108,6 @@ namespace DbfDataReader
             }
 
             return new SqlExpressionEvaluator(statement.Where, namedParameters, positionalParameters);
-        }
-
-        // execution catches up with the parser in later phases; parse everything,
-        // run what is implemented
-        private static void EnsureSupported(SelectStatement statement)
-        {
-            if (statement.OrderBy.Count > 0)
-                throw new NotSupportedException("ORDER BY is not supported yet.");
         }
 
         private static string GetFilePath(string folder, string fileName)

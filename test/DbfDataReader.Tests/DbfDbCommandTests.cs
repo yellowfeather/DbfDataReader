@@ -32,20 +32,6 @@ public class DbfDbCommandTests
         rowCount.ShouldBe(14);
     }
 
-    [Theory]
-    [InlineData("select * from dbase_03.dbf order by Point_ID", "ORDER BY")]
-    public void Should_throw_not_supported_for_parsed_but_unimplemented_features(string commandText,
-        string expectedFragment)
-    {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = commandText;
-
-        var exception = Should.Throw<NotSupportedException>(() => command.ExecuteReader());
-
-        exception.Message.ShouldContain(expectedFragment);
-    }
-
     [Fact]
     public void Should_throw_argument_exception_for_invalid_command_text()
     {
