@@ -25,3 +25,36 @@ Outliers
   DbfDataReaderBenchmarks.Sylvan: IterationTime=1.0000 s -> 3 outliers were removed (2.12 ms..2.18 ms)
   DbfDataReaderBenchmarks.NDbf: IterationTime=1.0000 s   -> 2 outliers were removed (4.37 ms, 4.44 ms)
 
+
+# v2.1.0 — automatic index use
+
+Generated 50,000-row table (65-byte records) with a compound index on `ID` (unique
+integers) and `CODE` (character keys, ~100 rows per value); see
+`BenchmarkTableGenerator` in `test/DbfDataReader.Benchmarks`. Each pair runs the same
+SQL through `DbfDbConnection` with `UseIndexes` on and off; the generated files are
+verified for index/scan equivalence before anything is measured.
+
+Reproduce with:
+`dotnet run -c Release --project test/DbfDataReader.Benchmarks -- --filter "*IndexQueryBenchmarks*"`
+
+BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.2, Job=ShortRun
+
+| Method          | Categories                   | Mean         | Ratio | Allocated   | Alloc Ratio |
+|---------------- |----------------------------- |-------------:|------:|------------:|------------:|
+| 'full scan'     | character seek (100 rows)    | 22,174.38 us | 1.000 | 16813.84 KB |       1.000 |
+| index           | character seek (100 rows)    |    156.94 us | 0.007 |    81.27 KB |       0.005 |
+|                 |                              |              |       |             |             |
+| 'read all rows' | count(*) all rows            | 21,752.63 us |  1.00 | 16804.55 KB |       1.000 |
+| 'status scan'   | count(*) all rows            | 15,131.75 us |  0.70 |    10.42 KB |       0.001 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | count(*) filtered (10k rows) | 23,582.86 us |  1.00 | 17980.82 KB |        1.00 |
+| 'index only'    | count(*) filtered (10k rows) |    972.50 us |  0.04 |  1201.05 KB |        0.07 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | equality seek (1 row)        | 22,998.16 us | 1.000 | 17980.99 KB |       1.000 |
+| index           | equality seek (1 row)        |     50.12 us | 0.002 |    31.98 KB |       0.002 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | range scan (100 rows)        | 23,776.99 us | 1.000 | 17983.64 KB |       1.000 |
+| index           | range scan (100 rows)        |    102.24 us | 0.004 |    81.12 KB |       0.005 |
+|                 |                              |              |       |             |             |
+| 'scan + sort'   | top 10 order by desc         | 60,556.31 us |  1.00 | 66357.99 KB |        1.00 |
+| index           | top 10 order by desc         |  2,986.39 us |  0.05 |  5661.96 KB |        0.09 |
