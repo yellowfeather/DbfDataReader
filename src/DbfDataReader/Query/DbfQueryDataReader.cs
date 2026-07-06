@@ -328,7 +328,10 @@ namespace DbfDataReader.Query
 
         public override bool IsDBNull(int ordinal)
         {
-            return GetValue(ordinal) == null;
+            var underlyingOrdinal = _ordinals[ordinal];
+            return _currentRow != null
+                ? _currentRow[underlyingOrdinal] == null
+                : _reader.IsDBNull(underlyingOrdinal);
         }
 
         public override bool GetBoolean(int ordinal)
