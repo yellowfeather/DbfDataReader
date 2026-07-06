@@ -163,6 +163,13 @@ namespace DbfDataReader
             return result;
         }
 
+        public void Seek(int recordIndex)
+        {
+            DbfTable.Seek(recordIndex);
+        }
+
+        public int RecordIndex => DbfRecord.RecordIndex;
+
         public override int Depth => throw new NotImplementedException();
 
         public override bool IsClosed => DbfTable.IsClosed;
