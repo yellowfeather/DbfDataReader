@@ -20,21 +20,21 @@ namespace DbfDataReader
         public DbfDataReader(string path, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(path, options.Encoding, options.StringTrimming);
+            DbfTable = new DbfTable(path, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfDataReader(Stream stream, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(stream, options.Encoding, options.StringTrimming);
+            DbfTable = new DbfTable(stream, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfDataReader(Stream stream, Stream memoStream, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(stream, memoStream, options.Encoding, options.StringTrimming);
+            DbfTable = new DbfTable(stream, memoStream, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
