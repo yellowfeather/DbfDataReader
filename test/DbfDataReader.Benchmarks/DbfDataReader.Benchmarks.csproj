@@ -14,9 +14,11 @@
     <Configuration>Release</Configuration>
   </PropertyGroup>
 
-  <!-- benchmark a specific published package with -p:DbfDataReaderVersion=x.y.z -->
+  <!-- benchmark a specific published package by setting the DbfDataReaderVersion
+       environment variable (NOT -p:, which BenchmarkDotNet's generated child build
+       does not inherit - see the README) -->
   <PropertyGroup>
-    <DbfDataReaderVersion Condition="'$(DbfDataReaderVersion)' == ''">2.1.0</DbfDataReaderVersion>
+    <DbfDataReaderVersion Condition="'$(DbfDataReaderVersion)' == ''">2.2.0</DbfDataReaderVersion>
   </PropertyGroup>
 
   <ItemGroup>
