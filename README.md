@@ -134,6 +134,39 @@ using (var dbfDataReader = new DbfDataReader(dbfPath))
 }
 ```
 
+Visual FoxPro compound index files (`.cdx`) can be opened and searched, and search results
+combined with `Seek` to jump straight to the matching records — `CdxKeyEntry.RecordIndex`
+converts the index's one-based record numbers to the zero-based indexes `Seek` expects:
+
+```csharp
+using DbfDataReader.Cdx;
+
+var dbfPath = "path/file.dbf";
+var cdxPath = "path/file.cdx";
+
+using (var dbfTable = new DbfTable(dbfPath))
+using (var cdxFile = new CdxFile(cdxPath, dbfTable.CurrentEncoding))
+{
+    var tagNames = cdxFile.TagNames;             // the named indexes ("tags") in the file
+
+    var index = cdxFile.GetIndex("CONTACT_ID");  // one tag; index.KeyExpression describes the key
+    var dbfRecord = new DbfRecord(dbfTable);
+
+    foreach (var entry in index.Search("C0000000042"))
+    {
+        dbfTable.Seek(entry.RecordIndex);
+        dbfTable.Read(dbfRecord);
+        // dbfRecord now holds the matching row
+    }
+}
+```
+
+`CdxIndex` also supports `EnumerateEntries()` (full in-order scan), `Count()`, and a
+`Search(Func<byte[], int>)` overload for range or prefix searches. Current limitations:
+only ascending indexes with byte-wise (MACHINE collation) character keys are searchable,
+index key expressions are exposed as text but not evaluated, and index entries include
+deleted records (check `DbfRecord.IsDeleted` after seeking).
+
 There is also an implementation of DbConnection so you can query a folder of files e.g.
 
 ```csharp
