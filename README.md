@@ -185,6 +185,15 @@ while (await reader.ReadAsync())
 }
 ```
 
+The command text supports column lists with optional aliases and a row limit:
+
+```sql
+select top 10 Point_ID as id, Date_Visit from dbase_03.dbf
+select Point_ID, Max_PDOP from dbase_03.dbf limit 5
+```
+
+`WHERE` and `ORDER BY` are parsed but not executable yet; they are being added in stages.
+
 The connection string supports the options available in `DbfDataReaderOptions`:
 
 - Folder - the folder containing the files to be queried
