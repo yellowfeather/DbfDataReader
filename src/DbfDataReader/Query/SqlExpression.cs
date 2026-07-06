@@ -4,6 +4,13 @@ namespace DbfDataReader.Query
 {
     internal abstract class SqlExpression
     {
+        protected SqlExpression(int position)
+        {
+            Position = position;
+        }
+
+        // zero-based character position within the command text, for error messages
+        public int Position { get; }
     }
 
     internal enum SqlBinaryOperator
@@ -21,6 +28,7 @@ namespace DbfDataReader.Query
     internal sealed class SqlBinaryExpression : SqlExpression
     {
         public SqlBinaryExpression(SqlBinaryOperator op, SqlExpression left, SqlExpression right)
+            : base(left.Position)
         {
             Operator = op;
             Left = left;
@@ -36,7 +44,8 @@ namespace DbfDataReader.Query
 
     internal sealed class SqlNotExpression : SqlExpression
     {
-        public SqlNotExpression(SqlExpression operand)
+        public SqlNotExpression(SqlExpression operand, int position)
+            : base(position)
         {
             Operand = operand;
         }
@@ -47,6 +56,7 @@ namespace DbfDataReader.Query
     internal sealed class SqlBetweenExpression : SqlExpression
     {
         public SqlBetweenExpression(SqlExpression operand, SqlExpression low, SqlExpression high, bool negated)
+            : base(operand.Position)
         {
             Operand = operand;
             Low = low;
@@ -66,6 +76,7 @@ namespace DbfDataReader.Query
     internal sealed class SqlInExpression : SqlExpression
     {
         public SqlInExpression(SqlExpression operand, IReadOnlyList<SqlExpression> values, bool negated)
+            : base(operand.Position)
         {
             Operand = operand;
             Values = values;
@@ -82,6 +93,7 @@ namespace DbfDataReader.Query
     internal sealed class SqlLikeExpression : SqlExpression
     {
         public SqlLikeExpression(SqlExpression operand, SqlExpression pattern, bool negated)
+            : base(operand.Position)
         {
             Operand = operand;
             Pattern = pattern;
@@ -98,6 +110,7 @@ namespace DbfDataReader.Query
     internal sealed class SqlIsNullExpression : SqlExpression
     {
         public SqlIsNullExpression(SqlExpression operand, bool negated)
+            : base(operand.Position)
         {
             Operand = operand;
             Negated = negated;
@@ -111,14 +124,12 @@ namespace DbfDataReader.Query
     internal sealed class SqlColumnExpression : SqlExpression
     {
         public SqlColumnExpression(string name, int position)
+            : base(position)
         {
             Name = name;
-            Position = position;
         }
 
         public string Name { get; }
-
-        public int Position { get; }
 
         // resolved by SqlBinder; -1 until bound
         public int Ordinal { get; set; } = -1;
@@ -126,7 +137,8 @@ namespace DbfDataReader.Query
 
     internal sealed class SqlLiteralExpression : SqlExpression
     {
-        public SqlLiteralExpression(object value)
+        public SqlLiteralExpression(object value, int position)
+            : base(position)
         {
             Value = value;
         }
@@ -138,10 +150,10 @@ namespace DbfDataReader.Query
     internal sealed class SqlParameterExpression : SqlExpression
     {
         public SqlParameterExpression(string name, int index, int position)
+            : base(position)
         {
             Name = name;
             Index = index;
-            Position = position;
         }
 
         // null for positional parameters
@@ -149,7 +161,5 @@ namespace DbfDataReader.Query
 
         // zero-based ordinal among positional parameters; -1 for named parameters
         public int Index { get; }
-
-        public int Position { get; }
     }
 }

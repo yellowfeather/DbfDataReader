@@ -134,7 +134,12 @@ namespace DbfDataReader.Query
 
             private SqlExpression ParseNotExpression()
             {
-                if (Match(SqlTokenType.NotKeyword)) return new SqlNotExpression(ParseNotExpression());
+                if (Current.Type == SqlTokenType.NotKeyword)
+                {
+                    var position = Current.Position;
+                    _index++;
+                    return new SqlNotExpression(ParseNotExpression(), position);
+                }
 
                 return ParsePredicate();
             }
@@ -220,23 +225,23 @@ namespace DbfDataReader.Query
                         return new SqlColumnExpression(token.Value, token.Position);
                     case SqlTokenType.StringLiteral:
                         _index++;
-                        return new SqlLiteralExpression(token.Value);
+                        return new SqlLiteralExpression(token.Value, token.Position);
                     case SqlTokenType.NumberLiteral:
                         _index++;
-                        return new SqlLiteralExpression(ParseNumber(token));
+                        return new SqlLiteralExpression(ParseNumber(token), token.Position);
                     case SqlTokenType.Minus:
                         _index++;
                         var number = Expect(SqlTokenType.NumberLiteral, "a number");
-                        return new SqlLiteralExpression(-ParseNumber(number));
+                        return new SqlLiteralExpression(-ParseNumber(number), token.Position);
                     case SqlTokenType.NullKeyword:
                         _index++;
-                        return new SqlLiteralExpression(null);
+                        return new SqlLiteralExpression(null, token.Position);
                     case SqlTokenType.TrueKeyword:
                         _index++;
-                        return new SqlLiteralExpression(true);
+                        return new SqlLiteralExpression(true, token.Position);
                     case SqlTokenType.FalseKeyword:
                         _index++;
-                        return new SqlLiteralExpression(false);
+                        return new SqlLiteralExpression(false, token.Position);
                     case SqlTokenType.NamedParameter:
                         _index++;
                         return new SqlParameterExpression(token.Value, -1, token.Position);
