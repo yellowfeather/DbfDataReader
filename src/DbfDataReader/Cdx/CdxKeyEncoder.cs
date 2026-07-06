@@ -18,7 +18,7 @@ namespace DbfDataReader.Cdx
         // DateTime interpretation in DbfValueDateTime
         private const int JulianDayOfDayOne = 1721426;
 
-        private static readonly DateTime DayOne = new DateTime(1, 1, 1);
+        private static readonly DateTime DayOne = new DateTime(1, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
 
         public static byte[] EncodeInteger(int value)
         {
