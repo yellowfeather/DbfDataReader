@@ -115,7 +115,11 @@ namespace DbfDataReader.Query
                 if (string.Equals(_names[ordinal], name, StringComparison.OrdinalIgnoreCase)) return ordinal;
             }
 
+            // DbDataReader.GetOrdinal is documented to throw IndexOutOfRangeException for
+            // unknown column names; DbfDataReader.GetOrdinal behaves the same way
+#pragma warning disable S112
             throw new IndexOutOfRangeException();
+#pragma warning restore S112
         }
 
         public override Type GetFieldType(int ordinal)
