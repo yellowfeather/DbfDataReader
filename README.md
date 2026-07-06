@@ -105,6 +105,22 @@ using (var dbfDataReader = new DbfDataReader(dbfPath, options))
 }
 ```
 
+Records can be accessed randomly by zero-based index using `Seek`, available on both `DbfTable` and `DbfDataReader`. The index of the record most recently read is available as `RecordIndex`:
+
+```csharp
+var dbfPath = "path/file.dbf";
+using (var dbfDataReader = new DbfDataReader(dbfPath))
+{
+    dbfDataReader.Seek(41); // position at the 42nd record
+
+    if (dbfDataReader.Read())
+    {
+        var recordIndex = dbfDataReader.RecordIndex; // 41
+        var valueCol1 = dbfDataReader.GetString(0);
+    }
+}
+```
+
 There is also an implementation of DbConnection so you can query a folder of files e.g.
 
 ```csharp

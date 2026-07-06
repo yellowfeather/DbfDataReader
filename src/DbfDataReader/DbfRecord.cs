@@ -14,6 +14,7 @@ namespace DbfDataReader
         private readonly StringTrimmingOption _stringTrimming;
         private readonly bool _readFloatsAsDecimals;
         private readonly int _recordLength;
+        private readonly long _dataOffset;
         private readonly byte[] _buffer;
 
         public DbfRecord(DbfTable dbfTable)
@@ -22,6 +23,7 @@ namespace DbfDataReader
             _stringTrimming = dbfTable.StringTrimming;
             _readFloatsAsDecimals = dbfTable.ReadFloatsAsDecimals;
             _recordLength = dbfTable.Header.RecordLength;
+            _dataOffset = dbfTable.DataOffset;
             _buffer = new byte[_recordLength];
 
             Values = new List<IDbfValue>();
@@ -34,6 +36,8 @@ namespace DbfDataReader
         }
 
         public bool IsDeleted { get; private set; }
+
+        public int RecordIndex { get; private set; } = -1;
 
         public IList<IDbfValue> Values { get; set; }
 
@@ -102,17 +106,18 @@ namespace DbfDataReader
 
         public bool Read(Stream stream)
         {
-            if (stream.Position == stream.Length) return false;
+            var position = stream.Position;
+            if (position == stream.Length) return false;
 
             try
             {
                 var read = stream.Read(_buffer, 0, _recordLength);
-                if (read <= 0) 
+                if (read <= 0)
                     return false;
                 while (read < _recordLength)
                 {
                     var r = stream.Read(_buffer, read, _recordLength - read);
-                    if (r == 0) 
+                    if (r == 0)
                         return false;
                     read += r;
                 }
@@ -122,6 +127,7 @@ namespace DbfDataReader
                 if (value == EndOfFile) return false;
 
                 IsDeleted = value == 0x2A;
+                RecordIndex = (int) ((position - _dataOffset) / _recordLength);
 
                 foreach (var dbfValue in Values)
                 {

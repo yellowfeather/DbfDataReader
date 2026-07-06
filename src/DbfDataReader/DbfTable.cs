@@ -11,6 +11,10 @@ namespace DbfDataReader
 
         private readonly bool _leaveOpen;
 
+        // position of the start of the DBF data within the stream, to support
+        // streams where the DBF content does not begin at offset zero
+        private readonly long _startOffset;
+
         public DbfTable(string path, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
         {
             if (!File.Exists(path)) throw new FileNotFoundException();
@@ -41,6 +45,7 @@ namespace DbfDataReader
             ReadFloatsAsDecimals = readFloatsAsDecimals;
             _leaveOpen = leaveOpen;
             Stream = stream;
+            _startOffset = stream.CanSeek ? stream.Position : 0;
 
             Init();
 
@@ -72,6 +77,8 @@ namespace DbfDataReader
         public bool ReadFloatsAsDecimals { get; set; }
 
         public bool IsClosed => Stream == null;
+
+        internal long DataOffset => _startOffset + Header.HeaderLength;
 
         public void Close()
         {
@@ -183,6 +190,17 @@ namespace DbfDataReader
         public bool Read(DbfRecord dbfRecord)
         {
             return dbfRecord.Read(Stream);
+        }
+
+        public void Seek(int recordIndex)
+        {
+            if (recordIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(recordIndex), recordIndex,
+                    "Record index must not be negative.");
+            if (!Stream.CanSeek)
+                throw new NotSupportedException("The underlying stream does not support seeking.");
+
+            Stream.Seek(DataOffset + (long) recordIndex * Header.RecordLength, SeekOrigin.Begin);
         }
     }
 }
