@@ -34,28 +34,7 @@ namespace DbfDataReader.Query
                 int? top = null;
                 if (Match(SqlTokenType.TopKeyword)) top = ParseNonNegativeInteger("TOP");
 
-                var isSelectAll = false;
-                var isCountAll = false;
-                var columns = new List<SelectColumn>();
-                if (Match(SqlTokenType.Star))
-                {
-                    isSelectAll = true;
-                }
-                else if (IsCountFunction())
-                {
-                    ParseCountAll();
-                    isCountAll = true;
-
-                    if (Current.Type == SqlTokenType.Comma)
-                        throw Error("COUNT(*) must be the only item in the select list", Current);
-                }
-                else
-                {
-                    do
-                    {
-                        columns.Add(ParseSelectColumn());
-                    } while (Match(SqlTokenType.Comma));
-                }
+                var (isSelectAll, isCountAll, columns) = ParseSelectList();
 
                 Expect(SqlTokenType.FromKeyword, "FROM");
                 var tableName = ParseName("a table name");
@@ -90,6 +69,30 @@ namespace DbfDataReader.Query
                         new SqlToken(SqlTokenType.OrderKeyword, "ORDER", orderBy[0].Position));
 
                 return new SelectStatement(isSelectAll, isCountAll, columns, tableName, where, orderBy, top);
+            }
+
+            private (bool IsSelectAll, bool IsCountAll, List<SelectColumn> Columns) ParseSelectList()
+            {
+                var columns = new List<SelectColumn>();
+
+                if (Match(SqlTokenType.Star)) return (true, false, columns);
+
+                if (IsCountFunction())
+                {
+                    ParseCountAll();
+
+                    if (Current.Type == SqlTokenType.Comma)
+                        throw Error("COUNT(*) must be the only item in the select list", Current);
+
+                    return (false, true, columns);
+                }
+
+                do
+                {
+                    columns.Add(ParseSelectColumn());
+                } while (Match(SqlTokenType.Comma));
+
+                return (false, false, columns);
             }
 
             // COUNT is not a reserved word: it only acts as a function when followed by

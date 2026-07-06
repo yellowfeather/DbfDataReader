@@ -164,14 +164,15 @@ namespace DbfDataReader.Query
 
         private sealed class Candidate
         {
-            public Candidate(CandidateKind kind, int ordinal, CdxIndex index, string description, byte padByte,
+            private readonly IndexTag _tag;
+
+            public Candidate(CandidateKind kind, int ordinal, IndexTag tag, string description,
                 byte[] equalityKey, Func<byte[], int> comparison, bool isExact)
             {
+                _tag = tag;
                 Kind = kind;
                 Ordinal = ordinal;
-                Index = index;
                 Description = description;
-                PadByte = padByte;
                 EqualityKey = equalityKey;
                 Comparison = comparison;
                 IsExact = isExact;
@@ -179,9 +180,9 @@ namespace DbfDataReader.Query
 
             public CandidateKind Kind { get; }
             public int Ordinal { get; }
-            public CdxIndex Index { get; }
+            public CdxIndex Index => _tag.Index;
             public string Description { get; }
-            public byte PadByte { get; }
+            public byte PadByte => _tag.PadByte;
             public byte[] EqualityKey { get; } // character equality searches
             public Func<byte[], int> Comparison { get; }
 
@@ -194,7 +195,7 @@ namespace DbfDataReader.Query
             // no key and no comparison: a provably empty result (exact by definition)
             public static Candidate Empty(CandidateKind kind, IndexTag tag, int ordinal, string description)
             {
-                return new Candidate(kind, ordinal, tag.Index, description, tag.PadByte, null, null, true);
+                return new Candidate(kind, ordinal, tag, description, null, null, true);
             }
         }
 
@@ -326,8 +327,8 @@ namespace DbfDataReader.Query
             {
                 // an equality value that cannot fit in the key is provably empty
                 return fits
-                    ? new Candidate(CandidateKind.Equality, column.Ordinal, tag.Index,
-                        $"index seek (=) on tag '{tag.Name}'", tag.PadByte, target, null, true)
+                    ? new Candidate(CandidateKind.Equality, column.Ordinal, tag,
+                        $"index seek (=) on tag '{tag.Name}'", target, null, true)
                     : Candidate.Empty(CandidateKind.Equality, tag, column.Ordinal,
                         $"index seek (=) on tag '{tag.Name}'");
             }
@@ -337,8 +338,8 @@ namespace DbfDataReader.Query
             var comparison = CreateTextRangeComparison(op, target);
             if (comparison == null) return null;
 
-            return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index,
-                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison, true);
+            return new Candidate(CandidateKind.Range, column.Ordinal, tag,
+                $"index range scan on tag '{tag.Name}'", null, comparison, true);
         }
 
         private static Func<byte[], int> CreateTextRangeComparison(SqlBinaryOperator op, byte[] target)
@@ -371,8 +372,8 @@ namespace DbfDataReader.Query
                         $"index seek (=) on tag '{tag.Name}'");
 
                 var target = CdxKeyEncoder.EncodeInteger((int)number);
-                return new Candidate(CandidateKind.Equality, column.Ordinal, tag.Index,
-                    $"index seek (=) on tag '{tag.Name}'", tag.PadByte, null,
+                return new Candidate(CandidateKind.Equality, column.Ordinal, tag,
+                    $"index seek (=) on tag '{tag.Name}'", null,
                     stored => CompareBinary(stored, target), true);
             }
 
@@ -395,8 +396,8 @@ namespace DbfDataReader.Query
             var key = CdxKeyEncoder.EncodeInteger((int)bound);
             var comparison = isLowerBound ? GreaterOrEqual(key) : LessOrEqual(key);
 
-            return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index,
-                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison, true);
+            return new Candidate(CandidateKind.Range, column.Ordinal, tag,
+                $"index range scan on tag '{tag.Name}'", null, comparison, true);
         }
 
         private static decimal AdjustIntegerBound(decimal number, SqlBinaryOperator op)
@@ -431,8 +432,8 @@ namespace DbfDataReader.Query
         {
             if (op == SqlBinaryOperator.Equal)
             {
-                return new Candidate(CandidateKind.Equality, column.Ordinal, tag.Index,
-                    $"index seek (=) on tag '{tag.Name}'", tag.PadByte, null,
+                return new Candidate(CandidateKind.Equality, column.Ordinal, tag,
+                    $"index seek (=) on tag '{tag.Name}'", null,
                     stored => CompareBinary(stored, target), false);
             }
 
@@ -442,8 +443,8 @@ namespace DbfDataReader.Query
             var isLowerBound = op == SqlBinaryOperator.GreaterThanOrEqual || op == SqlBinaryOperator.GreaterThan;
             var comparison = isLowerBound ? GreaterOrEqual(target) : LessOrEqual(target);
 
-            return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index,
-                $"index range scan on tag '{tag.Name}'", tag.PadByte, null, comparison, false);
+            return new Candidate(CandidateKind.Range, column.Ordinal, tag,
+                $"index range scan on tag '{tag.Name}'", null, comparison, false);
         }
 
         private static Candidate TryCreateBetweenCandidate(SqlColumnExpression column, SqlBetweenExpression between,
@@ -495,7 +496,7 @@ namespace DbfDataReader.Query
                 return CdxKeyComparer.Compare(stored, high) > 0 ? 1 : 0;
             }
 
-            return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index, description, tag.PadByte, null,
+            return new Candidate(CandidateKind.Range, column.Ordinal, tag, description, null,
                 Comparison, true);
         }
 
@@ -526,7 +527,7 @@ namespace DbfDataReader.Query
                 return CompareBinary(stored, high) > 0 ? 1 : 0;
             }
 
-            return new Candidate(CandidateKind.Range, column.Ordinal, tag.Index, description, tag.PadByte, null,
+            return new Candidate(CandidateKind.Range, column.Ordinal, tag, description, null,
                 Comparison, isExact);
         }
 
@@ -554,8 +555,8 @@ namespace DbfDataReader.Query
                     $"index prefix scan on tag '{tag.Name}' (impossible prefix)");
             }
 
-            return new Candidate(CandidateKind.LikePrefix, column.Ordinal, tag.Index,
-                $"index prefix scan (like) on tag '{tag.Name}'", tag.PadByte, null,
+            return new Candidate(CandidateKind.LikePrefix, column.Ordinal, tag,
+                $"index prefix scan (like) on tag '{tag.Name}'", null,
                 stored => CdxKeyComparer.Compare(stored, prefixBytes), false);
         }
 
