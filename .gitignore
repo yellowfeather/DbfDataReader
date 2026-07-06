@@ -46,3 +46,5 @@ artifacts/
 **/Properties/launchSettings.json
 /test/DbfDataReader.Benchmarks/BenchmarkDotNet.Artifacts/results
 **/Properties/PublishProfiles
+# BenchmarkDotNet output
+BenchmarkDotNet.Artifacts/

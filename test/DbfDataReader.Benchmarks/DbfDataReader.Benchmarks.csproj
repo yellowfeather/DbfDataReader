@@ -14,10 +14,23 @@
     <Configuration>Release</Configuration>
   </PropertyGroup>
 
+  <!-- benchmark a specific published package with -p:DbfDataReaderVersion=x.y.z -->
+  <PropertyGroup>
+    <DbfDataReaderVersion Condition="'$(DbfDataReaderVersion)' == ''">2.1.0</DbfDataReaderVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.8" />
-    <PackageReference Include="DbfDataReader" Version="1.1.0" />
+    <PackageReference Include="DbfDataReader" Version="$(DbfDataReaderVersion)" />
+    <PackageReference Include="NDbfReader" Version="1.2.2" />
+    <PackageReference Include="Sylvan.Data.XBase" Version="0.1.3" />
+  </ItemGroup>
+
+  <!-- the index benchmarks use the SQL and index features introduced in 2.x -->
+  <ItemGroup Condition="$(DbfDataReaderVersion.StartsWith('1'))">
+    <Compile Remove="IndexQueryBenchmarks.cs" />
+    <Compile Remove="BenchmarkTableGenerator.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +39,9 @@
 
   <ItemGroup>
     <None Include="..\fixtures\dbase_03.dbf" Link="fixtures\dbase_03.dbf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\fixtures\tl_2019_01_place.dbf" Link="fixtures\tl_2019_01_place.dbf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
