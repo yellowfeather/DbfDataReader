@@ -255,6 +255,17 @@ namespace DbfDataReader
                 yield break;
             }
 
+            var buffer = await BuildSortBufferAsync(plan, record, accessor, cursor, cancellationToken)
+                .ConfigureAwait(false);
+            foreach (var item in SortAndLimit(buffer, plan))
+            {
+                yield return item;
+            }
+        }
+
+        private async Task<List<(T Item, object[] Keys)>> BuildSortBufferAsync(QueryPlan plan, DbfRecord record,
+            Func<int, object> accessor, RowCursor cursor, CancellationToken cancellationToken)
+        {
             var buffer = new List<(T Item, object[] Keys)>();
             while (await ReadNextRowAsync(plan, record, cursor, cancellationToken).ConfigureAwait(false))
             {
@@ -265,10 +276,7 @@ namespace DbfDataReader
                 buffer.Add((Materialize(record, plan), SnapshotSortKeys(record, plan)));
             }
 
-            foreach (var item in SortAndLimit(buffer, plan))
-            {
-                yield return item;
-            }
+            return buffer;
         }
 
         private sealed class RowCursor
@@ -302,9 +310,9 @@ namespace DbfDataReader
 
             _table.Seek(0);
 
-            var position = 0;
             if (!SortRequired(plan))
             {
+                var position = 0;
                 var returned = 0;
                 while (NotLimited(returned) && ReadNextRow(plan, record, ref position))
                 {
@@ -319,7 +327,17 @@ namespace DbfDataReader
                 yield break;
             }
 
+            foreach (var item in SortAndLimit(BuildSortBuffer(plan, record, accessor), plan))
+            {
+                yield return item;
+            }
+        }
+
+        private List<(T Item, object[] Keys)> BuildSortBuffer(QueryPlan plan, DbfRecord record,
+            Func<int, object> accessor)
+        {
             var buffer = new List<(T Item, object[] Keys)>();
+            var position = 0;
             while (ReadNextRow(plan, record, ref position))
             {
                 var decision = EvaluateRow(record, plan, accessor);
@@ -329,10 +347,7 @@ namespace DbfDataReader
                 buffer.Add((Materialize(record, plan), SnapshotSortKeys(record, plan)));
             }
 
-            foreach (var item in SortAndLimit(buffer, plan))
-            {
-                yield return item;
-            }
+            return buffer;
         }
 
         private static bool SortRequired(QueryPlan plan)
