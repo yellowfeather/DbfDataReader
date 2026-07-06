@@ -34,19 +34,7 @@ namespace DbfDataReader.Query
                 int? top = null;
                 if (Match(SqlTokenType.TopKeyword)) top = ParseNonNegativeInteger("TOP");
 
-                var isSelectAll = false;
-                var columns = new List<SelectColumn>();
-                if (Match(SqlTokenType.Star))
-                {
-                    isSelectAll = true;
-                }
-                else
-                {
-                    do
-                    {
-                        columns.Add(ParseSelectColumn());
-                    } while (Match(SqlTokenType.Comma));
-                }
+                var (isSelectAll, isCountAll, columns) = ParseSelectList();
 
                 Expect(SqlTokenType.FromKeyword, "FROM");
                 var tableName = ParseName("a table name");
@@ -76,7 +64,52 @@ namespace DbfDataReader.Query
                 Match(SqlTokenType.Semicolon);
                 Expect(SqlTokenType.EndOfText, "end of statement");
 
-                return new SelectStatement(isSelectAll, columns, tableName, where, orderBy, top);
+                if (isCountAll && orderBy.Count > 0)
+                    throw Error("ORDER BY cannot be used with COUNT(*)",
+                        new SqlToken(SqlTokenType.OrderKeyword, "ORDER", orderBy[0].Position));
+
+                return new SelectStatement(isSelectAll, isCountAll, columns, tableName, where, orderBy, top);
+            }
+
+            private (bool IsSelectAll, bool IsCountAll, List<SelectColumn> Columns) ParseSelectList()
+            {
+                var columns = new List<SelectColumn>();
+
+                if (Match(SqlTokenType.Star)) return (true, false, columns);
+
+                if (IsCountFunction())
+                {
+                    ParseCountAll();
+
+                    if (Current.Type == SqlTokenType.Comma)
+                        throw Error("COUNT(*) must be the only item in the select list", Current);
+
+                    return (false, true, columns);
+                }
+
+                do
+                {
+                    columns.Add(ParseSelectColumn());
+                } while (Match(SqlTokenType.Comma));
+
+                return (false, false, columns);
+            }
+
+            // COUNT is not a reserved word: it only acts as a function when followed by
+            // a parenthesis, so columns named "count" keep working
+            private bool IsCountFunction()
+            {
+                return Current.Type == SqlTokenType.Identifier &&
+                       string.Equals(Current.Value, "count", StringComparison.OrdinalIgnoreCase) &&
+                       _tokens[_index + 1].Type == SqlTokenType.LeftParen;
+            }
+
+            private void ParseCountAll()
+            {
+                _index++; // count
+                _index++; // (
+                Expect(SqlTokenType.Star, "'*'");
+                Expect(SqlTokenType.RightParen, "')'");
             }
 
             private SelectColumn ParseSelectColumn()

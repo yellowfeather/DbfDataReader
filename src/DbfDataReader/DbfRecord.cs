@@ -108,6 +108,38 @@ namespace DbfDataReader
 
         public bool Read(Stream stream)
         {
+            if (!ReadRaw(stream)) return false;
+
+            try
+            {
+                ParseValues();
+                return true;
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
+            }
+        }
+
+        public async ValueTask<bool> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        {
+            if (!await ReadRawAsync(stream, cancellationToken).ConfigureAwait(false)) return false;
+
+            try
+            {
+                ParseValues();
+                return true;
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
+            }
+        }
+
+        // reads the raw record into the buffer and sets IsDeleted and RecordIndex
+        // without parsing any column values; Values keeps the previous row's contents
+        internal bool ReadRaw(Stream stream)
+        {
             var position = stream.Position;
             if (position == stream.Length) return false;
 
@@ -123,16 +155,16 @@ namespace DbfDataReader
                         return false;
                     read += r;
                 }
-
-                return ParseRecord(position);
             }
             catch (EndOfStreamException)
             {
                 return false;
             }
+
+            return ReadStatus(position);
         }
 
-        public async ValueTask<bool> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        internal async ValueTask<bool> ReadRawAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             var position = stream.Position;
             if (position == stream.Length) return false;
@@ -151,31 +183,35 @@ namespace DbfDataReader
                         return false;
                     read += r;
                 }
-
-                return ParseRecord(position);
             }
             catch (EndOfStreamException)
             {
                 return false;
             }
+
+            return ReadStatus(position);
         }
 
-        private bool ParseRecord(long position)
+        private bool ReadStatus(long position)
+        {
+            var status = _buffer[0];
+            if (status == EndOfFile) return false;
+
+            IsDeleted = status == 0x2A;
+            RecordIndex = (int) ((position - _dataOffset) / _recordLength);
+
+            return true;
+        }
+
+        private void ParseValues()
         {
             var span = new ReadOnlySpan<byte>(_buffer);
-
-            var value = span[0];
-            if (value == EndOfFile) return false;
-
-            IsDeleted = value == 0x2A;
-            RecordIndex = (int) ((position - _dataOffset) / _recordLength);
 
             foreach (var dbfValue in Values)
             {
                 var slice = span.Slice(dbfValue.Start, dbfValue.Length);
                 dbfValue.Read(slice);
             }
-            return true;
         }
 
         public object GetValue(int ordinal)

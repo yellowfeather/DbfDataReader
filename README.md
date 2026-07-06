@@ -224,6 +224,7 @@ select Point_ID from dbase_03.dbf where Max_PDOP >= 3.5 and Date_Visit >= '1997-
 select Point_ID from dbase_03.dbf where Point_ID like 'A%' or Point_ID in ('B1', 'B2')
 select * from dbase_03.dbf where Point_ID = @id
 select top 5 Point_ID from dbase_03.dbf where Max_PDOP >= 3.5 order by Max_PDOP desc, Point_ID
+select count(*) from dbase_03.dbf where Max_PDOP >= 3.5
 ```
 
 ```csharp
@@ -251,6 +252,11 @@ SQL three-valued logic; date columns compare against `'yyyy-MM-dd'` or
 `'yyyy-MM-dd HH:mm:ss'` strings. `ORDER BY` sorts with the same comparison rules
 (multiple keys, `ASC`/`DESC`, select-list aliases allowed, nulls first ascending) using
 a stable in-memory sort of the matching rows; `TOP`/`LIMIT` applies after the sort.
+`COUNT(*)` is the one supported aggregate, and it counts as cheaply as it safely can:
+without a `WHERE` it scans record status bytes only (header record counts are not
+trusted); when an index covers the `WHERE` exactly, the count comes from the index
+without reading any rows; otherwise rows are read and filtered without being projected.
+The same fast paths back `DbfQuery<T>.Count()`.
 
 When a sidecar compound index (`file.cdx`) exists next to the table, queries use it
 automatically: equality, range and `BETWEEN` predicates on indexed character, integer,

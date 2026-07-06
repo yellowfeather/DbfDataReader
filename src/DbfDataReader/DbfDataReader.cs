@@ -44,6 +44,8 @@ namespace DbfDataReader
 
         public DbfRecord DbfRecord { get; private set; }
 
+        internal bool SkipsDeletedRecords => _options.SkipDeletedRecords;
+
         public override void Close()
         {
             try

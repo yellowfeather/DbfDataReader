@@ -67,6 +67,8 @@ public class DapperCompatibilityTests
             "select Max_PDOP from dbase_03.dbf order by Max_PDOP desc");
         maxPdop.ShouldBeGreaterThan(0m);
 
+        db.ExecuteScalar<int>("select count(*) from dbase_03.dbf").ShouldBe(14);
+
         var first = db.QueryFirstOrDefault<DapperPoint>(
             "select Point_ID, Max_PDOP, Date_Visit from dbase_03.dbf where Point_ID = 'no-such-value'");
         first.ShouldBeNull();
