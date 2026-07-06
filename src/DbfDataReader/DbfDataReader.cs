@@ -5,6 +5,8 @@ using System.Data;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
@@ -154,6 +156,22 @@ namespace DbfDataReader
             do
             {
                 result = DbfTable.Read(DbfRecord);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
+        }
+
+        public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
+        {
+            bool result;
+            bool skip;
+            do
+            {
+                result = await DbfTable.ReadAsync(DbfRecord, cancellationToken).ConfigureAwait(false);
                 if (!result)
                     break;
 
