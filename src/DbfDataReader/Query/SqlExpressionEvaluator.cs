@@ -11,13 +11,6 @@ namespace DbfDataReader.Query
     // and ignore trailing spaces, matching DBF MACHINE collation and CHAR padding.
     internal sealed class SqlExpressionEvaluator
     {
-        private static readonly string[] DateTimeFormats =
-        {
-            "yyyy-MM-dd",
-            "yyyy-MM-dd HH:mm:ss",
-            "yyyy-MM-ddTHH:mm:ss"
-        };
-
         private readonly SqlExpression _expression;
         private readonly IReadOnlyDictionary<string, object> _namedParameters;
         private readonly IReadOnlyList<object> _positionalParameters;
@@ -235,71 +228,7 @@ namespace DbfDataReader.Query
 
         private static int CompareValues(object left, object right, int position)
         {
-            if (left is string leftText && right is string rightText)
-                return string.CompareOrdinal(TrimTrailingSpaces(leftText), TrimTrailingSpaces(rightText));
-
-            if (IsNumber(left) && IsNumber(right)) return CompareNumbers(left, right);
-
-            if (left is DateTime || right is DateTime)
-                return ToDateTime(left, position).CompareTo(ToDateTime(right, position));
-
-            if (left is bool leftBool && right is bool rightBool) return leftBool.CompareTo(rightBool);
-
-            throw new InvalidOperationException(
-                $"Cannot compare values of type {left.GetType().Name} and {right.GetType().Name} " +
-                $"at position {position}.");
-        }
-
-        private static int CompareNumbers(object left, object right)
-        {
-            if (left is double || left is float || right is double || right is float)
-                return Convert.ToDouble(left, CultureInfo.InvariantCulture)
-                    .CompareTo(Convert.ToDouble(right, CultureInfo.InvariantCulture));
-
-            return Convert.ToDecimal(left, CultureInfo.InvariantCulture)
-                .CompareTo(Convert.ToDecimal(right, CultureInfo.InvariantCulture));
-        }
-
-        private static bool IsNumber(object value)
-        {
-            switch (value)
-            {
-                case byte _:
-                case sbyte _:
-                case short _:
-                case ushort _:
-                case int _:
-                case uint _:
-                case long _:
-                case ulong _:
-                case float _:
-                case double _:
-                case decimal _:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        private static DateTime ToDateTime(object value, int position)
-        {
-            switch (value)
-            {
-                case DateTime dateTime:
-                    return dateTime;
-                case string text:
-                    if (DateTime.TryParseExact(text, DateTimeFormats, CultureInfo.InvariantCulture,
-                            DateTimeStyles.None, out var parsed))
-                        return parsed;
-
-                    throw new InvalidOperationException(
-                        $"Cannot convert '{text}' to a date at position {position}; " +
-                        "use 'yyyy-MM-dd' or 'yyyy-MM-dd HH:mm:ss'.");
-                default:
-                    throw new InvalidOperationException(
-                        $"Cannot compare a date with a value of type {value.GetType().Name} " +
-                        $"at position {position}.");
-            }
+            return SqlValueComparer.CompareValues(left, right, position);
         }
 
         private Regex GetLikePattern(string pattern)
@@ -325,7 +254,7 @@ namespace DbfDataReader.Query
 
         private static string TrimTrailingSpaces(string value)
         {
-            return value.TrimEnd(' ');
+            return SqlValueComparer.TrimTrailingSpaces(value);
         }
     }
 }

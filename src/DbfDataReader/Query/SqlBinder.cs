@@ -18,8 +18,22 @@ namespace DbfDataReader.Query
 
             foreach (var orderByItem in statement.OrderBy)
             {
-                orderByItem.Ordinal = ResolveColumn(orderByItem.ColumnName, orderByItem.Position, columns);
+                orderByItem.Ordinal = ResolveOrderByColumn(orderByItem, statement, columns);
             }
+        }
+
+        // ORDER BY may reference a select-list alias as well as a table column
+        private static int ResolveOrderByColumn(OrderByItem item, SelectStatement statement,
+            IList<DbfColumn> columns)
+        {
+            foreach (var selectColumn in statement.Columns)
+            {
+                if (selectColumn.Alias != null &&
+                    string.Equals(selectColumn.Alias, item.ColumnName, StringComparison.OrdinalIgnoreCase))
+                    return selectColumn.Ordinal;
+            }
+
+            return ResolveColumn(item.ColumnName, item.Position, columns);
         }
 
         private static void BindExpression(SqlExpression expression, IList<DbfColumn> columns)

@@ -185,8 +185,8 @@ while (await reader.ReadAsync())
 }
 ```
 
-The command text supports column lists with optional aliases, a row limit, and `WHERE`
-clauses with named (`@name`) or positional (`?`) parameters:
+The command text supports column lists with optional aliases, a row limit, `WHERE`
+clauses with named (`@name`) or positional (`?`) parameters, and `ORDER BY`:
 
 ```sql
 select top 10 Point_ID as id, Date_Visit from dbase_03.dbf
@@ -194,6 +194,7 @@ select Point_ID, Max_PDOP from dbase_03.dbf limit 5
 select Point_ID from dbase_03.dbf where Max_PDOP >= 3.5 and Date_Visit >= '1997-01-01'
 select Point_ID from dbase_03.dbf where Point_ID like 'A%' or Point_ID in ('B1', 'B2')
 select * from dbase_03.dbf where Point_ID = @id
+select top 5 Point_ID from dbase_03.dbf where Max_PDOP >= 3.5 order by Max_PDOP desc, Point_ID
 ```
 
 ```csharp
@@ -207,7 +208,9 @@ Predicates support `=`, `<>`, `!=`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `LIKE
 (`%` and `_`), `IS [NOT] NULL`, `AND`/`OR`/`NOT` and parentheses. String comparisons are
 ordinal, case-sensitive and ignore trailing spaces; comparisons involving `NULL` follow
 SQL three-valued logic; date columns compare against `'yyyy-MM-dd'` or
-`'yyyy-MM-dd HH:mm:ss'` strings. `ORDER BY` is parsed but not executable yet.
+`'yyyy-MM-dd HH:mm:ss'` strings. `ORDER BY` sorts with the same comparison rules
+(multiple keys, `ASC`/`DESC`, select-list aliases allowed, nulls first ascending) using
+a stable in-memory sort of the matching rows; `TOP`/`LIMIT` applies after the sort.
 
 The connection string supports the options available in `DbfDataReaderOptions`:
 
