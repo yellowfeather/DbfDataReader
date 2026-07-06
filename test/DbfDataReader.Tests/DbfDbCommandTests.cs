@@ -33,7 +33,6 @@ public class DbfDbCommandTests
     }
 
     [Theory]
-    [InlineData("select * from dbase_03.dbf where Point_ID = 'x'", "WHERE")]
     [InlineData("select * from dbase_03.dbf order by Point_ID", "ORDER BY")]
     public void Should_throw_not_supported_for_parsed_but_unimplemented_features(string commandText,
         string expectedFragment)

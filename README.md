@@ -185,14 +185,29 @@ while (await reader.ReadAsync())
 }
 ```
 
-The command text supports column lists with optional aliases and a row limit:
+The command text supports column lists with optional aliases, a row limit, and `WHERE`
+clauses with named (`@name`) or positional (`?`) parameters:
 
 ```sql
 select top 10 Point_ID as id, Date_Visit from dbase_03.dbf
 select Point_ID, Max_PDOP from dbase_03.dbf limit 5
+select Point_ID from dbase_03.dbf where Max_PDOP >= 3.5 and Date_Visit >= '1997-01-01'
+select Point_ID from dbase_03.dbf where Point_ID like 'A%' or Point_ID in ('B1', 'B2')
+select * from dbase_03.dbf where Point_ID = @id
 ```
 
-`WHERE` and `ORDER BY` are parsed but not executable yet; they are being added in stages.
+```csharp
+var command = (DbfDbCommand)dbConnection.CreateCommand();
+command.CommandText = "select Point_ID from dbase_03.dbf where Point_ID = @id";
+command.Parameters.AddWithValue("@id", "A1");
+var value = command.ExecuteScalar();
+```
+
+Predicates support `=`, `<>`, `!=`, `<`, `<=`, `>`, `>=`, `BETWEEN`, `IN`, `LIKE`
+(`%` and `_`), `IS [NOT] NULL`, `AND`/`OR`/`NOT` and parentheses. String comparisons are
+ordinal, case-sensitive and ignore trailing spaces; comparisons involving `NULL` follow
+SQL three-valued logic; date columns compare against `'yyyy-MM-dd'` or
+`'yyyy-MM-dd HH:mm:ss'` strings. `ORDER BY` is parsed but not executable yet.
 
 The connection string supports the options available in `DbfDataReaderOptions`:
 
