@@ -183,6 +183,40 @@ namespace DbfDataReader
             return result;
         }
 
+        // advances like Read (honoring SkipDeletedRecords) without parsing any column
+        // values; callers parse the subset they need via DbfRecord.TryParseValues
+        internal bool ReadRaw()
+        {
+            bool result;
+            bool skip;
+            do
+            {
+                result = DbfTable.ReadRaw(DbfRecord);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
+        }
+
+        internal async ValueTask<bool> ReadRawAsync(CancellationToken cancellationToken)
+        {
+            bool result;
+            bool skip;
+            do
+            {
+                result = await DbfTable.ReadRawAsync(DbfRecord, cancellationToken).ConfigureAwait(false);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
+        }
+
         public void Seek(int recordIndex)
         {
             DbfTable.Seek(recordIndex);

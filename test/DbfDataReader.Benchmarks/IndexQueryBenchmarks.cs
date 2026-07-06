@@ -20,6 +20,7 @@ namespace DbfDataReader.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
+            BenchmarkVersion.Print();
             _directory = Path.Combine(Path.GetTempPath(), "DbfDataReader.Benchmarks",
                 $"index-{RowCount}");
             BenchmarkTableGenerator.Generate(_directory, RowCount);

@@ -13,6 +13,9 @@ namespace DbfDataReader.Benchmarks
     {
         private const string FixturePath = "./fixtures/tl_2019_01_place.dbf";
 
+        [GlobalSetup]
+        public void Setup() => BenchmarkVersion.Print();
+
         [Benchmark]
         public void Sylvan()
         {

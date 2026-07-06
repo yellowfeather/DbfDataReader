@@ -130,6 +130,7 @@ namespace DbfDataReader
         {
             var plan = Prepare();
             var record = new DbfRecord(_table);
+            record.EnableSubsetParsing();
 
             _table.Seek(0);
 
@@ -190,7 +191,9 @@ namespace DbfDataReader
             var count = 0;
             while (count < limit && ReadNextRow(plan, record, ref position))
             {
-                if (!Accept(record, plan, accessor)) continue;
+                if (!_includeDeleted && record.IsDeleted) continue;
+                if (!record.TryParseValues(plan.FilterOrdinals)) break;
+                if (plan.Filter != null && !plan.Filter.Matches(accessor)) continue;
 
                 count++;
             }
@@ -203,13 +206,13 @@ namespace DbfDataReader
         private bool ReadNextRow(QueryPlan plan, DbfRecord record, ref int position)
         {
             var recordIndexes = plan.AccessPlan.RecordIndexes;
-            if (recordIndexes == null) return _table.Read(record);
+            if (recordIndexes == null) return _table.ReadRaw(record);
 
             while (position < recordIndexes.Count)
             {
                 _table.Seek(recordIndexes[position]);
                 position++;
-                if (_table.Read(record)) return true; // false: entry beyond the table
+                if (_table.ReadRaw(record)) return true; // false: entry beyond the table
             }
 
             return false;
@@ -231,6 +234,7 @@ namespace DbfDataReader
         {
             var plan = Prepare();
             var record = new DbfRecord(_table);
+            record.EnableSubsetParsing();
             Func<int, object> accessor = record.GetValue;
             var cursor = new RowCursor();
 
@@ -242,7 +246,8 @@ namespace DbfDataReader
                 while (NotLimited(returned) &&
                        await ReadNextRowAsync(plan, record, cursor, cancellationToken).ConfigureAwait(false))
                 {
-                    if (!Accept(record, plan, accessor)) continue;
+                    if (!MatchesFilter(record, plan, accessor)) continue;
+                    if (!record.TryParseValues(plan.PostFilterOrdinals)) break;
 
                     yield return Materialize(record, plan);
                     returned++;
@@ -254,7 +259,8 @@ namespace DbfDataReader
             var buffer = new List<(T Item, object[] Keys)>();
             while (await ReadNextRowAsync(plan, record, cursor, cancellationToken).ConfigureAwait(false))
             {
-                if (!Accept(record, plan, accessor)) continue;
+                if (!MatchesFilter(record, plan, accessor)) continue;
+                if (!record.TryParseValues(plan.PostFilterOrdinals)) break;
 
                 buffer.Add((Materialize(record, plan), SnapshotSortKeys(record, plan)));
             }
@@ -275,13 +281,13 @@ namespace DbfDataReader
         {
             var recordIndexes = plan.AccessPlan.RecordIndexes;
             if (recordIndexes == null)
-                return await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false);
+                return await _table.ReadRawAsync(record, cancellationToken).ConfigureAwait(false);
 
             while (cursor.Position < recordIndexes.Count)
             {
                 _table.Seek(recordIndexes[cursor.Position]);
                 cursor.Position++;
-                if (await _table.ReadAsync(record, cancellationToken).ConfigureAwait(false)) return true;
+                if (await _table.ReadRawAsync(record, cancellationToken).ConfigureAwait(false)) return true;
             }
 
             return false;
@@ -291,6 +297,7 @@ namespace DbfDataReader
         {
             var plan = Prepare();
             var record = new DbfRecord(_table);
+            record.EnableSubsetParsing();
             Func<int, object> accessor = record.GetValue;
 
             _table.Seek(0);
@@ -301,7 +308,8 @@ namespace DbfDataReader
                 var returned = 0;
                 while (NotLimited(returned) && ReadNextRow(plan, record, ref position))
                 {
-                    if (!Accept(record, plan, accessor)) continue;
+                    if (!MatchesFilter(record, plan, accessor)) continue;
+                    if (!record.TryParseValues(plan.PostFilterOrdinals)) break;
 
                     yield return Materialize(record, plan);
                     returned++;
@@ -313,7 +321,8 @@ namespace DbfDataReader
             var buffer = new List<(T Item, object[] Keys)>();
             while (ReadNextRow(plan, record, ref position))
             {
-                if (!Accept(record, plan, accessor)) continue;
+                if (!MatchesFilter(record, plan, accessor)) continue;
+                if (!record.TryParseValues(plan.PostFilterOrdinals)) break;
 
                 buffer.Add((Materialize(record, plan), SnapshotSortKeys(record, plan)));
             }
@@ -334,9 +343,10 @@ namespace DbfDataReader
             return _take == null || returned < _take.Value;
         }
 
-        private bool Accept(DbfRecord record, QueryPlan plan, Func<int, object> accessor)
+        private bool MatchesFilter(DbfRecord record, QueryPlan plan, Func<int, object> accessor)
         {
             if (!_includeDeleted && record.IsDeleted) return false;
+            if (!record.TryParseValues(plan.FilterOrdinals)) return false;
 
             return plan.Filter == null || plan.Filter.Matches(accessor);
         }
@@ -457,20 +467,40 @@ namespace DbfDataReader
 
             var accessPlan = QueryPlanner.CreatePlan(combinedWhere, sortKeys, _table, _useIndexes, null, null);
 
+            // column-subset parsing (issue #296): the filter's columns are parsed for
+            // every candidate row; the remaining mapped (and, when sorting, sort key)
+            // columns only for rows that match
+            var filterOrdinals = combinedWhere == null
+                ? new HashSet<int>()
+                : SqlColumnCollector.CollectOrdinals(combinedWhere);
+
+            var needed = new HashSet<int>(mappedOrdinals);
+            if (sortKeys.Count > 0 && !accessPlan.SortSatisfied)
+            {
+                foreach (var (ordinal, _) in sortKeys)
+                {
+                    needed.Add(ordinal);
+                }
+            }
+
+            needed.ExceptWith(filterOrdinals);
+
             return new QueryPlan(
                 RowMaterializer.Create<T>(mappedNames),
                 mappedOrdinals,
                 new object[mappedOrdinals.Count],
                 filter,
                 sortKeys,
-                accessPlan);
+                accessPlan,
+                SqlColumnCollector.ToSortedOrdinals(filterOrdinals),
+                SqlColumnCollector.ToSortedOrdinals(needed));
         }
 
         private sealed class QueryPlan
         {
             public QueryPlan(Func<object[], T> materializer, IReadOnlyList<int> mappedOrdinals, object[] rowBuffer,
                 SqlExpressionEvaluator filter, IReadOnlyList<(int Ordinal, bool Descending)> sortKeys,
-                QueryAccessPlan accessPlan)
+                QueryAccessPlan accessPlan, int[] filterOrdinals, int[] postFilterOrdinals)
             {
                 Materializer = materializer;
                 MappedOrdinals = mappedOrdinals;
@@ -478,6 +508,8 @@ namespace DbfDataReader
                 Filter = filter;
                 SortKeys = sortKeys;
                 AccessPlan = accessPlan;
+                FilterOrdinals = filterOrdinals;
+                PostFilterOrdinals = postFilterOrdinals;
             }
 
             public Func<object[], T> Materializer { get; }
@@ -491,6 +523,10 @@ namespace DbfDataReader
             public IReadOnlyList<(int Ordinal, bool Descending)> SortKeys { get; }
 
             public QueryAccessPlan AccessPlan { get; }
+
+            public int[] FilterOrdinals { get; }
+
+            public int[] PostFilterOrdinals { get; }
         }
     }
 }

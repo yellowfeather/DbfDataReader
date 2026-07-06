@@ -48,7 +48,10 @@ namespace DbfDataReader.Query
             }
 
             var evaluator = new SqlExpressionEvaluator(statement.Where, namedParameters, positionalParameters);
-            return (CountByReadingRows(reader, evaluator, plan), description);
+            var filterOrdinals =
+                SqlColumnCollector.ToSortedOrdinals(SqlColumnCollector.CollectOrdinals(statement.Where));
+            record.EnableSubsetParsing();
+            return (CountByReadingRows(reader, evaluator, plan, filterOrdinals), description);
         }
 
         private static int CountByStatusScan(DbfTable table, DbfRecord record, bool skipDeletedRecords)
@@ -79,8 +82,9 @@ namespace DbfDataReader.Query
             return count;
         }
 
+        // rows are counted parsing only the columns the WHERE clause references
         private static int CountByReadingRows(DbfDataReader reader, SqlExpressionEvaluator evaluator,
-            QueryAccessPlan plan)
+            QueryAccessPlan plan, int[] filterOrdinals)
         {
             Func<int, object> accessor = reader.GetValue;
             var table = reader.DbfTable;
@@ -90,9 +94,10 @@ namespace DbfDataReader.Query
 
             if (plan.RecordIndexes == null)
             {
-                // reader.Read applies the skip-deleted option itself
-                while (reader.Read())
+                // reader.ReadRaw applies the skip-deleted option itself
+                while (reader.ReadRaw())
                 {
+                    if (!record.TryParseValues(filterOrdinals)) break;
                     if (evaluator.Matches(accessor)) count++;
                 }
 
@@ -102,8 +107,9 @@ namespace DbfDataReader.Query
             foreach (var recordIndex in plan.RecordIndexes)
             {
                 table.Seek(recordIndex);
-                if (!table.Read(record)) continue;
+                if (!table.ReadRaw(record)) continue;
                 if (reader.SkipsDeletedRecords && record.IsDeleted) continue;
+                if (!record.TryParseValues(filterOrdinals)) break;
                 if (!evaluator.Matches(accessor)) continue;
 
                 count++;

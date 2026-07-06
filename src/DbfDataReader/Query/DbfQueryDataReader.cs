@@ -25,6 +25,9 @@ namespace DbfDataReader.Query
         private readonly QueryAccessPlan _plan;
         private readonly bool _skipDeletedRecords;
         private readonly int _limit; // -1 when unlimited
+        private readonly int[] _filterParseOrdinals; // parsed before the filter runs
+        private readonly int[] _postFilterParseOrdinals; // parsed only for matching rows
+        private readonly int[] _snapshotOrdinals; // ordinals captured into sort-buffer rows
         private int _rowsReturned;
         private int _planPosition; // cursor into the plan's record indexes
 
@@ -70,6 +73,30 @@ namespace DbfDataReader.Query
             _ordinals = ordinals;
             _names = names;
             _limit = statement.Top ?? -1;
+
+            // column-subset parsing (issue #296): rows are parsed in two phases - the
+            // columns the filter references first, then, only once a row matches, the
+            // remaining projected (and, when sorting, ORDER BY) columns
+            var filterOrdinals = statement.Where == null
+                ? new HashSet<int>()
+                : SqlColumnCollector.CollectOrdinals(statement.Where);
+
+            var needed = new HashSet<int>(ordinals);
+            if (SortRequired)
+            {
+                foreach (var item in _orderBy)
+                {
+                    needed.Add(item.Ordinal);
+                }
+            }
+
+            _snapshotOrdinals = SqlColumnCollector.ToSortedOrdinals(needed);
+
+            needed.ExceptWith(filterOrdinals);
+            _filterParseOrdinals = SqlColumnCollector.ToSortedOrdinals(filterOrdinals);
+            _postFilterParseOrdinals = SqlColumnCollector.ToSortedOrdinals(needed);
+
+            reader.DbfRecord.EnableSubsetParsing();
         }
 
         public override int FieldCount => _names.Count;
@@ -104,6 +131,7 @@ namespace DbfDataReader.Query
             while (ReadNextRow())
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
+                if (!_reader.DbfRecord.TryParseValues(_postFilterParseOrdinals)) return false;
 
                 _rowsReturned++;
                 return true;
@@ -125,6 +153,7 @@ namespace DbfDataReader.Query
             while (await ReadNextRowAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
+                if (!_reader.DbfRecord.TryParseValues(_postFilterParseOrdinals)) return false;
 
                 _rowsReturned++;
                 return true;
@@ -133,12 +162,14 @@ namespace DbfDataReader.Query
             return false;
         }
 
-        // advances the underlying reader to the next candidate row: sequentially, or by
+        // advances the underlying reader to the next candidate row - sequentially, or by
         // seeking the next record index supplied by the access plan (re-checking the
-        // deleted flag, which sequential reads handle inside the raw reader)
+        // deleted flag, which sequential reads handle inside the raw reader) - parsing
+        // only the columns the filter needs
         private bool ReadNextRow()
         {
-            if (_plan?.RecordIndexes == null) return _reader.Read();
+            if (_plan?.RecordIndexes == null)
+                return _reader.ReadRaw() && _reader.DbfRecord.TryParseValues(_filterParseOrdinals);
 
             while (_planPosition < _plan.RecordIndexes.Count)
             {
@@ -146,10 +177,10 @@ namespace DbfDataReader.Query
                 _planPosition++;
 
                 _reader.Seek(recordIndex);
-                if (!_reader.DbfTable.Read(_reader.DbfRecord)) continue; // entry beyond the table
+                if (!_reader.DbfTable.ReadRaw(_reader.DbfRecord)) continue; // entry beyond the table
                 if (_skipDeletedRecords && _reader.DbfRecord.IsDeleted) continue;
 
-                return true;
+                return _reader.DbfRecord.TryParseValues(_filterParseOrdinals);
             }
 
             return false;
@@ -158,7 +189,10 @@ namespace DbfDataReader.Query
         private async Task<bool> ReadNextRowAsync(CancellationToken cancellationToken)
         {
             if (_plan?.RecordIndexes == null)
-                return await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            {
+                return await _reader.ReadRawAsync(cancellationToken).ConfigureAwait(false) &&
+                       _reader.DbfRecord.TryParseValues(_filterParseOrdinals);
+            }
 
             while (_planPosition < _plan.RecordIndexes.Count)
             {
@@ -166,11 +200,11 @@ namespace DbfDataReader.Query
                 _planPosition++;
 
                 _reader.Seek(recordIndex);
-                if (!await _reader.DbfTable.ReadAsync(_reader.DbfRecord, cancellationToken).ConfigureAwait(false))
+                if (!await _reader.DbfTable.ReadRawAsync(_reader.DbfRecord, cancellationToken).ConfigureAwait(false))
                     continue;
                 if (_skipDeletedRecords && _reader.DbfRecord.IsDeleted) continue;
 
-                return true;
+                return _reader.DbfRecord.TryParseValues(_filterParseOrdinals);
             }
 
             return false;
@@ -192,6 +226,7 @@ namespace DbfDataReader.Query
             while (ReadNextRow())
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
+                if (!_reader.DbfRecord.TryParseValues(_postFilterParseOrdinals)) break;
 
                 rows.Add(SnapshotCurrentRow());
             }
@@ -206,6 +241,7 @@ namespace DbfDataReader.Query
             while (await ReadNextRowAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
+                if (!_reader.DbfRecord.TryParseValues(_postFilterParseOrdinals)) break;
 
                 rows.Add(SnapshotCurrentRow());
             }
@@ -214,10 +250,12 @@ namespace DbfDataReader.Query
             return rows;
         }
 
+        // full-width so underlying ordinals index it directly; only the projected and
+        // ORDER BY positions are populated (and only those are ever read back)
         private object[] SnapshotCurrentRow()
         {
             var row = new object[_reader.FieldCount];
-            for (var ordinal = 0; ordinal < row.Length; ordinal++)
+            foreach (var ordinal in _snapshotOrdinals)
             {
                 row[ordinal] = _reader.GetValue(ordinal);
             }
