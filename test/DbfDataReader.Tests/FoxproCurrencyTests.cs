@@ -48,6 +48,17 @@ namespace DbfDataReader.Tests
         {
             ValidateRowValues("../../../../fixtures/foxpro_currency_01.csv");
         }
+
+        [Fact]
+        public void Should_read_currency_values_as_decimal()
+        {
+            using var dbfDataReader = new DbfDataReader(FoxproCurrency01FixturePath);
+
+            dbfDataReader.Read().ShouldBeTrue();
+            dbfDataReader.GetValue(0).ShouldBeOfType<decimal>();
+            dbfDataReader.GetDecimal(0).ShouldBe(20m);
+            dbfDataReader.GetDecimal(1).ShouldBe(-20m);
+        }
     }
 
 }
