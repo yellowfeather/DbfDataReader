@@ -9,6 +9,8 @@ namespace DbfDataReader
     {
         private const byte Terminator = 0x0d;
 
+        private readonly bool _leaveOpen;
+
         public DbfTable(string path, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
         {
             if (!File.Exists(path)) throw new FileNotFoundException();
@@ -26,17 +28,18 @@ namespace DbfDataReader
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
-        public DbfTable(Stream stream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
-            : this(stream, null, encoding, stringTrimming, readFloatsAsDecimals)
+        public DbfTable(Stream stream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
+            : this(stream, null, encoding, stringTrimming, readFloatsAsDecimals, leaveOpen)
         {
         }
 
-        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
+        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
             StringTrimming = stringTrimming;
             ReadFloatsAsDecimals = readFloatsAsDecimals;
+            _leaveOpen = leaveOpen;
             Stream = stream;
 
             Init();
@@ -80,7 +83,7 @@ namespace DbfDataReader
             try
             {
                 if (!disposing) return;
-                Stream?.Dispose();
+                if (!_leaveOpen) Stream?.Dispose();
                 Memo?.Dispose();
             }
             finally
