@@ -261,8 +261,9 @@ The same fast paths back `DbfQuery<T>.Count()`.
 When a sidecar compound index (`file.cdx`) exists next to the table, queries use it
 automatically: equality, range and `BETWEEN` predicates on indexed character, integer,
 numeric, double and date columns (plus prefix `LIKE` on character columns) become index
-seeks, and an `ORDER BY` matching an index tag reads in index order instead of sorting.
-This applies to SQL text and to the `Query<T>` builder alike. The planner is
+seeks, and an `ORDER BY` matching an index tag — ascending or descending — reads in
+index order instead of sorting (descending order is served by reversing the ascending
+tag). This applies to SQL text and to the `Query<T>` builder alike. The planner is
 conservative — index tags with dBASE `UNIQUE` or `FOR` filters, descending keys,
 expression keys, unsupported key types (datetime, currency), or non-ASCII character
 search values fall back to a full table scan, and the full `WHERE` clause is always
