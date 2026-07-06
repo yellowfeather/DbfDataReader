@@ -61,7 +61,7 @@ namespace DbfDataReader
                 return false;
             }
 
-            return DateTime.TryParseExact(text, dateFormat, null,
+            return DateTime.TryParseExact(text, dateFormat, CultureInfo.InvariantCulture,
                 DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite, out value);
         }
 

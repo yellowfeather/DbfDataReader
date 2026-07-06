@@ -252,7 +252,7 @@ namespace DbfDataReader
             return GetValue<T>(ordinal);
         }
 
-        private T GetBoxedValue<T>(IDbfValue dbfValue, int ordinal)
+        private static T GetBoxedValue<T>(IDbfValue dbfValue, int ordinal)
         {
             try
             {
