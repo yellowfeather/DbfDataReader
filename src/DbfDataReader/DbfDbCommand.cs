@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.IO;
+using System.Linq;
 using DbfDataReader.Query;
 
 namespace DbfDataReader
@@ -83,7 +84,14 @@ namespace DbfDataReader
             try
             {
                 SqlBinder.Bind(statement, reader.DbfTable.Columns);
-                return new DbfQueryDataReader(reader, statement, CreateEvaluator(statement));
+
+                var (namedParameters, positionalParameters) = CollectParameters();
+                var evaluator = statement.Where == null
+                    ? null
+                    : new SqlExpressionEvaluator(statement.Where, namedParameters, positionalParameters);
+                var plan = CreatePlan(statement, reader.DbfTable, options, namedParameters, positionalParameters);
+
+                return new DbfQueryDataReader(reader, statement, evaluator, plan, options.SkipDeletedRecords);
             }
             catch
             {
@@ -92,10 +100,48 @@ namespace DbfDataReader
             }
         }
 
-        private SqlExpressionEvaluator CreateEvaluator(SelectStatement statement)
+        // describes how the current command text would be executed, without reading any
+        // rows; useful for verifying whether an index is used
+        public string ExplainPlan()
         {
-            if (statement.Where == null) return null;
+            var dbfDbConnection = Connection as DbfDbConnection;
+            if (dbfDbConnection is null)
+            {
+                throw new InvalidOperationException($"{nameof(DbfDbConnection)} is not available");
+            }
 
+            var statement = SqlParser.Parse(CommandText);
+            var filePath = GetFilePath(dbfDbConnection.Database, statement.TableName);
+            var options = dbfDbConnection.Options;
+
+            using (var table = new DbfTable(filePath, options.Encoding, options.StringTrimming,
+                       options.ReadFloatsAsDecimals))
+            {
+                if (statement.IsSelectAll && statement.Top == null && statement.Where == null &&
+                    statement.OrderBy.Count == 0)
+                    return "full scan (select all)";
+
+                SqlBinder.Bind(statement, table.Columns);
+
+                var (namedParameters, positionalParameters) = CollectParameters();
+                var plan = CreatePlan(statement, table, options, namedParameters, positionalParameters);
+
+                var sortNote = statement.OrderBy.Count > 0 && !plan.SortSatisfied ? "; in-memory sort" : "";
+                return plan.Description + sortNote;
+            }
+        }
+
+        private static QueryAccessPlan CreatePlan(SelectStatement statement, DbfTable table,
+            DbfDataReaderOptions options, IReadOnlyDictionary<string, object> namedParameters,
+            IReadOnlyList<object> positionalParameters)
+        {
+            var orderKeys = statement.OrderBy.Select(item => (item.Ordinal, item.Descending)).ToList();
+            return QueryPlanner.CreatePlan(statement.Where, orderKeys, table, options.UseIndexes, namedParameters,
+                positionalParameters);
+        }
+
+        private (Dictionary<string, object> Named, List<object> Positional) CollectParameters()
+        {
             var namedParameters = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             var positionalParameters = new List<object>();
 
@@ -107,7 +153,7 @@ namespace DbfDataReader
                 if (!string.IsNullOrEmpty(name)) namedParameters[name] = parameter.Value;
             }
 
-            return new SqlExpressionEvaluator(statement.Where, namedParameters, positionalParameters);
+            return (namedParameters, positionalParameters);
         }
 
         private static string GetFilePath(string folder, string fileName)

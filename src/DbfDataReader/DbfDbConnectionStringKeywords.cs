@@ -7,5 +7,6 @@ namespace DbfDataReader
         public const string ReadFloatsAsDecimals = "readfloatsasdecimals";
         public const string SkipDeletedRecords = "SkipDeletedRecords";
         public const string StringTrimming = "StringTrimming";
+        public const string UseIndexes = "UseIndexes";
     }
 }
