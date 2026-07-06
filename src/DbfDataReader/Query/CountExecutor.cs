@@ -86,25 +86,39 @@ namespace DbfDataReader.Query
         private static int CountByReadingRows(DbfDataReader reader, SqlExpressionEvaluator evaluator,
             QueryAccessPlan plan, int[] filterOrdinals)
         {
+            return plan.RecordIndexes == null
+                ? CountBySequentialScan(reader, evaluator, filterOrdinals)
+                : CountByIndexResult(reader, evaluator, plan.RecordIndexes, filterOrdinals);
+        }
+
+        private static int CountBySequentialScan(DbfDataReader reader, SqlExpressionEvaluator evaluator,
+            int[] filterOrdinals)
+        {
+            Func<int, object> accessor = reader.GetValue;
+            var record = reader.DbfRecord;
+
+            var count = 0;
+
+            // reader.ReadRaw applies the skip-deleted option itself
+            while (reader.ReadRaw())
+            {
+                if (!record.TryParseValues(filterOrdinals)) break;
+                if (evaluator.Matches(accessor)) count++;
+            }
+
+            return count;
+        }
+
+        private static int CountByIndexResult(DbfDataReader reader, SqlExpressionEvaluator evaluator,
+            IReadOnlyList<int> recordIndexes, int[] filterOrdinals)
+        {
             Func<int, object> accessor = reader.GetValue;
             var table = reader.DbfTable;
             var record = reader.DbfRecord;
 
             var count = 0;
 
-            if (plan.RecordIndexes == null)
-            {
-                // reader.ReadRaw applies the skip-deleted option itself
-                while (reader.ReadRaw())
-                {
-                    if (!record.TryParseValues(filterOrdinals)) break;
-                    if (evaluator.Matches(accessor)) count++;
-                }
-
-                return count;
-            }
-
-            foreach (var recordIndex in plan.RecordIndexes)
+            foreach (var recordIndex in recordIndexes)
             {
                 table.Seek(recordIndex);
                 if (!table.ReadRaw(record)) continue;
