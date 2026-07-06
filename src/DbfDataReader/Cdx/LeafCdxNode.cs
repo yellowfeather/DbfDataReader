@@ -63,30 +63,41 @@ namespace DbfDataReader.Cdx
                     throw new CdxException(CdxErrorCode.InvalidLeafNodeCalculatedKeyStartIndex);
 
                 var actualKeyLength = keyLength - trailingBytes;
-                var keyBytes = new byte[actualKeyLength];
-
-                if (duplicateBytes > 0)
-                {
-                    if (previousKey == null)
-                        throw new CdxException(CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes);
-
-                    var duplicated = Math.Min(duplicateBytes, actualKeyLength);
-                    for (var d = 0; d < duplicated; d++)
-                    {
-                        keyBytes[d] = previousKey[d];
-                    }
-                }
-
-                for (int b = duplicateBytes, source = 0; source < newBytesCount && b < actualKeyLength; b++, source++)
-                {
-                    keyBytes[b] = packed[keyValueSource + source];
-                }
+                var keyBytes = BuildKeyBytes(packed, keyValueSource, newBytesCount, duplicateBytes, actualKeyLength,
+                    previousKey);
 
                 entries[i] = new CdxKeyEntry(keyBytes, recordNumber, encoding);
                 previousKey = keyBytes;
             }
 
             return new LeafCdxNode(offset, indexHeader, attributes, keyCount, leftSibling, rightSibling, entries);
+        }
+
+        // A key is the first duplicateBytes of the previous key, then newBytesCount bytes taken
+        // from the back of the packed area, truncated to the key length minus trailing padding.
+        private static byte[] BuildKeyBytes(ReadOnlySpan<byte> packed, int keyValueSource, int newBytesCount,
+            int duplicateBytes, int actualKeyLength, byte[] previousKey)
+        {
+            var keyBytes = new byte[actualKeyLength];
+
+            if (duplicateBytes > 0)
+            {
+                if (previousKey == null)
+                    throw new CdxException(CdxErrorCode.FirstLeafNodeKeyEntryHasDuplicateBytes);
+
+                var duplicated = Math.Min(duplicateBytes, actualKeyLength);
+                for (var d = 0; d < duplicated; d++)
+                {
+                    keyBytes[d] = previousKey[d];
+                }
+            }
+
+            for (int b = duplicateBytes, source = 0; source < newBytesCount && b < actualKeyLength; b++, source++)
+            {
+                keyBytes[b] = packed[keyValueSource + source];
+            }
+
+            return keyBytes;
         }
     }
 
