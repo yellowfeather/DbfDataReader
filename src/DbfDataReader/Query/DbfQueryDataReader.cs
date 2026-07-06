@@ -17,12 +17,14 @@ namespace DbfDataReader.Query
         private readonly IReadOnlyList<DbfColumn> _columns; // underlying columns, in projected order
         private readonly IReadOnlyList<int> _ordinals; // projected ordinal -> underlying ordinal
         private readonly IReadOnlyList<string> _names; // output names (aliases applied)
+        private readonly SqlExpressionEvaluator _filter; // null when there is no WHERE clause
         private readonly int _limit; // -1 when unlimited
         private int _rowsReturned;
 
-        public DbfQueryDataReader(DbfDataReader reader, SelectStatement statement)
+        public DbfQueryDataReader(DbfDataReader reader, SelectStatement statement, SqlExpressionEvaluator filter)
         {
             _reader = reader;
+            _filter = filter;
 
             var tableColumns = reader.DbfTable.Columns;
             var columns = new List<DbfColumn>();
@@ -72,20 +74,30 @@ namespace DbfDataReader.Query
         {
             if (LimitReached()) return false;
 
-            var result = _reader.Read();
-            if (result) _rowsReturned++;
+            while (_reader.Read())
+            {
+                if (_filter != null && !_filter.Matches(_reader)) continue;
 
-            return result;
+                _rowsReturned++;
+                return true;
+            }
+
+            return false;
         }
 
         public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
         {
             if (LimitReached()) return false;
 
-            var result = await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-            if (result) _rowsReturned++;
+            while (await _reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                if (_filter != null && !_filter.Matches(_reader)) continue;
 
-            return result;
+                _rowsReturned++;
+                return true;
+            }
+
+            return false;
         }
 
         private bool LimitReached()

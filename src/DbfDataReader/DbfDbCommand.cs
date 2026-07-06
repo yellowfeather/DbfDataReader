@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.IO;
@@ -14,8 +15,10 @@ namespace DbfDataReader
         public override bool DesignTimeVisible { get; set; }
         public override UpdateRowSource UpdatedRowSource { get; set; }
         protected override DbConnection DbConnection { get; set; }
-        protected override DbParameterCollection DbParameterCollection { get; }
+        protected override DbParameterCollection DbParameterCollection { get; } = new DbfDbParameterCollection();
         protected override DbTransaction DbTransaction { get; set; }
+
+        public new DbfDbParameterCollection Parameters => (DbfDbParameterCollection)DbParameterCollection;
 
         public override void Cancel()
         {
@@ -29,7 +32,10 @@ namespace DbfDataReader
 
         public override object ExecuteScalar()
         {
-            throw new NotImplementedException();
+            using (var reader = ExecuteDbDataReader(CommandBehavior.Default))
+            {
+                return reader.Read() ? reader.GetValue(0) : null;
+            }
         }
 
         public override void Prepare()
@@ -39,7 +45,7 @@ namespace DbfDataReader
 
         protected override DbParameter CreateDbParameter()
         {
-            throw new NotImplementedException();
+            return new DbfDbParameter();
         }
 
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
@@ -69,13 +75,14 @@ namespace DbfDataReader
             var options = dbfDbConnection.Options;
             var reader = new DbfDataReader(filePath, options);
 
-            // a plain SELECT * needs no projection or row limit; return the raw reader
-            if (statement.IsSelectAll && statement.Top == null) return reader;
+            // a plain unfiltered SELECT * needs no projection, filter or row limit;
+            // return the raw reader
+            if (statement.IsSelectAll && statement.Top == null && statement.Where == null) return reader;
 
             try
             {
                 SqlBinder.Bind(statement, reader.DbfTable.Columns);
-                return new DbfQueryDataReader(reader, statement);
+                return new DbfQueryDataReader(reader, statement, CreateEvaluator(statement));
             }
             catch
             {
@@ -84,12 +91,28 @@ namespace DbfDataReader
             }
         }
 
+        private SqlExpressionEvaluator CreateEvaluator(SelectStatement statement)
+        {
+            if (statement.Where == null) return null;
+
+            var namedParameters = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            var positionalParameters = new List<object>();
+
+            foreach (DbfDbParameter parameter in Parameters)
+            {
+                positionalParameters.Add(parameter.Value);
+
+                var name = DbfDbParameterCollection.Normalize(parameter.ParameterName);
+                if (!string.IsNullOrEmpty(name)) namedParameters[name] = parameter.Value;
+            }
+
+            return new SqlExpressionEvaluator(statement.Where, namedParameters, positionalParameters);
+        }
+
         // execution catches up with the parser in later phases; parse everything,
         // run what is implemented
         private static void EnsureSupported(SelectStatement statement)
         {
-            if (statement.Where != null)
-                throw new NotSupportedException("WHERE clauses are not supported yet.");
             if (statement.OrderBy.Count > 0)
                 throw new NotSupportedException("ORDER BY is not supported yet.");
         }
