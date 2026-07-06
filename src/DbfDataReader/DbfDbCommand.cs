@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.Common;
 using System.IO;
+using DbfDataReader.Query;
 
 namespace DbfDataReader
 {
@@ -60,11 +61,28 @@ namespace DbfDataReader
                 throw new DirectoryNotFoundException($"The specified folder does not exist: {folder}");
             }
             
-            var fileName = QueryParser.Parse(CommandText);
-            var filePath = GetFilePath(folder, fileName);
+            var statement = SqlParser.Parse(CommandText);
+            EnsureSupported(statement);
+
+            var filePath = GetFilePath(folder, statement.TableName);
 
             var options = dbfDbConnection.Options;
             return new DbfDataReader(filePath, options);
+        }
+
+        // execution catches up with the parser in later phases; parse everything,
+        // run what is implemented
+        private static void EnsureSupported(SelectStatement statement)
+        {
+            if (!statement.IsSelectAll)
+                throw new NotSupportedException(
+                    "Column selection is not supported yet; only 'SELECT *' can be executed.");
+            if (statement.Where != null)
+                throw new NotSupportedException("WHERE clauses are not supported yet.");
+            if (statement.OrderBy.Count > 0)
+                throw new NotSupportedException("ORDER BY is not supported yet.");
+            if (statement.Top != null)
+                throw new NotSupportedException("TOP and LIMIT are not supported yet.");
         }
 
         private static string GetFilePath(string folder, string fileName)
