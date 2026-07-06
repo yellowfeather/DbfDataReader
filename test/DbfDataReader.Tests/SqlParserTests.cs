@@ -14,9 +14,12 @@ public class SqlParserTests
 
     public SqlParserTests()
     {
+        // bare (unquoted) table names consist of word characters and dots; Bogus can
+        // generate names with apostrophes, ampersands or spaces, which would need
+        // quoting and are covered by the delimited-name tests
         var faker = new Faker();
         var fileName = faker.System.FileName("dbf");
-        _fileName = fileName.Replace("&", "_and_");
+        _fileName = System.Text.RegularExpressions.Regex.Replace(fileName, @"[^\w.]", "_");
     }
 
     [Fact]
