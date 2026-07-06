@@ -302,14 +302,15 @@ namespace DbfDataReader
 
             var columnNames = columns.Select(column => column.ColumnName).ToArray();
 
-            foreach (var property in RowMaterializer.GetSettableProperties(typeof(T)))
+            foreach (var propertyName in RowMaterializer.GetSettableProperties(typeof(T))
+                         .Select(property => property.Name))
             {
-                var ordinal = RowMaterializer.FindSourceOrdinal(property.Name, columnNames);
+                var ordinal = RowMaterializer.FindSourceOrdinal(propertyName, columnNames);
                 if (ordinal < 0)
                     throw new InvalidOperationException(
-                        $"No column in '{_table.Path}' matches property '{typeof(T).Name}.{property.Name}'.");
+                        $"No column in '{_table.Path}' matches property '{typeof(T).Name}.{propertyName}'.");
 
-                ordinalsByProperty[property.Name] = ordinal;
+                ordinalsByProperty[propertyName] = ordinal;
                 mappedOrdinals.Add(ordinal);
                 mappedNames.Add(columnNames[ordinal]);
             }
