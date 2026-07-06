@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,9 +93,9 @@ namespace DbfDataReader
 
         public T First()
         {
-            foreach (var item in this)
+            using (var enumerator = GetEnumerator())
             {
-                return item;
+                if (enumerator.MoveNext()) return enumerator.Current;
             }
 
             throw new InvalidOperationException("The query returned no rows.");
@@ -102,12 +103,10 @@ namespace DbfDataReader
 
         public T FirstOrDefault()
         {
-            foreach (var item in this)
+            using (var enumerator = GetEnumerator())
             {
-                return item;
+                return enumerator.MoveNext() ? enumerator.Current : null;
             }
-
-            return null;
         }
 
         public int Count()
@@ -301,8 +300,7 @@ namespace DbfDataReader
             var mappedNames = new List<string>();
             var ordinalsByProperty = new Dictionary<string, int>(StringComparer.Ordinal);
 
-            var columnNames = new string[columns.Count];
-            for (var i = 0; i < columns.Count; i++) columnNames[i] = columns[i].ColumnName;
+            var columnNames = columns.Select(column => column.ColumnName).ToArray();
 
             foreach (var property in RowMaterializer.GetSettableProperties(typeof(T)))
             {

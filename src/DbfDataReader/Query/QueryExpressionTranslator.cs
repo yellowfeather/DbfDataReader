@@ -94,7 +94,7 @@ namespace DbfDataReader.Query
             {
                 var member = Unwrap(call.Object) as MemberExpression;
                 if (member != null && IsParameterMember(member, parameter))
-                    return TranslateStringMatch(call, member, parameter, resolveOrdinal);
+                    return TranslateStringMatch(call, member, resolveOrdinal);
             }
 
             if (TryGetContainsParts(call, parameter, out var collection, out var item))
@@ -112,7 +112,7 @@ namespace DbfDataReader.Query
         }
 
         private static SqlExpression TranslateStringMatch(MethodCallExpression call, MemberExpression member,
-            ParameterExpression parameter, Func<string, int> resolveOrdinal)
+            Func<string, int> resolveOrdinal)
         {
             if (!(Evaluate(call.Arguments[0]) is string text))
                 throw NotSupported(call, "the match text must not be null");

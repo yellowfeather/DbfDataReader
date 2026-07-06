@@ -18,7 +18,7 @@ namespace DbfDataReader.Query
             new ConcurrentDictionary<(Type, string), Delegate>();
 
         private static readonly MethodInfo ConvertValueMethod =
-            typeof(RowMaterializer).GetMethod(nameof(ConvertValue), BindingFlags.NonPublic | BindingFlags.Static);
+            ((Func<object, Type, string, object>)ConvertValue).Method;
 
         public static Func<object[], T> Create<T>(IReadOnlyList<string> sourceNames)
         {
