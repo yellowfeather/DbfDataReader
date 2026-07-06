@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Text;
 
 namespace DbfDataReader
 {
@@ -22,16 +21,15 @@ namespace DbfDataReader
             {
                 Value = null;
             }
+            else if (AsciiFieldParser.TryParse(bytes,
+                NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
+                _decimalNumberFormat, out decimal value))
+            {
+                Value = value;
+            }
             else
             {
-                var stringValue = Encoding.ASCII.GetString(bytes);
-
-                if (decimal.TryParse(stringValue,
-                    NumberStyles.Float | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
-                    _decimalNumberFormat, out var value))
-                    Value = value;
-                else
-                    Value = null;
+                Value = null;
             }
         }
 

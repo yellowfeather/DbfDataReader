@@ -220,14 +220,44 @@ namespace DbfDataReader
             return dbfValue.GetValue();
         }
 
+        public bool IsNull(int ordinal)
+        {
+            return Values[ordinal].IsNull;
+        }
+
         public T GetValue<T>(int ordinal)
         {
             var dbfValue = Values[ordinal];
+            if (dbfValue is DbfValue<T> typedValue)
+            {
+                var value = typedValue.Value;
+                if (value is null) throw DataIsNull(ordinal);
+                return value;
+            }
+
+            return GetBoxedValue<T>(dbfValue, ordinal);
+        }
+
+        // typed getters store T? but return T; reading through DbfValue<T?>
+        // avoids boxing the value on the way out
+        internal T GetStructValue<T>(int ordinal) where T : struct
+        {
+            if (Values[ordinal] is DbfValue<T?> typedValue)
+            {
+                var value = typedValue.Value;
+                if (value is null) throw DataIsNull(ordinal);
+                return value.GetValueOrDefault();
+            }
+
+            return GetValue<T>(ordinal);
+        }
+
+        private T GetBoxedValue<T>(IDbfValue dbfValue, int ordinal)
+        {
             try
             {
                 var value = dbfValue.GetValue();
-                if (value is null)
-                    throw new SqlNullValueException($"Data is Null. This method or property cannot be called on Null values. Ordinal {ordinal}");
+                if (value is null) throw DataIsNull(ordinal);
                 return (T) value;
             }
             catch (InvalidCastException)
@@ -235,6 +265,12 @@ namespace DbfDataReader
                 throw new InvalidCastException(
                     $"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
             }
+        }
+
+        private static SqlNullValueException DataIsNull(int ordinal)
+        {
+            return new SqlNullValueException(
+                $"Data is Null. This method or property cannot be called on Null values. Ordinal {ordinal}");
         }
 
         public string GetStringValue(int ordinal)

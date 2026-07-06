@@ -14,6 +14,8 @@ namespace DbfDataReader
 
         public int Length { get; }
 
+        public bool IsNull => true;
+
         public object GetValue()
         {
             return null;

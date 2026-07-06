@@ -92,17 +92,17 @@ namespace DbfDataReader
 
         public T? GetNullableValue<T>(int ordinal) where T : struct
         {
-            return GetValue<T>(ordinal);
+            return DbfRecord.GetStructValue<T>(ordinal);
         }
 
         public override bool GetBoolean(int ordinal)
         {
-            return (bool) GetValue(ordinal);
+            return DbfRecord.GetStructValue<bool>(ordinal);
         }
 
         public override byte GetByte(int ordinal)
         {
-            return GetValue<byte>(ordinal);
+            return DbfRecord.GetStructValue<byte>(ordinal);
         }
 
         public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
@@ -112,7 +112,7 @@ namespace DbfDataReader
 
         public override char GetChar(int ordinal)
         {
-            return GetValue<char>(ordinal);
+            return DbfRecord.GetStructValue<char>(ordinal);
         }
 
         public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
@@ -128,17 +128,17 @@ namespace DbfDataReader
 
         public override DateTime GetDateTime(int ordinal)
         {
-            return GetValue<DateTime>(ordinal);
+            return DbfRecord.GetStructValue<DateTime>(ordinal);
         }
 
         public override decimal GetDecimal(int ordinal)
         {
-            return GetValue<decimal>(ordinal);
+            return DbfRecord.GetStructValue<decimal>(ordinal);
         }
 
         public override double GetDouble(int ordinal)
         {
-            return GetValue<double>(ordinal);
+            return DbfRecord.GetStructValue<double>(ordinal);
         }
 
         public override IEnumerator GetEnumerator()
@@ -213,8 +213,7 @@ namespace DbfDataReader
 
         public override bool IsDBNull(int ordinal)
         {
-            var value = GetValue(ordinal);
-            return value == null;
+            return DbfRecord.IsNull(ordinal);
         }
 
         public override int GetValues(object[] values)
@@ -263,17 +262,17 @@ namespace DbfDataReader
 
         public override long GetInt64(int ordinal)
         {
-            return GetValue<long>(ordinal);
+            return DbfRecord.GetStructValue<long>(ordinal);
         }
 
         public override int GetInt32(int ordinal)
         {
-            return GetValue<int>(ordinal);
+            return DbfRecord.GetStructValue<int>(ordinal);
         }
 
         public override short GetInt16(int ordinal)
         {
-            return GetValue<short>(ordinal);
+            return DbfRecord.GetStructValue<short>(ordinal);
         }
 
         public override Guid GetGuid(int ordinal)
@@ -283,7 +282,7 @@ namespace DbfDataReader
 
         public override float GetFloat(int ordinal)
         {
-            return GetValue<float>(ordinal);
+            return DbfRecord.GetStructValue<float>(ordinal);
         }
 
         public override Type GetFieldType(int ordinal)
