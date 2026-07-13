@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DbfDataReader
 {
@@ -13,7 +14,7 @@ namespace DbfDataReader
 
         public override object SyncRoot => ((ICollection)_parameters).SyncRoot;
 
-        public DbfDbParameter AddWithValue(string parameterName, object value)
+        public DbfDbParameter AddWithValue(string parameterName, object? value)
         {
             var parameter = new DbfDbParameter { ParameterName = parameterName, Value = value };
             _parameters.Add(parameter);
@@ -127,12 +128,13 @@ namespace DbfDataReader
         }
 
         // parameter names match case-insensitively, with or without a leading '@'
-        private static bool NamesEqual(string x, string y)
+        private static bool NamesEqual(string? x, string? y)
         {
             return string.Equals(Normalize(x), Normalize(y), StringComparison.OrdinalIgnoreCase);
         }
 
-        internal static string Normalize(string parameterName)
+        [return: NotNullIfNotNull(nameof(parameterName))]
+        internal static string? Normalize(string? parameterName)
         {
             return parameterName != null && parameterName.StartsWith("@", StringComparison.Ordinal)
                 ? parameterName.Substring(1)

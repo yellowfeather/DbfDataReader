@@ -38,8 +38,13 @@ before the analyzer pass — it collapses most of the CA1062 count. Work
 file-group by file-group so each PR is reviewable.
 
 Progress: core read path + value types annotated (net10.0 nullable warnings
-326 → 284; those files are now nullable-clean). Remaining warnings live in the
-ADO.NET surface, query engine, and CDX index.
+326 → 284), then the ADO.NET reader surface (`DbfDataReader`, `DbfDbConnection`,
+`DbfDbParameter`, `DbfDbParameterCollection`, `SchemaTableBuilder`) — those files
+are now nullable-clean. `DbfDbCommand` and the connection-string builders are
+deferred to the query-engine slice: their parameter-value nullability threads
+into `QueryPlanner`/`SqlExpressionEvaluator`, so they're best done together.
+Remaining warnings live in the query engine, CDX index, `DbfDbCommand`, and the
+connection-string builders.
 
 Warning inventory (per-build, `net10.0`):
 
@@ -57,8 +62,8 @@ Warning inventory (per-build, `net10.0`):
 Suggested order:
 - [x] Core read path — `DbfTable`, `DbfRecord`, `DbfHeader`, `DbfColumn`, memo readers
 - [x] Value types — `DbfValue*`
-- [ ] ADO.NET surface — `DbfDbConnection`, `DbfDbCommand`, `DbfDataReader`, parameter/connection-string types
-- [ ] Query engine — `Query/*` (parser, planner, translator, evaluator, readers)
+- [x] ADO.NET reader surface — `DbfDataReader`, `DbfDbConnection`, `DbfDbParameter`, `DbfDbParameterCollection`, `SchemaTableBuilder`
+- [ ] Query engine — `Query/*` (parser, planner, translator, evaluator, readers) **+ `DbfDbCommand` + connection-string builders** (parameter-value nullability threads through here)
 - [ ] CDX index — `Cdx/*`
 - [ ] Remove now-redundant manual null-checks flagged as dead by CA1508
 

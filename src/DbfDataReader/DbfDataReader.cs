@@ -54,8 +54,8 @@ namespace DbfDataReader
             }
             finally
             {
-                DbfTable = null;
-                DbfRecord = null;
+                DbfTable = null!;
+                DbfRecord = null!;
             }
         }
 
@@ -69,9 +69,9 @@ namespace DbfDataReader
             }
         }
 
-        public DbfRecord ReadRecord()
+        public DbfRecord? ReadRecord()
         {
-            DbfRecord dbfRecord;
+            DbfRecord? dbfRecord;
             bool skip;
             do
             {
@@ -105,7 +105,7 @@ namespace DbfDataReader
             return DbfRecord.GetStructValue<byte>(ordinal);
         }
 
-        public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
+        public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
         {
             throw new NotImplementedException();
         }
@@ -115,7 +115,7 @@ namespace DbfDataReader
             return DbfRecord.GetStructValue<char>(ordinal);
         }
 
-        public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
+        public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
         {
             throw new NotImplementedException();
         }
@@ -261,12 +261,14 @@ namespace DbfDataReader
 
         public override object GetValue(int ordinal)
         {
-            return DbfRecord.GetValue(ordinal);
+            // DbDataReader declares a non-null return, but this reader has always
+            // surfaced a null field value as null rather than DBNull; preserve that.
+            return DbfRecord.GetValue(ordinal)!;
         }
 
         public override string GetString(int ordinal)
         {
-            return DbfRecord.GetStringValue(ordinal);
+            return DbfRecord.GetStringValue(ordinal)!;
         }
 
         public override int GetOrdinal(string name)
@@ -291,7 +293,7 @@ namespace DbfDataReader
         public override string GetName(int ordinal)
         {
             var dbfColumn = DbfTable.Columns[ordinal];
-            return dbfColumn.ColumnName;
+            return dbfColumn.ColumnName!;
         }
 
         public override long GetInt64(int ordinal)
@@ -321,12 +323,12 @@ namespace DbfDataReader
 
         public override Type GetFieldType(int ordinal)
         {
-            return DbfRecord.GetFieldType(ordinal);
+            return DbfRecord.GetFieldType(ordinal)!;
         }
 
         public ReadOnlyCollection<DbColumn> GetColumnSchema()
         {
-            var columns = DbfTable.Columns.Select(c => c as DbColumn).ToList();
+            var columns = DbfTable.Columns.Select(c => (DbColumn)c).ToList();
             return columns.AsReadOnly();
         }
 
