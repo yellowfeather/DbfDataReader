@@ -12,8 +12,8 @@ namespace DbfDataReader
 
         void Read(ReadOnlySpan<byte> bytes);
 
-        object GetValue();
+        object? GetValue();
 
-        Type GetFieldType();
+        Type? GetFieldType();
     }
 }

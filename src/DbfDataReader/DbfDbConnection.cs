@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -29,7 +30,17 @@ namespace DbfDataReader
 
         public DbfDataReaderOptions Options { get; private set; } = new DbfDataReaderOptions();
 
-        public override string ConnectionString { get; set; }
+        private string _connectionString = string.Empty;
+
+        // base declares [AllowNull] on the setter; store a non-null value so the getter
+        // never returns null
+        [AllowNull]
+        public override string ConnectionString
+        {
+            get => _connectionString;
+            set => _connectionString = value ?? string.Empty;
+        }
+
         public override string DataSource { get; }
         public override string ServerVersion { get; }
         
@@ -104,7 +115,7 @@ namespace DbfDataReader
         // Dapper-style typed queries: rows are mapped to T's settable properties by
         // column name (or to T itself for single-column scalar queries), and param's
         // properties become named parameters
-        public List<T> Query<T>(string sql, object param = null)
+        public List<T> Query<T>(string sql, object? param = null)
         {
             using (var command = CreateTypedCommand(sql, param))
             using (var reader = command.ExecuteReader())
@@ -123,7 +134,7 @@ namespace DbfDataReader
             }
         }
 
-        public async Task<List<T>> QueryAsync<T>(string sql, object param = null,
+        public async Task<List<T>> QueryAsync<T>(string sql, object? param = null,
             CancellationToken cancellationToken = default)
         {
             using (var command = CreateTypedCommand(sql, param))
@@ -143,7 +154,7 @@ namespace DbfDataReader
             }
         }
 
-        public T QueryFirstOrDefault<T>(string sql, object param = null)
+        public T? QueryFirstOrDefault<T>(string sql, object? param = null)
         {
             using (var command = CreateTypedCommand(sql, param))
             using (var reader = command.ExecuteReader())
@@ -158,7 +169,7 @@ namespace DbfDataReader
             }
         }
 
-        private DbfDbCommand CreateTypedCommand(string sql, object param)
+        private DbfDbCommand CreateTypedCommand(string sql, object? param)
         {
             var command = (DbfDbCommand)CreateCommand();
             command.CommandText = sql;

@@ -1,0 +1,25 @@
+<Project>
+
+  <!-- Shared defaults for every project in the repo. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <!-- Roslyn/FxCop-style analysis in the build (reviewer recommendation #5).
+         AnalysisMode=All opts in to the full CA rule set, not just the minimal
+         default that ships enabled for SDK projects. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>All</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- Library-only settings. Scoped to the shipping assembly so the test and
+       benchmark projects don't drown in nullable/missing-doc warnings. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'DbfDataReader'">
+    <!-- Nullable reference types (reviewer recommendation #1). -->
+    <Nullable>enable</Nullable>
+    <!-- Emit XML docs into the package so downstream consumers get IntelliSense
+         and the /// <exception> docs from recommendation #4. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>
