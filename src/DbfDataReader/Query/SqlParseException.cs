@@ -6,6 +6,20 @@ namespace DbfDataReader.Query
     // ArgumentException for invalid command text keep working
     public class SqlParseException : ArgumentException
     {
+        public SqlParseException()
+        {
+        }
+
+        public SqlParseException(string message)
+            : base(message)
+        {
+        }
+
+        public SqlParseException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
         public SqlParseException(string message, int position)
             : base(message)
         {
