@@ -5,9 +5,9 @@ namespace DbfDataReader
 {
     public class DbfValueMemo : DbfValueString
     {
-        private readonly DbfMemo _memo;
+        private readonly DbfMemo? _memo;
 
-        public DbfValueMemo(int start, int length, DbfMemo memo, Encoding encoding)
+        public DbfValueMemo(int start, int length, DbfMemo? memo, Encoding encoding)
             : base(start, length, encoding)
         {
             _memo = memo;

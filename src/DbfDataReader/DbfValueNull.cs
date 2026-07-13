@@ -16,7 +16,7 @@ namespace DbfDataReader
 
         public bool IsNull => true;
 
-        public object GetValue()
+        public object? GetValue()
         {
             return null;
         }
@@ -36,7 +36,7 @@ namespace DbfDataReader
             return string.Empty;
         }
 
-        public Type GetFieldType()
+        public Type? GetFieldType()
         {
             return null;
         }

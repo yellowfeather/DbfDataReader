@@ -17,62 +17,60 @@ namespace DbfDataReader
         // streams where the DBF content does not begin at offset zero
         private readonly long _startOffset;
 
-        public DbfTable(string path, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
+        public DbfTable(string path, Encoding? encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
         {
             if (!File.Exists(path)) throw new FileNotFoundException();
 
             Path = path;
-            CurrentEncoding = encoding;
             StringTrimming = stringTrimming;
             ReadFloatsAsDecimals = readFloatsAsDecimals;
 
             Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            Init();
+            Init(encoding);
 
             var memoPath = MemoPath();
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
-        public DbfTable(Stream stream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
+        public DbfTable(Stream stream, Encoding? encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
             : this(stream, null, encoding, stringTrimming, readFloatsAsDecimals, leaveOpen)
         {
         }
 
-        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
+        public DbfTable(Stream stream, Stream? memoStream, Encoding? encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
         {
             Path = string.Empty;
-            CurrentEncoding = encoding;
             StringTrimming = stringTrimming;
             ReadFloatsAsDecimals = readFloatsAsDecimals;
             _leaveOpen = leaveOpen;
             Stream = stream;
             _startOffset = stream.CanSeek ? stream.Position : 0;
 
-            Init();
+            Init(encoding);
 
             if (memoStream != null)
                 Memo = CreateMemo(memoStream);
         }
 
-        private void Init()
+        private void Init(Encoding? encoding)
         {
             Header = new DbfHeader(Stream);
-            CurrentEncoding ??= EncodingProvider.GetEncoding(Header.LanguageDriver);
+            CurrentEncoding = encoding ?? EncodingProvider.GetEncoding(Header.LanguageDriver);
             Columns = ReadColumns(Stream);
         }
 
         public string Path { get; }
 
-        public Encoding CurrentEncoding { get; private set; }
+        public Encoding CurrentEncoding { get; private set; } = null!;
 
-        public DbfHeader Header { get; private set; }
+        public DbfHeader Header { get; private set; } = null!;
 
         public Stream Stream { get; private set; }
 
-        public DbfMemo Memo { get; private set; }
+        public DbfMemo? Memo { get; private set; }
 
-        public IList<DbfColumn> Columns { get; private set; }
+        public IList<DbfColumn> Columns { get; private set; } = null!;
 
         public StringTrimmingOption StringTrimming { get; private set; }
 
@@ -97,7 +95,7 @@ namespace DbfDataReader
             }
             finally
             {
-                Stream = null;
+                Stream = null!;
                 Memo = null;
             }
         }
@@ -183,13 +181,13 @@ namespace DbfDataReader
             return columns;
         }
 
-        public DbfRecord ReadRecord()
+        public DbfRecord? ReadRecord()
         {
             var dbfRecord = new DbfRecord(this);
             return !dbfRecord.Read(Stream) ? null : dbfRecord;
         }
 
-        public async ValueTask<DbfRecord> ReadRecordAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<DbfRecord?> ReadRecordAsync(CancellationToken cancellationToken = default)
         {
             var dbfRecord = new DbfRecord(this);
             return !await dbfRecord.ReadAsync(Stream, cancellationToken).ConfigureAwait(false) ? null : dbfRecord;

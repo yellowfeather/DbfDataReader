@@ -14,20 +14,20 @@ namespace DbfDataReader
 
         public int Length { get; }
 
-        public T Value { get; protected set; }
+        public T? Value { get; protected set; }
 
         public bool IsNull => Value is null;
 
         public abstract void Read(ReadOnlySpan<byte> bytes);
 
-        public object GetValue()
+        public object? GetValue()
         {
             return Value;
         }
 
         public override string ToString()
         {
-            return Value == null ? string.Empty : Value.ToString();
+            return Value?.ToString() ?? string.Empty;
         }
 
         public Type GetFieldType()

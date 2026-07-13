@@ -8,6 +8,7 @@ namespace DbfDataReader
         protected const int BlockHeaderSize = 8;
         protected const int DefaultBlockSize = 512;
 
+        // cleared to null! on Dispose; treated as non-null for the object's usable lifetime
         protected BinaryReader BinaryReader;
 
         protected DbfMemo(string path)
@@ -54,7 +55,7 @@ namespace DbfDataReader
             }
             finally
             {
-                BinaryReader = null;
+                BinaryReader = null!;
             }
         }
 

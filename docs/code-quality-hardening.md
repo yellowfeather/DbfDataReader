@@ -31,11 +31,15 @@ Already in place before the review (no action needed):
 
 ---
 
-## Phase 1 — Nullable reference types (⬜ not started)
+## Phase 1 — Nullable reference types (🚧 in progress)
 
 ~305 nullable warnings on the library, mostly on the public API surface. Do this
 before the analyzer pass — it collapses most of the CA1062 count. Work
 file-group by file-group so each PR is reviewable.
+
+Progress: core read path + value types annotated (net10.0 nullable warnings
+326 → 284; those files are now nullable-clean). Remaining warnings live in the
+ADO.NET surface, query engine, and CDX index.
 
 Warning inventory (per-build, `net10.0`):
 
@@ -51,8 +55,8 @@ Warning inventory (per-build, `net10.0`):
 | CS8602 | 2 | Dereference of a possibly null reference |
 
 Suggested order:
-- [ ] Core read path — `DbfTable`, `DbfRecord`, `DbfHeader`, `DbfColumn`, memo readers
-- [ ] Value types — `DbfValue*`
+- [x] Core read path — `DbfTable`, `DbfRecord`, `DbfHeader`, `DbfColumn`, memo readers
+- [x] Value types — `DbfValue*`
 - [ ] ADO.NET surface — `DbfDbConnection`, `DbfDbCommand`, `DbfDataReader`, parameter/connection-string types
 - [ ] Query engine — `Query/*` (parser, planner, translator, evaluator, readers)
 - [ ] CDX index — `Cdx/*`
