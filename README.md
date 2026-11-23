@@ -281,6 +281,23 @@ case-insensitively); `[Column]` without a name, and its `Order`/`TypeName`, are 
 Every mapped property must match a column, so mark the ones that should not be read with
 `[NotMapped]`.
 
+The same mapping can be configured fluently, which suits types you cannot (or would
+rather not) annotate:
+
+```csharp
+var rows = dbfTable.Query<CoverageRow>(map =>
+    {
+        map.Property(r => r.Coverage).HasColumnName("Coverage %");
+        map.Ignore(r => r.Display);
+    })
+    .Where(r => r.Coverage >= 40)
+    .ToList();
+```
+
+Precedence follows EF Core: fluent configuration, then attributes, then the property
+name. `Property(...)` therefore also maps a property marked `[NotMapped]`, and when a
+property is configured more than once the last call wins.
+
 ## SQL queries with DbfDbConnection
 
 There is also an implementation of `DbConnection` so you can query a folder of files:
@@ -359,6 +376,22 @@ of these fill `CoverageRow.Coverage`; quote column names that are not identifier
 dbConnection.Query<CoverageRow>("select * from coverage.dbf");
 dbConnection.Query<CoverageRow>("select [Coverage %] as Coverage, Name from coverage.dbf");
 ```
+
+The fluent configuration is registered once per connection with `Map<T>`, and then
+applies to every `Query<T>`, `QueryAsync<T>` and `QueryFirstOrDefault<T>` on it:
+
+```csharp
+dbConnection.Map<CoverageRow>(map =>
+{
+    map.Property(r => r.Coverage).HasColumnName("Coverage %");
+    map.Ignore(r => r.Display);
+});
+
+dbConnection.Query<CoverageRow>("select * from coverage.dbf where Name = @name", new { name = "alpha" });
+```
+
+Registering a type again replaces its mapping. The registration belongs to that
+connection instance and is not shared with other connections.
 
 ### Automatic index usage
 

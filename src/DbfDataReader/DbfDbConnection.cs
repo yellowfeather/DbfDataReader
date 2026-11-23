@@ -12,6 +12,7 @@ namespace DbfDataReader
 {
     public class DbfDbConnection : DbConnection
     {
+        private readonly Dictionary<Type, ModelMap> _modelMaps = new Dictionary<Type, ModelMap>();
         private string _database = string.Empty;
         private ConnectionState _state  = ConnectionState.Closed;
 
@@ -101,9 +102,28 @@ namespace DbfDataReader
             };
         }
 
+        // Registers how T's properties map to columns for the typed queries on this
+        // connection, e.g.
+        //
+        //     connection.Map<Row>(map => map.Property(r => r.Coverage).HasColumnName("Coverage %"));
+        //
+        // The mapping takes precedence over [Column] / [NotMapped]. Registering T again
+        // replaces its mapping for subsequent queries.
+        public DbfDbConnection Map<T>(Action<DbfModelBuilder<T>> configure) where T : class
+        {
+            if (configure == null) throw new ArgumentNullException(nameof(configure));
+
+            if (RowMaterializer.IsScalar(typeof(T)))
+                throw new InvalidOperationException(
+                    $"A column mapping cannot be configured for the scalar type '{typeof(T).Name}'.");
+
+            _modelMaps[typeof(T)] = DbfModelBuilder<T>.BuildMap(configure);
+            return this;
+        }
+
         // Dapper-style typed queries: rows are mapped to T's settable properties by
         // column name (or to T itself for single-column scalar queries), and param's
-        // properties become named parameters
+        // properties become named parameters. Map<T> changes the column names.
         public List<T> Query<T>(string sql, object param = null)
         {
             using (var command = CreateTypedCommand(sql, param))
@@ -174,7 +194,7 @@ namespace DbfDataReader
             return command;
         }
 
-        private static Func<object[], T> CreateMaterializer<T>(DbDataReader reader)
+        private Func<object[], T> CreateMaterializer<T>(DbDataReader reader)
         {
             var names = new string[reader.FieldCount];
             for (var ordinal = 0; ordinal < names.Length; ordinal++)
@@ -182,7 +202,9 @@ namespace DbfDataReader
                 names[ordinal] = reader.GetName(ordinal);
             }
 
-            return RowMaterializer.Create<T>(names);
+            // null (no registration) selects the attribute / convention mapping
+            _modelMaps.TryGetValue(typeof(T), out var map);
+            return RowMaterializer.Create<T>(names, map);
         }
     }
 }

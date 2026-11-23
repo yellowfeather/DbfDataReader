@@ -228,6 +228,117 @@ public class DbfDbConnectionQueryTests
         message.ShouldContain("CoverageRow.Coverage");
     }
 
+    private static void MapCoverage(DbfModelBuilder<PlainCoverage> map)
+    {
+        map.Property(r => r.Coverage).HasColumnName("Coverage %");
+        map.Property(r => r.Name).HasColumnName("Name (x)");
+        map.Ignore(r => r.Display);
+    }
+
+    [Fact]
+    public void Should_map_with_a_registered_configuration()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open();
+        connection.Map<PlainCoverage>(MapCoverage);
+
+        var rows = connection.Query<PlainCoverage>("select * from coverage.dbf");
+
+        rows.Select(r => r.Coverage).ShouldBe(new[] { 10, 75, 40, 100 });
+        rows.Select(r => r.Name).ShouldBe(new[] { "alpha", "bravo", "charlie", "delta" });
+    }
+
+    [Fact]
+    public void Should_map_with_parameters_and_a_registered_configuration()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open().Map<PlainCoverage>(MapCoverage);
+
+        var rows = connection.Query<PlainCoverage>(
+            "select * from coverage.dbf where [Coverage %] >= @min order by [Coverage %]",
+            new { min = 40 });
+        rows.Select(r => r.Name).ShouldBe(new[] { "charlie", "bravo", "delta" });
+
+        var first = connection.QueryFirstOrDefault<PlainCoverage>(
+            "select * from coverage.dbf where [Name (x)] = @name", new { name = "delta" });
+        first.Coverage.ShouldBe(100);
+    }
+
+    [Fact]
+    public void Should_fall_back_to_the_property_name_with_a_registered_configuration()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open().Map<PlainCoverage>(MapCoverage);
+
+        var rows = connection.Query<PlainCoverage>(
+            "select [Coverage %] as Coverage, [Name (x)] as Name from coverage.dbf");
+
+        rows.Select(r => r.Coverage).ShouldBe(new[] { 10, 75, 40, 100 });
+        rows.Select(r => r.Name).ShouldBe(new[] { "alpha", "bravo", "charlie", "delta" });
+    }
+
+    [Fact]
+    public async Task Should_map_with_a_registered_configuration_asynchronously()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open().Map<PlainCoverage>(MapCoverage);
+
+        var rows = await connection.QueryAsync<PlainCoverage>("select * from coverage.dbf");
+        rows.Select(r => r.Coverage).ShouldBe(new[] { 10, 75, 40, 100 });
+
+        var filtered = await connection.QueryAsync<PlainCoverage>(
+            "select * from coverage.dbf where [Coverage %] > @min", new { min = 40 });
+        filtered.Select(r => r.Name).ShouldBe(new[] { "bravo", "delta" });
+    }
+
+    [Fact]
+    public void Should_replace_a_registered_configuration()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open();
+
+        connection.Map<PlainCoverage>(MapCoverage);
+        connection.Query<PlainCoverage>("select * from coverage.dbf")[0].Display.ShouldBeNull();
+
+        connection.Map<PlainCoverage>(map =>
+        {
+            MapCoverage(map);
+            map.Property(r => r.Display).HasColumnName("Name (x)");
+        });
+        connection.Query<PlainCoverage>("select * from coverage.dbf")[0].Display.ShouldBe("alpha");
+    }
+
+    [Fact]
+    public void Should_scope_a_registered_configuration_to_its_connection()
+    {
+        using var folder = new CoverageFolder();
+        using var mapped = folder.Open().Map<PlainCoverage>(MapCoverage);
+        using var unmapped = folder.Open();
+
+        mapped.Query<PlainCoverage>("select * from coverage.dbf").Count.ShouldBe(4);
+
+        // without the registration, PlainCoverage's property names match no column
+        Should.Throw<InvalidOperationException>(() =>
+            unmapped.Query<PlainCoverage>("select * from coverage.dbf"));
+    }
+
+    [Fact]
+    public void Should_reject_a_null_configuration()
+    {
+        using var connection = new DbfDbConnection();
+
+        Should.Throw<ArgumentNullException>(() => connection.Map<PlainCoverage>(null));
+    }
+
+    [Fact]
+    public void Should_reject_a_configuration_for_scalar_types()
+    {
+        using var connection = new DbfDbConnection();
+
+        Should.Throw<InvalidOperationException>(() => connection.Map<string>(map => { }))
+            .Message.ShouldContain("scalar");
+    }
+
     private class AliasedPoint
     {
         public string Id { get; set; }

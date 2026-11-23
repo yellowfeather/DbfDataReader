@@ -14,16 +14,19 @@ namespace DbfDataReader.Query
     // nullable forms) map the first column.
     internal static class RowMaterializer
     {
-        private static readonly ConcurrentDictionary<(Type Type, string Signature), Delegate> Cache =
-            new ConcurrentDictionary<(Type, string), Delegate>();
+        private static readonly ConcurrentDictionary<(Type Type, string Mapping, string Signature), Delegate> Cache =
+            new ConcurrentDictionary<(Type, string, string), Delegate>();
 
         private static readonly MethodInfo ConvertValueMethod =
             ((Func<object, Type, string, object>)ConvertValue).Method;
 
-        public static Func<object[], T> Create<T>(IReadOnlyList<string> sourceNames)
+        // map: the property -> column mapping; null for the attribute / convention one
+        public static Func<object[], T> Create<T>(IReadOnlyList<string> sourceNames, ModelMap map = null)
         {
-            var key = (typeof(T), string.Join("\u001f", sourceNames));
-            return (Func<object[], T>)Cache.GetOrAdd(key, _ => Build<T>(sourceNames));
+            map = map ?? ModelMap.For(typeof(T));
+
+            var key = (typeof(T), map.Signature, string.Join("\u001f", sourceNames));
+            return (Func<object[], T>)Cache.GetOrAdd(key, _ => Build<T>(sourceNames, map));
         }
 
         public static bool IsScalar(Type type)
@@ -33,7 +36,7 @@ namespace DbfDataReader.Query
                    underlying == typeof(DateTime);
         }
 
-        private static Func<object[], T> Build<T>(IReadOnlyList<string> sourceNames)
+        private static Func<object[], T> Build<T>(IReadOnlyList<string> sourceNames, ModelMap map)
         {
             if (IsScalar(typeof(T)))
             {
@@ -48,11 +51,11 @@ namespace DbfDataReader.Query
             var row = Expression.Parameter(typeof(object[]), "row");
             var bindings = new List<MemberBinding>();
 
-            foreach (var entry in ModelMap.For(typeof(T)))
+            foreach (var entry in map.Entries)
             {
                 var property = entry.Property;
 
-                // an attribute name that is absent falls back to the property name, so
+                // a configured name that is absent falls back to the property name, so
                 // "select [Coverage %] as Coverage" still maps
                 var ordinal = FindSourceOrdinal(entry.ColumnName, sourceNames);
                 if (ordinal < 0 && entry.IsExplicit) ordinal = FindSourceOrdinal(property.Name, sourceNames);
