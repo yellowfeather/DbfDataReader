@@ -14,6 +14,11 @@ variable reaches every build. Each benchmark prints the version it actually load
 
 Reads every field of every record of `fixtures/tl_2019_01_place.dbf`, in the style of
 [MarkPflug/Benchmarks](https://github.com/MarkPflug/Benchmarks/blob/main/source/Benchmarks/DbfDataReaderBenchmarks.cs).
+Every library reads its fields through `GetValue`, so the comparison measures the
+readers and not the loop. (Results recorded up to v2.3.0 used a typed-getter dispatch
+for DbfDataReader only — `GetFieldType` and `Type.GetTypeCode` per field — which cost
+it roughly 40 µs per pass that the other two did not pay.)
+
 Run it against any released version to compare releases:
 
 ```

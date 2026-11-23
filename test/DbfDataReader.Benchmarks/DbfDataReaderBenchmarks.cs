@@ -7,8 +7,10 @@ namespace DbfDataReader.Benchmarks
 {
     // Cross-library comparison in the style of
     // https://github.com/MarkPflug/Benchmarks/blob/main/source/Benchmarks/DbfDataReaderBenchmarks.cs:
-    // read every field of every record of a US Census TIGER place file. Run against a
-    // specific released DbfDataReader with -p:DbfDataReaderVersion=x.y.z (see README).
+    // read every field of every record of a US Census TIGER place file. Each library
+    // reads its fields the same way, through GetValue, so that the comparison measures
+    // the readers rather than the loop. Run against a specific released DbfDataReader by
+    // setting the DbfDataReaderVersion environment variable (see README).
     public class DbfDataReaderBenchmarks
     {
         private const string FixturePath = "./fixtures/tl_2019_01_place.dbf";
@@ -54,7 +56,7 @@ namespace DbfDataReader.Benchmarks
                 for (var ordinal = 0; ordinal < dbfDataReader.FieldCount; ordinal++)
                 {
                     if (dbfDataReader.IsDBNull(ordinal)) continue;
-                    dbfDataReader.ReadField(ordinal);
+                    dbfDataReader.GetValue(ordinal);
                 }
             }
         }
