@@ -26,8 +26,8 @@ namespace DbfDataReader.Query
         }
 
         public static (int Count, string Description) Execute(SelectStatement statement, DbfDataReader reader,
-            DbfDataReaderOptions options, IReadOnlyDictionary<string, object> namedParameters,
-            IReadOnlyList<object> positionalParameters)
+            DbfDataReaderOptions options, IReadOnlyDictionary<string, object?>? namedParameters,
+            IReadOnlyList<object?>? positionalParameters)
         {
             var table = reader.DbfTable;
             var record = reader.DbfRecord;

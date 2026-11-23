@@ -12,12 +12,12 @@ namespace DbfDataReader.Query
     internal sealed class SqlExpressionEvaluator
     {
         private readonly SqlExpression _expression;
-        private readonly IReadOnlyDictionary<string, object> _namedParameters;
-        private readonly IReadOnlyList<object> _positionalParameters;
+        private readonly IReadOnlyDictionary<string, object?>? _namedParameters;
+        private readonly IReadOnlyList<object?>? _positionalParameters;
         private readonly Dictionary<string, Regex> _likePatterns = new Dictionary<string, Regex>();
 
         public SqlExpressionEvaluator(SqlExpression expression,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters)
         {
             _expression = expression;
             _namedParameters = namedParameters;
@@ -25,12 +25,12 @@ namespace DbfDataReader.Query
         }
 
         // getValue returns the current row's value for an underlying column ordinal
-        public bool Matches(Func<int, object> getValue)
+        public bool Matches(Func<int, object?> getValue)
         {
             return EvaluateCondition(_expression, getValue) == true;
         }
 
-        private bool? EvaluateCondition(SqlExpression expression, Func<int, object> reader)
+        private bool? EvaluateCondition(SqlExpression expression, Func<int, object?> reader)
         {
             switch (expression)
             {
@@ -52,7 +52,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private bool? EvaluateBinary(SqlBinaryExpression binary, Func<int, object> reader)
+        private bool? EvaluateBinary(SqlBinaryExpression binary, Func<int, object?> reader)
         {
             switch (binary.Operator)
             {
@@ -65,7 +65,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private bool? EvaluateAnd(SqlBinaryExpression binary, Func<int, object> reader)
+        private bool? EvaluateAnd(SqlBinaryExpression binary, Func<int, object?> reader)
         {
             var left = EvaluateCondition(binary.Left, reader);
             if (left == false) return false;
@@ -76,7 +76,7 @@ namespace DbfDataReader.Query
             return left == true && right == true ? true : (bool?)null;
         }
 
-        private bool? EvaluateOr(SqlBinaryExpression binary, Func<int, object> reader)
+        private bool? EvaluateOr(SqlBinaryExpression binary, Func<int, object?> reader)
         {
             var left = EvaluateCondition(binary.Left, reader);
             if (left == true) return true;
@@ -87,7 +87,7 @@ namespace DbfDataReader.Query
             return left == false && right == false ? false : (bool?)null;
         }
 
-        private bool? EvaluateComparison(SqlBinaryExpression binary, Func<int, object> reader)
+        private bool? EvaluateComparison(SqlBinaryExpression binary, Func<int, object?> reader)
         {
             var left = EvaluateOperand(binary.Left, reader);
             var right = EvaluateOperand(binary.Right, reader);
@@ -108,7 +108,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private bool? EvaluateBetween(SqlBetweenExpression between, Func<int, object> reader)
+        private bool? EvaluateBetween(SqlBetweenExpression between, Func<int, object?> reader)
         {
             var value = EvaluateOperand(between.Operand, reader);
             var low = EvaluateOperand(between.Low, reader);
@@ -131,7 +131,7 @@ namespace DbfDataReader.Query
             return ApplyNegation(result, between.Negated);
         }
 
-        private bool? EvaluateIn(SqlInExpression inExpression, Func<int, object> reader)
+        private bool? EvaluateIn(SqlInExpression inExpression, Func<int, object?> reader)
         {
             var value = EvaluateOperand(inExpression.Operand, reader);
 
@@ -165,7 +165,7 @@ namespace DbfDataReader.Query
             return ApplyNegation(result, inExpression.Negated);
         }
 
-        private bool? EvaluateLike(SqlLikeExpression like, Func<int, object> reader)
+        private bool? EvaluateLike(SqlLikeExpression like, Func<int, object?> reader)
         {
             var value = EvaluateOperand(like.Operand, reader);
             var pattern = EvaluateOperand(like.Pattern, reader);
@@ -182,13 +182,13 @@ namespace DbfDataReader.Query
             return ApplyNegation(result, like.Negated);
         }
 
-        private bool? EvaluateIsNull(SqlIsNullExpression isNull, Func<int, object> reader)
+        private bool? EvaluateIsNull(SqlIsNullExpression isNull, Func<int, object?> reader)
         {
             var value = EvaluateOperand(isNull.Operand, reader);
             return isNull.Negated ? value != null : value == null;
         }
 
-        private object EvaluateOperand(SqlExpression expression, Func<int, object> reader)
+        private object? EvaluateOperand(SqlExpression expression, Func<int, object?> reader)
         {
             switch (expression)
             {
@@ -204,9 +204,9 @@ namespace DbfDataReader.Query
             }
         }
 
-        private object GetParameterValue(SqlParameterExpression parameter)
+        private object? GetParameterValue(SqlParameterExpression parameter)
         {
-            object value;
+            object? value;
             if (parameter.Name != null)
             {
                 if (_namedParameters == null || !_namedParameters.TryGetValue(parameter.Name, out value))

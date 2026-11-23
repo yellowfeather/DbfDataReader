@@ -128,12 +128,12 @@ namespace DbfDataReader.Query
         public override long GetInt64(int ordinal) => GetFieldValue<long>(ordinal);
         public override string GetString(int ordinal) => GetFieldValue<string>(ordinal);
 
-        public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
+        public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
         {
             throw new NotImplementedException();
         }
 
-        public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
+        public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
         {
             throw new NotImplementedException();
         }

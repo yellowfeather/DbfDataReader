@@ -18,12 +18,12 @@ namespace DbfDataReader.Query
             new ConcurrentDictionary<(Type, string), Delegate>();
 
         private static readonly MethodInfo ConvertValueMethod =
-            ((Func<object, Type, string, object>)ConvertValue).Method;
+            ((Func<object?, Type, string, object?>)ConvertValue).Method;
 
-        public static Func<object[], T> Create<T>(IReadOnlyList<string> sourceNames)
+        public static Func<object?[], T> Create<T>(IReadOnlyList<string> sourceNames)
         {
             var key = (typeof(T), string.Join("\u001f", sourceNames));
-            return (Func<object[], T>)Cache.GetOrAdd(key, _ => Build<T>(sourceNames));
+            return (Func<object?[], T>)Cache.GetOrAdd(key, _ => Build<T>(sourceNames));
         }
 
         public static bool IsScalar(Type type)
@@ -33,12 +33,12 @@ namespace DbfDataReader.Query
                    underlying == typeof(DateTime);
         }
 
-        private static Func<object[], T> Build<T>(IReadOnlyList<string> sourceNames)
+        private static Func<object?[], T> Build<T>(IReadOnlyList<string> sourceNames)
         {
             if (IsScalar(typeof(T)))
             {
                 var name = sourceNames.Count > 0 ? sourceNames[0] : "0";
-                return row => (T)ConvertValue(row[0], typeof(T), name);
+                return row => (T)ConvertValue(row[0], typeof(T), name)!;
             }
 
             if (typeof(T).GetConstructor(Type.EmptyTypes) == null)
@@ -68,7 +68,7 @@ namespace DbfDataReader.Query
                     $"Type '{typeof(T).Name}' has no public settable properties to map.");
 
             var body = Expression.MemberInit(Expression.New(typeof(T)), bindings);
-            return Expression.Lambda<Func<object[], T>>(body, row).Compile();
+            return Expression.Lambda<Func<object?[], T>>(body, row).Compile();
         }
 
         internal static IEnumerable<PropertyInfo> GetSettableProperties(Type type)
@@ -95,7 +95,7 @@ namespace DbfDataReader.Query
             return -1;
         }
 
-        private static object ConvertValue(object value, Type targetType, string sourceName)
+        private static object? ConvertValue(object? value, Type targetType, string sourceName)
         {
             if (value == null)
             {

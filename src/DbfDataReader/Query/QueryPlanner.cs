@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,9 +25,9 @@ namespace DbfDataReader.Query
             LikePrefix = 2
         }
 
-        public static QueryAccessPlan CreatePlan(SqlExpression where,
+        public static QueryAccessPlan CreatePlan(SqlExpression? where,
             IReadOnlyList<(int Ordinal, bool Descending)> orderKeys, DbfTable table, bool useIndexes,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters)
         {
             if (!useIndexes) return QueryAccessPlan.FullScan("indexes disabled");
 
@@ -53,9 +54,9 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static QueryAccessPlan CreatePlanCore(SqlExpression where, int orderOrdinal,
+        private static QueryAccessPlan CreatePlanCore(SqlExpression? where, int orderOrdinal,
             bool orderDescending, DbfTable table, string indexPath,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters)
         {
             using (var cdxFile = new CdxFile(indexPath, table.CurrentEncoding))
             {
@@ -173,7 +174,7 @@ namespace DbfDataReader.Query
             private readonly IndexTag _tag;
 
             public Candidate(CandidateKind kind, int ordinal, IndexTag tag, string description,
-                byte[] equalityKey, Func<byte[], int> comparison, bool isExact)
+                byte[]? equalityKey, Func<byte[], int>? comparison, bool isExact)
             {
                 _tag = tag;
                 Kind = kind;
@@ -189,8 +190,8 @@ namespace DbfDataReader.Query
             public CdxIndex Index => _tag.Index;
             public string Description { get; }
             public byte PadByte => _tag.PadByte;
-            public byte[] EqualityKey { get; } // character equality searches
-            public Func<byte[], int> Comparison { get; }
+            public byte[]? EqualityKey { get; } // character equality searches
+            public Func<byte[], int>? Comparison { get; }
 
             // the search returns exactly the rows matching this conjunct, with no need
             // for a residual filter; double and date keys are inexact because decimal
@@ -205,11 +206,11 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static Candidate FindBestCandidate(IReadOnlyList<SqlExpression> conjuncts,
+        private static Candidate? FindBestCandidate(IReadOnlyList<SqlExpression> conjuncts,
             Dictionary<int, IndexTag> tags, Encoding encoding,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters)
         {
-            Candidate best = null;
+            Candidate? best = null;
 
             foreach (var conjunct in conjuncts)
             {
@@ -235,9 +236,9 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static Candidate TryCreateCandidate(SqlExpression conjunct, Dictionary<int, IndexTag> tags,
-            Encoding encoding, IReadOnlyDictionary<string, object> namedParameters,
-            IReadOnlyList<object> positionalParameters)
+        private static Candidate? TryCreateCandidate(SqlExpression conjunct, Dictionary<int, IndexTag> tags,
+            Encoding encoding, IReadOnlyDictionary<string, object?>? namedParameters,
+            IReadOnlyList<object?>? positionalParameters)
         {
             switch (conjunct)
             {
@@ -257,8 +258,9 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static bool TryGetComparison(SqlBinaryExpression binary, out SqlColumnExpression column,
-            out SqlExpression valueExpression, out SqlBinaryOperator op)
+        private static bool TryGetComparison(SqlBinaryExpression binary,
+            [NotNullWhen(true)] out SqlColumnExpression? column,
+            [NotNullWhen(true)] out SqlExpression? valueExpression, out SqlBinaryOperator op)
         {
             column = null;
             valueExpression = null;
@@ -297,9 +299,9 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static Candidate TryCreateComparisonCandidate(SqlColumnExpression column,
+        private static Candidate? TryCreateComparisonCandidate(SqlColumnExpression column,
             SqlExpression valueExpression, SqlBinaryOperator op, Dictionary<int, IndexTag> tags, Encoding encoding,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters)
         {
             if (!tags.TryGetValue(column.Ordinal, out var tag)) return null;
             if (!TryResolveValue(valueExpression, namedParameters, positionalParameters, out var value)) return null;
@@ -321,7 +323,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static Candidate TryCreateTextComparisonCandidate(SqlColumnExpression column, object value,
+        private static Candidate? TryCreateTextComparisonCandidate(SqlColumnExpression column, object value,
             SqlBinaryOperator op, IndexTag tag, Encoding encoding)
         {
             if (!TryGetSearchText(value, out var text)) return null;
@@ -341,14 +343,15 @@ namespace DbfDataReader.Query
 
             if (!fits) return null; // over-long bound: leave it to the scan
 
-            var comparison = CreateTextRangeComparison(op, target);
+            // fits is true here, so TryPadKey produced a non-null padded key
+            var comparison = CreateTextRangeComparison(op, target!);
             if (comparison == null) return null;
 
             return new Candidate(CandidateKind.Range, column.Ordinal, tag,
                 $"index range scan on tag '{tag.Name}'", null, comparison, true);
         }
 
-        private static Func<byte[], int> CreateTextRangeComparison(SqlBinaryOperator op, byte[] target)
+        private static Func<byte[], int>? CreateTextRangeComparison(SqlBinaryOperator op, byte[] target)
         {
             switch (op)
             {
@@ -365,7 +368,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static Candidate TryCreateIntegerComparisonCandidate(SqlColumnExpression column, object value,
+        private static Candidate? TryCreateIntegerComparisonCandidate(SqlColumnExpression column, object value,
             SqlBinaryOperator op, IndexTag tag)
         {
             if (!TryGetNumber(value, out var number)) return null;
@@ -417,7 +420,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static Candidate TryCreateDoubleComparisonCandidate(SqlColumnExpression column, object value,
+        private static Candidate? TryCreateDoubleComparisonCandidate(SqlColumnExpression column, object value,
             SqlBinaryOperator op, IndexTag tag)
         {
             if (!TryGetNumber(value, out var number)) return null;
@@ -425,7 +428,7 @@ namespace DbfDataReader.Query
             return CreateDoubleKeyCandidate(column, CdxKeyEncoder.EncodeDouble((double)number), op, tag);
         }
 
-        private static Candidate TryCreateDateComparisonCandidate(SqlColumnExpression column, object value,
+        private static Candidate? TryCreateDateComparisonCandidate(SqlColumnExpression column, object value,
             SqlBinaryOperator op, IndexTag tag)
         {
             if (!TryGetDate(value, out var date)) return null;
@@ -453,9 +456,9 @@ namespace DbfDataReader.Query
                 $"index range scan on tag '{tag.Name}'", null, comparison, false);
         }
 
-        private static Candidate TryCreateBetweenCandidate(SqlColumnExpression column, SqlBetweenExpression between,
+        private static Candidate? TryCreateBetweenCandidate(SqlColumnExpression column, SqlBetweenExpression between,
             Dictionary<int, IndexTag> tags, Encoding encoding,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters)
         {
             if (!tags.TryGetValue(column.Ordinal, out var tag)) return null;
             if (!TryResolveValue(between.Low, namedParameters, positionalParameters, out var lowValue)) return null;
@@ -486,7 +489,7 @@ namespace DbfDataReader.Query
             }
         }
 
-        private static Candidate TryCreateTextBetweenCandidate(SqlColumnExpression column, object lowValue,
+        private static Candidate? TryCreateTextBetweenCandidate(SqlColumnExpression column, object lowValue,
             object highValue, IndexTag tag, Encoding encoding, string description)
         {
             if (!TryGetSearchText(lowValue, out var lowText)) return null;
@@ -506,7 +509,7 @@ namespace DbfDataReader.Query
                 Comparison, true);
         }
 
-        private static Candidate TryCreateIntegerBetweenCandidate(SqlColumnExpression column, object lowValue,
+        private static Candidate? TryCreateIntegerBetweenCandidate(SqlColumnExpression column, object lowValue,
             object highValue, IndexTag tag, string description)
         {
             if (!TryGetNumber(lowValue, out var lowNumber)) return null;
@@ -537,9 +540,9 @@ namespace DbfDataReader.Query
                 Comparison, isExact);
         }
 
-        private static Candidate TryCreateLikeCandidate(SqlColumnExpression column, SqlLikeExpression like,
+        private static Candidate? TryCreateLikeCandidate(SqlColumnExpression column, SqlLikeExpression like,
             Dictionary<int, IndexTag> tags, Encoding encoding,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters)
         {
             if (!tags.TryGetValue(column.Ordinal, out var tag)) return null;
             if (tag.ColumnType != DbfColumnType.Character) return null;
@@ -582,8 +585,8 @@ namespace DbfDataReader.Query
         }
 
         private static bool TryResolveValue(SqlExpression expression,
-            IReadOnlyDictionary<string, object> namedParameters, IReadOnlyList<object> positionalParameters,
-            out object value)
+            IReadOnlyDictionary<string, object?>? namedParameters, IReadOnlyList<object?>? positionalParameters,
+            [NotNullWhen(true)] out object? value)
         {
             value = null;
 
@@ -610,7 +613,7 @@ namespace DbfDataReader.Query
 
         // character search text must be printable ASCII; that keeps byte order and the
         // evaluator's ordinal comparison sign-consistent
-        private static bool TryGetSearchText(object value, out string text)
+        private static bool TryGetSearchText(object value, [NotNullWhen(true)] out string? text)
         {
             text = null;
 
@@ -667,7 +670,7 @@ namespace DbfDataReader.Query
 
         // trims trailing spaces, which the dialect ignores, and pads the value to the
         // key length. Fails when the trimmed value cannot fit in a key.
-        private static bool TryPadKey(string text, int keyLength, Encoding encoding, out byte[] key)
+        private static bool TryPadKey(string text, int keyLength, Encoding encoding, [NotNullWhen(true)] out byte[]? key)
         {
             key = null;
 
@@ -789,7 +792,7 @@ namespace DbfDataReader.Query
             return -1;
         }
 
-        private static string FindIndexPath(string dbfPath)
+        private static string? FindIndexPath(string dbfPath)
         {
             if (string.IsNullOrEmpty(dbfPath)) return null;
 

@@ -118,7 +118,7 @@ namespace DbfDataReader
             throw new InvalidOperationException("The query returned no rows.");
         }
 
-        public T FirstOrDefault()
+        public T? FirstOrDefault()
         {
             using (var enumerator = GetEnumerator())
             {
@@ -139,9 +139,7 @@ namespace DbfDataReader
 
             // an index result that is exactly the matching rows (or any index result
             // when there is no filter) can be counted without reading row values
-            var indexCountsRows = recordIndexes != null &&
-                                  (plan.Filter == null || plan.AccessPlan.CoversWhereExactly);
-            if (indexCountsRows)
+            if (recordIndexes != null && (plan.Filter == null || plan.AccessPlan.CoversWhereExactly))
             {
                 return _includeDeleted
                     ? Math.Min(recordIndexes.Count, limit)
@@ -185,7 +183,7 @@ namespace DbfDataReader
 
         private int CountByReadingRows(QueryPlan plan, DbfRecord record, int limit)
         {
-            Func<int, object> accessor = record.GetValue;
+            Func<int, object?> accessor = record.GetValue;
 
             var position = 0;
             var count = 0;
@@ -233,7 +231,7 @@ namespace DbfDataReader
             var plan = Prepare();
             var record = new DbfRecord(_table);
             record.EnableSubsetParsing();
-            Func<int, object> accessor = record.GetValue;
+            Func<int, object?> accessor = record.GetValue;
             var cursor = new RowCursor();
 
             _table.Seek(0);
@@ -263,10 +261,10 @@ namespace DbfDataReader
             }
         }
 
-        private async Task<List<(T Item, object[] Keys)>> BuildSortBufferAsync(QueryPlan plan, DbfRecord record,
-            Func<int, object> accessor, RowCursor cursor, CancellationToken cancellationToken)
+        private async Task<List<(T Item, object?[] Keys)>> BuildSortBufferAsync(QueryPlan plan, DbfRecord record,
+            Func<int, object?> accessor, RowCursor cursor, CancellationToken cancellationToken)
         {
-            var buffer = new List<(T Item, object[] Keys)>();
+            var buffer = new List<(T Item, object?[] Keys)>();
             while (await ReadNextRowAsync(plan, record, cursor, cancellationToken).ConfigureAwait(false))
             {
                 var decision = EvaluateRow(record, plan, accessor);
@@ -306,7 +304,7 @@ namespace DbfDataReader
             var plan = Prepare();
             var record = new DbfRecord(_table);
             record.EnableSubsetParsing();
-            Func<int, object> accessor = record.GetValue;
+            Func<int, object?> accessor = record.GetValue;
 
             _table.Seek(0);
 
@@ -333,10 +331,10 @@ namespace DbfDataReader
             }
         }
 
-        private List<(T Item, object[] Keys)> BuildSortBuffer(QueryPlan plan, DbfRecord record,
-            Func<int, object> accessor)
+        private List<(T Item, object?[] Keys)> BuildSortBuffer(QueryPlan plan, DbfRecord record,
+            Func<int, object?> accessor)
         {
-            var buffer = new List<(T Item, object[] Keys)>();
+            var buffer = new List<(T Item, object?[] Keys)>();
             var position = 0;
             while (ReadNextRow(plan, record, ref position))
             {
@@ -370,7 +368,7 @@ namespace DbfDataReader
         // the deleted/filter checks parse only the filter's columns; the remaining
         // needed columns parse once the row is accepted. Stop means the record data
         // ran past the end of a stream (matching Read's end-of-stream contract).
-        private RowDecision EvaluateRow(DbfRecord record, QueryPlan plan, Func<int, object> accessor)
+        private RowDecision EvaluateRow(DbfRecord record, QueryPlan plan, Func<int, object?> accessor)
         {
             if (!MatchesFilter(record, plan, accessor)) return RowDecision.Skip;
 
@@ -379,7 +377,7 @@ namespace DbfDataReader
 
         // counting needs only the filter columns, so this is also the whole of the
         // count path's row evaluation
-        private bool MatchesFilter(DbfRecord record, QueryPlan plan, Func<int, object> accessor)
+        private bool MatchesFilter(DbfRecord record, QueryPlan plan, Func<int, object?> accessor)
         {
             if (!_includeDeleted && record.IsDeleted) return false;
             if (!record.TryParseValues(plan.FilterOrdinals)) return false;
@@ -397,9 +395,9 @@ namespace DbfDataReader
             return plan.Materializer(plan.RowBuffer);
         }
 
-        private static object[] SnapshotSortKeys(DbfRecord record, QueryPlan plan)
+        private static object?[] SnapshotSortKeys(DbfRecord record, QueryPlan plan)
         {
-            var keys = new object[plan.SortKeys.Count];
+            var keys = new object?[plan.SortKeys.Count];
             for (var i = 0; i < keys.Length; i++)
             {
                 keys[i] = record.GetValue(plan.SortKeys[i].Ordinal);
@@ -408,7 +406,7 @@ namespace DbfDataReader
             return keys;
         }
 
-        private IEnumerable<T> SortAndLimit(List<(T Item, object[] Keys)> buffer, QueryPlan plan)
+        private IEnumerable<T> SortAndLimit(List<(T Item, object?[] Keys)> buffer, QueryPlan plan)
         {
             var indices = new int[buffer.Count];
             for (var i = 0; i < indices.Length; i++) indices[i] = i;
@@ -427,7 +425,7 @@ namespace DbfDataReader
             }
         }
 
-        private static int CompareKeys(object[] x, object[] y, QueryPlan plan)
+        private static int CompareKeys(object?[] x, object?[] y, QueryPlan plan)
         {
             for (var i = 0; i < plan.SortKeys.Count; i++)
             {
@@ -440,7 +438,7 @@ namespace DbfDataReader
         }
 
         // nulls sort before every value ascending (and therefore last descending)
-        private static int CompareKeyValues(object x, object y)
+        private static int CompareKeyValues(object? x, object? y)
         {
             if (x == null && y == null) return 0;
             if (x == null) return -1;
@@ -483,7 +481,7 @@ namespace DbfDataReader
                     $"Property '{propertyName}' is not mapped to a column.");
             }
 
-            SqlExpression combinedWhere = null;
+            SqlExpression? combinedWhere = null;
             foreach (var predicate in _predicates)
             {
                 var translated = QueryExpressionTranslator.TranslatePredicate(predicate, ResolveOrdinal);
@@ -524,7 +522,7 @@ namespace DbfDataReader
             return new QueryPlan(
                 RowMaterializer.Create<T>(mappedNames),
                 mappedOrdinals,
-                new object[mappedOrdinals.Count],
+                new object?[mappedOrdinals.Count],
                 filter,
                 sortKeys,
                 accessPlan)
@@ -536,8 +534,8 @@ namespace DbfDataReader
 
         private sealed class QueryPlan
         {
-            public QueryPlan(Func<object[], T> materializer, IReadOnlyList<int> mappedOrdinals, object[] rowBuffer,
-                SqlExpressionEvaluator filter, IReadOnlyList<(int Ordinal, bool Descending)> sortKeys,
+            public QueryPlan(Func<object?[], T> materializer, IReadOnlyList<int> mappedOrdinals, object?[] rowBuffer,
+                SqlExpressionEvaluator? filter, IReadOnlyList<(int Ordinal, bool Descending)> sortKeys,
                 QueryAccessPlan accessPlan)
             {
                 Materializer = materializer;
@@ -548,21 +546,21 @@ namespace DbfDataReader
                 AccessPlan = accessPlan;
             }
 
-            public Func<object[], T> Materializer { get; }
+            public Func<object?[], T> Materializer { get; }
 
             public IReadOnlyList<int> MappedOrdinals { get; }
 
-            public object[] RowBuffer { get; }
+            public object?[] RowBuffer { get; }
 
-            public SqlExpressionEvaluator Filter { get; }
+            public SqlExpressionEvaluator? Filter { get; }
 
             public IReadOnlyList<(int Ordinal, bool Descending)> SortKeys { get; }
 
             public QueryAccessPlan AccessPlan { get; }
 
-            public int[] FilterOrdinals { get; set; }
+            public int[] FilterOrdinals { get; set; } = Array.Empty<int>();
 
-            public int[] PostFilterOrdinals { get; set; }
+            public int[] PostFilterOrdinals { get; set; } = Array.Empty<int>();
         }
     }
 }
