@@ -20,18 +20,22 @@ namespace DbfDataReader
 
         public DbfTable(string path, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
         {
-            if (!File.Exists(path)) throw new FileNotFoundException();
+            // resolve a relative path once: each File.Exists or FileStream open on a
+            // relative path looks up the current directory again, which costs far more
+            // than the check itself
+            var fullPath = System.IO.Path.GetFullPath(path);
+            if (!File.Exists(fullPath)) throw new FileNotFoundException();
 
             Path = path;
             CurrentEncoding = encoding;
             StringTrimming = stringTrimming;
             ReadFloatsAsDecimals = readFloatsAsDecimals;
 
-            Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            Stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
             Init();
 
-            var memoPath = MemoPath();
+            var memoPath = FindMemoPath(fullPath);
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
@@ -85,7 +89,9 @@ namespace DbfDataReader
 
         public void Close()
         {
-            Dispose(true);
+            // through Dispose() so that the finalizer is suppressed; otherwise every
+            // closed table is still finalized and survives into the next GC generation
+            Dispose();
         }
 
         protected override void Dispose(bool disposing)
@@ -105,12 +111,17 @@ namespace DbfDataReader
 
         public string MemoPath()
         {
+            return FindMemoPath(Path);
+        }
+
+        private static string FindMemoPath(string tablePath)
+        {
             var paths = new[]
             {
-                System.IO.Path.ChangeExtension(Path, "fpt"),
-                System.IO.Path.ChangeExtension(Path, "FPT"),
-                System.IO.Path.ChangeExtension(Path, "dbt"),
-                System.IO.Path.ChangeExtension(Path, "DBT")
+                System.IO.Path.ChangeExtension(tablePath, "fpt"),
+                System.IO.Path.ChangeExtension(tablePath, "FPT"),
+                System.IO.Path.ChangeExtension(tablePath, "dbt"),
+                System.IO.Path.ChangeExtension(tablePath, "DBT")
             };
 
             foreach (var path in paths)
