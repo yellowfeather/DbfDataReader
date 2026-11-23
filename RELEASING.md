@@ -66,8 +66,14 @@ Choose the number with [semantic versioning](https://semver.org):
    ```
 
    It runs the test suite, then pushes the `.nupkg` to MyGet and to NuGet, and attaches
-   the packages to the workflow run as an artifact. It needs the `MYGET_URL`,
-   `MYGET_API_KEY` and `NUGET_API_KEY` repository secrets.
+   the packages to the workflow run as an artifact.
+
+   - MyGet uses the `MYGET_URL` and `MYGET_API_KEY` repository secrets.
+   - NuGet uses [trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing):
+     the workflow exchanges a GitHub OIDC token for a one-hour API key, so there is no
+     long-lived NuGet key to store or renew. It needs the `NUGET_USER` secret (the
+     nuget.org username, not the email address) and a trusted publishing policy on
+     nuget.org for this repository and `release.yml`.
 
 4. Check that the version is listed on
    [nuget.org/packages/DbfDataReader](https://www.nuget.org/packages/DbfDataReader).
@@ -94,6 +100,14 @@ version is available on NuGet. In one pull request (see #305 for an example):
   ```
   gh release delete v2.3.0 --cleanup-tag
   ```
+
+- **The workflow fails part-way through pushing** (for example MyGet succeeded and
+  NuGet did not): fix the cause and re-run the workflow from the Actions tab. Both
+  pushes use `--skip-duplicate`, so a package that already arrived is skipped.
+
+- **The NuGet login step fails**: check that the trusted publishing policy on nuget.org
+  is active and names this repository and `release.yml`, and that `NUGET_USER` is the
+  account that owns the policy. Renaming the workflow file breaks the policy.
 
 - **A package was pushed but is faulty**: a version on NuGet cannot be replaced.
   Unlist it on nuget.org and release a new patch version with the fix.
