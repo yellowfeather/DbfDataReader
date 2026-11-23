@@ -147,7 +147,6 @@ namespace DbfDataReader
         internal bool ReadRaw(Stream stream)
         {
             var position = stream.Position;
-            if (position == stream.Length) return false;
 
             try
             {
@@ -173,7 +172,6 @@ namespace DbfDataReader
         internal async ValueTask<bool> ReadRawAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             var position = stream.Position;
-            if (position == stream.Length) return false;
 
             try
             {
