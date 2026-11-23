@@ -8,9 +8,14 @@ namespace DbfDataReader.Tests
     {
         private const string MsKhdmFixturePath = "../../../../fixtures/MS__KHDM.DBF";
 
+        private static readonly DbfDataReaderOptions Options = new()
+        {
+            Encoding = EncodingProvider.GetEncoding(1251)
+        };
+
         // override default encoding to use 1251 codepage
         public MsKhdmTests() 
-            : base(MsKhdmFixturePath, EncodingProvider.GetEncoding(1251))
+            : base(MsKhdmFixturePath, Options)
         {
         }
 

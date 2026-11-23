@@ -1,74 +1,60 @@
-﻿using System.Linq;
+using System.IO;
 using BenchmarkDotNet.Attributes;
+using NDbfReader;
+using Sylvan.Data.XBase;
 
 namespace DbfDataReader.Benchmarks
 {
+    // Cross-library comparison in the style of
+    // https://github.com/MarkPflug/Benchmarks/blob/main/source/Benchmarks/DbfDataReaderBenchmarks.cs:
+    // read every field of every record of a US Census TIGER place file. Run against a
+    // specific released DbfDataReader with -p:DbfDataReaderVersion=x.y.z (see README).
     public class DbfDataReaderBenchmarks
     {
-        private const string FixturePath = "./fixtures/dbase_03.dbf";
+        private const string FixturePath = "./fixtures/tl_2019_01_place.dbf";
+
+        [GlobalSetup]
+        public void Setup() => BenchmarkVersion.Print();
 
         [Benchmark]
-        public void ReadField()
+        public void Sylvan()
         {
-            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            using var stream = File.OpenRead(FixturePath);
+            using var reader = XBaseDataReader.Create(stream);
+            while (reader.Read())
             {
-                var cols = dbfDataReader.GetColumnSchema();
-                var allowDbNull = cols.Select(c => c.AllowDBNull != false).ToArray();
-                while (dbfDataReader.Read())
+                for (var ordinal = 0; ordinal < reader.FieldCount; ordinal++)
                 {
-                    for (var ordinal = 0; ordinal < dbfDataReader.FieldCount; ordinal++)
-                    {
-                        if (allowDbNull[ordinal] && dbfDataReader.IsDBNull(ordinal))
-                            continue;
-                        dbfDataReader.ReadField(ordinal);
-                    }
+                    if (reader.IsDBNull(ordinal)) continue;
+                    reader.GetValue(ordinal);
+                }
+            }
+        }
+
+        [Benchmark(Baseline = true)]
+        public void NDbf()
+        {
+            using var table = Table.Open(FixturePath);
+            var reader = table.OpenReader();
+            while (reader.Read())
+            {
+                foreach (var column in table.Columns)
+                {
+                    reader.GetValue(column);
                 }
             }
         }
 
         [Benchmark]
-        public void ReadRecord()
+        public void DbfData()
         {
-            using (var dbfDataReader = new DbfDataReader(FixturePath))
+            using var dbfDataReader = new DbfDataReader(FixturePath);
+            while (dbfDataReader.Read())
             {
-                while (dbfDataReader.Read())
+                for (var ordinal = 0; ordinal < dbfDataReader.FieldCount; ordinal++)
                 {
-                    var pointId = dbfDataReader.GetString(0);
-                    var type = dbfDataReader.GetString(1);
-                    var shape = dbfDataReader.GetString(2);
-                    var circularD = dbfDataReader.GetString(3);
-                    var nonCircul = dbfDataReader.GetString(4);
-                    var flowPrese = dbfDataReader.GetString(5);
-                    var condition = dbfDataReader.GetString(6);
-                    var comments = dbfDataReader.GetString(7);
-                    var dateVisit = dbfDataReader.GetDateTime(8);
-                    var time = dbfDataReader.GetString(9);
-                    var maxPdop = dbfDataReader.GetDecimal(10);
-                    var maxHdop = dbfDataReader.GetDecimal(11);
-                    var corrType = dbfDataReader.GetString(12);
-                    var rcvrType = dbfDataReader.GetString(13);
-                    var gpsDate = dbfDataReader.GetDateTime(14);
-                    var gpsTime = dbfDataReader.GetString(15);
-                    var updateSta = dbfDataReader.GetString(16);
-                    var FeatName = dbfDataReader.GetString(17);
-                    var datafile = dbfDataReader.GetString(18);
-                    var unfiltPos = dbfDataReader.GetInt64(19);
-                    var filtPos = dbfDataReader.GetInt64(20);
-                    var dataDicti = dbfDataReader.GetString(21);
-                    var gpsWeek = dbfDataReader.GetInt32(22);
-                    var gpsSecond = dbfDataReader.GetDecimal(23);
-                    var gpsHeight = dbfDataReader.GetDecimal(24);
-                    var vertPrec = dbfDataReader.GetDecimal(25);
-                    var horzPrec = dbfDataReader.GetDecimal(26);
-
-                    if (!dbfDataReader.IsDBNull(27))
-                    {
-                        var stdDev = dbfDataReader.GetDecimal(27);
-                    }
-
-                    var northing = dbfDataReader.GetDecimal(28);
-                    var easting = dbfDataReader.GetDecimal(29);
-                    var pointId2 = dbfDataReader.GetInt32(30);
+                    if (dbfDataReader.IsDBNull(ordinal)) continue;
+                    dbfDataReader.ReadField(ordinal);
                 }
             }
         }

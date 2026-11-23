@@ -20,7 +20,7 @@ namespace DbfDataReader
         public override string ToString()
         {
             var format = DecimalCount != 0
-                ? $"0.{new string('0', DecimalCount)}"
+                ? $"F{DecimalCount}"
                 : null;
 
             return Value?.ToString(format, NumberFormatInfo.CurrentInfo) ?? string.Empty;

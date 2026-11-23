@@ -1,0 +1,19 @@
+
+Database: client.dbf
+Type: (8b) dBase IV with memo file
+Memo File: true
+Records: 8
+
+Fields:
+Name             Type       Length     Decimal
+------------------------------------------------------------------------------
+CLIENT_ID        C          6          0         
+CLIENT           C          30         0         
+LASTNAME         C          15         0         
+FIRSTNAME        C          15         0         
+ADDRESS          C          30         0         
+CITY             C          20         0         
+STATE            C          2          0         
+ZIP              C          10         0         
+PHONE            C          13         0         
+CLIEN_HIST       M          10         0         

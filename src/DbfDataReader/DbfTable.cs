@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
@@ -9,15 +11,21 @@ namespace DbfDataReader
     {
         private const byte Terminator = 0x0d;
 
-        public DbfTable(string path, Encoding encoding = null)
+        private readonly bool _leaveOpen;
+
+        // position of the start of the DBF data within the stream, to support
+        // streams where the DBF content does not begin at offset zero
+        private readonly long _startOffset;
+
+        public DbfTable(string path, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false)
         {
             if (!File.Exists(path)) throw new FileNotFoundException();
 
             Path = path;
             CurrentEncoding = encoding;
+            StringTrimming = stringTrimming;
+            ReadFloatsAsDecimals = readFloatsAsDecimals;
 
-            // https://stackoverflow.com/questions/23559452/stream-reader-process-cannot-access-file-because-its-in-use-by-another-process
-            File.SetAttributes(path, FileAttributes.Normal);
             Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
             Init();
@@ -26,16 +34,20 @@ namespace DbfDataReader
             if (!string.IsNullOrEmpty(memoPath)) Memo = CreateMemo(memoPath);
         }
 
-        public DbfTable(Stream stream, Encoding encoding = null)
-            : this(stream, null, encoding)
+        public DbfTable(Stream stream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
+            : this(stream, null, encoding, stringTrimming, readFloatsAsDecimals, leaveOpen)
         {
         }
 
-        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null)
+        public DbfTable(Stream stream, Stream memoStream, Encoding encoding = null, StringTrimmingOption stringTrimming = StringTrimmingOption.Trim, bool readFloatsAsDecimals = false, bool leaveOpen = false)
         {
             Path = string.Empty;
             CurrentEncoding = encoding;
+            StringTrimming = stringTrimming;
+            ReadFloatsAsDecimals = readFloatsAsDecimals;
+            _leaveOpen = leaveOpen;
             Stream = stream;
+            _startOffset = stream.CanSeek ? stream.Position : 0;
 
             Init();
 
@@ -62,7 +74,13 @@ namespace DbfDataReader
 
         public IList<DbfColumn> Columns { get; private set; }
 
+        public StringTrimmingOption StringTrimming { get; private set; }
+
+        public bool ReadFloatsAsDecimals { get; set; }
+
         public bool IsClosed => Stream == null;
+
+        internal long DataOffset => _startOffset + Header.HeaderLength;
 
         public void Close()
         {
@@ -74,7 +92,7 @@ namespace DbfDataReader
             try
             {
                 if (!disposing) return;
-                Stream?.Dispose();
+                if (!_leaveOpen) Stream?.Dispose();
                 Memo?.Dispose();
             }
             finally
@@ -143,7 +161,7 @@ namespace DbfDataReader
         {
             var count = Header.HeaderLength - DbfHeader.DbfHeaderSize;
             var buffer = new byte[count];
-            stream.Read(buffer, 0, count);
+            stream.ReadExactly(buffer, 0, count);
             var span = new ReadOnlySpan<byte>(buffer);
 
             var columns = new List<DbfColumn>();
@@ -165,9 +183,55 @@ namespace DbfDataReader
             return columns;
         }
 
+        public DbfRecord ReadRecord()
+        {
+            var dbfRecord = new DbfRecord(this);
+            return !dbfRecord.Read(Stream) ? null : dbfRecord;
+        }
+
+        public async ValueTask<DbfRecord> ReadRecordAsync(CancellationToken cancellationToken = default)
+        {
+            var dbfRecord = new DbfRecord(this);
+            return !await dbfRecord.ReadAsync(Stream, cancellationToken).ConfigureAwait(false) ? null : dbfRecord;
+        }
+
         public bool Read(DbfRecord dbfRecord)
         {
             return dbfRecord.Read(Stream);
+        }
+
+        // advances to the next record reading only its status byte, without parsing
+        // column values
+        internal bool ReadRaw(DbfRecord dbfRecord)
+        {
+            return dbfRecord.ReadRaw(Stream);
+        }
+
+        internal ValueTask<bool> ReadRawAsync(DbfRecord dbfRecord, CancellationToken cancellationToken = default)
+        {
+            return dbfRecord.ReadRawAsync(Stream, cancellationToken);
+        }
+
+        public ValueTask<bool> ReadAsync(DbfRecord dbfRecord, CancellationToken cancellationToken = default)
+        {
+            return dbfRecord.ReadAsync(Stream, cancellationToken);
+        }
+
+        public void Seek(int recordIndex)
+        {
+            if (recordIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(recordIndex), recordIndex,
+                    "Record index must not be negative.");
+            if (!Stream.CanSeek)
+                throw new NotSupportedException("The underlying stream does not support seeking.");
+
+            Stream.Seek(DataOffset + (long) recordIndex * Header.RecordLength, SeekOrigin.Begin);
+        }
+
+        // a typed query over this table; T's settable properties define the columns read
+        public DbfQuery<T> Query<T>() where T : class
+        {
+            return new DbfQuery<T>(this);
         }
     }
 }

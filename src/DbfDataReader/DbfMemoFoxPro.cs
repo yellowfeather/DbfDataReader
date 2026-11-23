@@ -48,8 +48,8 @@ namespace DbfDataReader
                 {
                     value = value.Substring(0, nullIdx);   // trim off everything past & including the first NUL byte
                 }
-            }
             value = value.TrimEnd(' ');
+            }
             return value;
         }
     }

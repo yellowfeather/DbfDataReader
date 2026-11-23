@@ -5,6 +5,8 @@ using System.Data;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DbfDataReader
 {
@@ -20,27 +22,29 @@ namespace DbfDataReader
         public DbfDataReader(string path, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(path, options.Encoding);
+            DbfTable = new DbfTable(path, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfDataReader(Stream stream, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(stream, options.Encoding);
+            DbfTable = new DbfTable(stream, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfDataReader(Stream stream, Stream memoStream, DbfDataReaderOptions options)
         {
             _options = options;
-            DbfTable = new DbfTable(stream, memoStream, options.Encoding);
+            DbfTable = new DbfTable(stream, memoStream, options.Encoding, options.StringTrimming, options.ReadFloatsAsDecimals);
             DbfRecord = new DbfRecord(DbfTable);
         }
 
         public DbfTable DbfTable { get; private set; }
 
         public DbfRecord DbfRecord { get; private set; }
+
+        internal bool SkipsDeletedRecords => _options.SkipDeletedRecords;
 
         public override void Close()
         {
@@ -57,10 +61,28 @@ namespace DbfDataReader
 
         protected override void Dispose(bool disposing)
         {
+            base.Dispose(disposing);
+            
             if (disposing)
             {
                 Close();
             }
+        }
+
+        public DbfRecord ReadRecord()
+        {
+            DbfRecord dbfRecord;
+            bool skip;
+            do
+            {
+                dbfRecord = DbfTable.ReadRecord();
+                if (dbfRecord == null)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return dbfRecord;
         }
 
         public T GetValue<T>(int ordinal)
@@ -70,17 +92,17 @@ namespace DbfDataReader
 
         public T? GetNullableValue<T>(int ordinal) where T : struct
         {
-            return GetValue<T>(ordinal);
+            return DbfRecord.GetStructValue<T>(ordinal);
         }
 
         public override bool GetBoolean(int ordinal)
         {
-            return (bool) GetValue(ordinal);
+            return DbfRecord.GetStructValue<bool>(ordinal);
         }
 
         public override byte GetByte(int ordinal)
         {
-            return GetValue<byte>(ordinal);
+            return DbfRecord.GetStructValue<byte>(ordinal);
         }
 
         public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
@@ -90,7 +112,7 @@ namespace DbfDataReader
 
         public override char GetChar(int ordinal)
         {
-            return GetValue<char>(ordinal);
+            return DbfRecord.GetStructValue<char>(ordinal);
         }
 
         public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
@@ -100,29 +122,30 @@ namespace DbfDataReader
 
         public override string GetDataTypeName(int ordinal)
         {
-            throw new NotImplementedException();
+            var dbfColumn = DbfTable.Columns[ordinal];
+            return dbfColumn.ColumnType.ToString();
         }
 
         public override DateTime GetDateTime(int ordinal)
         {
-            return GetValue<DateTime>(ordinal);
+            return DbfRecord.GetStructValue<DateTime>(ordinal);
         }
 
         public override decimal GetDecimal(int ordinal)
         {
-            return GetValue<decimal>(ordinal);
+            return DbfRecord.GetStructValue<decimal>(ordinal);
         }
 
         public override double GetDouble(int ordinal)
         {
-            return GetValue<double>(ordinal);
+            return DbfRecord.GetStructValue<double>(ordinal);
         }
 
         public override IEnumerator GetEnumerator()
         {
-            throw new NotImplementedException();
+            return new DbEnumerator(this, closeReader: false);
         }
-
+        
         public override bool NextResult()
         {
             return false;
@@ -143,6 +166,63 @@ namespace DbfDataReader
 
             return result;
         }
+
+        public override async Task<bool> ReadAsync(CancellationToken cancellationToken)
+        {
+            bool result;
+            bool skip;
+            do
+            {
+                result = await DbfTable.ReadAsync(DbfRecord, cancellationToken).ConfigureAwait(false);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
+        }
+
+        // advances like Read (honoring SkipDeletedRecords) without parsing any column
+        // values; callers parse the subset they need via DbfRecord.TryParseValues
+        internal bool ReadRaw()
+        {
+            bool result;
+            bool skip;
+            do
+            {
+                result = DbfTable.ReadRaw(DbfRecord);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
+        }
+
+        internal async ValueTask<bool> ReadRawAsync(CancellationToken cancellationToken)
+        {
+            bool result;
+            bool skip;
+            do
+            {
+                result = await DbfTable.ReadRawAsync(DbfRecord, cancellationToken).ConfigureAwait(false);
+                if (!result)
+                    break;
+
+                skip = _options.SkipDeletedRecords && DbfRecord.IsDeleted;
+            } while (skip);
+
+            return result;
+        }
+
+        public void Seek(int recordIndex)
+        {
+            DbfTable.Seek(recordIndex);
+        }
+
+        public int RecordIndex => DbfRecord.RecordIndex;
 
         public override int Depth => throw new NotImplementedException();
 
@@ -167,13 +247,16 @@ namespace DbfDataReader
 
         public override bool IsDBNull(int ordinal)
         {
-            var value = GetValue(ordinal);
-            return value == null;
+            return DbfRecord.IsNull(ordinal);
         }
 
         public override int GetValues(object[] values)
         {
-            throw new NotImplementedException();
+            for (var ordinal = 0; ordinal < FieldCount; ordinal++)
+            {
+                values[ordinal] = GetValue(ordinal);
+            }
+            return FieldCount;
         }
 
         public override object GetValue(int ordinal)
@@ -195,8 +278,14 @@ namespace DbfDataReader
                 if (dbfColumn.ColumnName == name) return ordinal;
                 ordinal++;
             }
+            ordinal = 0; 
+            foreach (var dbfColumn in DbfTable.Columns)
+            {
+                if (String.Equals(dbfColumn.ColumnName,name,StringComparison.OrdinalIgnoreCase)) return ordinal;
+                ordinal++;
+            }
 
-            return -1;
+            throw new IndexOutOfRangeException();
         }
 
         public override string GetName(int ordinal)
@@ -207,17 +296,17 @@ namespace DbfDataReader
 
         public override long GetInt64(int ordinal)
         {
-            return GetValue<long>(ordinal);
+            return DbfRecord.GetStructValue<long>(ordinal);
         }
 
         public override int GetInt32(int ordinal)
         {
-            return GetValue<int>(ordinal);
+            return DbfRecord.GetStructValue<int>(ordinal);
         }
 
         public override short GetInt16(int ordinal)
         {
-            return GetValue<short>(ordinal);
+            return DbfRecord.GetStructValue<short>(ordinal);
         }
 
         public override Guid GetGuid(int ordinal)
@@ -227,7 +316,7 @@ namespace DbfDataReader
 
         public override float GetFloat(int ordinal)
         {
-            return GetValue<float>(ordinal);
+            return DbfRecord.GetStructValue<float>(ordinal);
         }
 
         public override Type GetFieldType(int ordinal)
@@ -244,68 +333,7 @@ namespace DbfDataReader
         public override DataTable GetSchemaTable()
         {
             var columnSchema = GetColumnSchema();
-            return GetSchemaTable(columnSchema);
+            return SchemaTableBuilder.Build(columnSchema);
         }
-
-		public static DataTable GetSchemaTable(ReadOnlyCollection<DbColumn> columnSchema)
-		{
-            var table = new DataTable("SchemaTable")
-            {
-                Columns =
-                {
-                    new DataColumn(SchemaTableColumn.ColumnName, typeof(string)),
-                    new DataColumn(SchemaTableColumn.ColumnOrdinal, typeof(int)),
-                    new DataColumn(SchemaTableColumn.ColumnSize, typeof(int)),
-                    new DataColumn(SchemaTableColumn.NumericPrecision, typeof(short)),
-                    new DataColumn(SchemaTableColumn.NumericScale, typeof(short)),
-                    new DataColumn(SchemaTableColumn.DataType, typeof(Type)),
-                    new DataColumn(SchemaTableColumn.AllowDBNull, typeof(bool)),
-                 
-                    new DataColumn(SchemaTableColumn.BaseColumnName, typeof(string)),
-                    new DataColumn(SchemaTableColumn.BaseSchemaName, typeof(string)),
-                    new DataColumn(SchemaTableColumn.BaseTableName, typeof(string)),
-
-                    new DataColumn(SchemaTableColumn.IsAliased, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsExpression, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsKey, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsLong, typeof(bool)),
-                    new DataColumn(SchemaTableColumn.IsUnique, typeof(bool)),
-
-                    new DataColumn(SchemaTableColumn.ProviderType, typeof(int)),
-                    new DataColumn(SchemaTableColumn.NonVersionedProviderType, typeof(int)),
-                }
-            };
-
-            object dbNull = DBNull.Value;
-            foreach (var column in columnSchema)
-			{
-				var row = table.NewRow();
-				row[0] = column.ColumnName ?? dbNull;
-				row[1] = column.ColumnOrdinal ?? dbNull;
-				row[2] = column.ColumnSize ?? dbNull;
-				row[3] = column.NumericPrecision ?? dbNull;
-				row[4] = column.NumericScale ?? dbNull;
-                row[5] = column.DataType ?? dbNull;
-				row[6] = column.AllowDBNull ?? dbNull;
-
-				row[7] = column.BaseColumnName ?? dbNull;
-				row[8] = column.BaseSchemaName ?? dbNull;
-				row[9] = column.BaseTableName ?? dbNull;
-
-				row[10] = column.IsAliased ?? dbNull;
-				row[11] = column.IsExpression ?? dbNull;
-				row[12] = column.IsKey ?? dbNull;
-				row[13] = column.IsLong ?? dbNull;
-				row[14] = column.IsUnique ?? dbNull;
-
-				var code = (int)Type.GetTypeCode(column.DataType);
-				row[15] = code;
-				row[16] = code;
-
-				table.Rows.Add(row);
-			}
-
-			return table;
-		}
     }
 }

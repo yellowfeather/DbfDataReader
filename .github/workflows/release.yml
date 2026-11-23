@@ -15,19 +15,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 5.0.x
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.x
+        dotnet-version: 10.0.x
 
     - name: Build
       run: dotnet build $SOLUTION --configuration $BUILD_CONFIG
@@ -50,7 +45,7 @@ jobs:
       run: dotnet nuget push ./artifacts/**.nupkg --source nuget.org --api-key $NUGET_API_KEY
 
     - name: Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v5
       with:
         name: artifacts
         path: artifacts/**/*

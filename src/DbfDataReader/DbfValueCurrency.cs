@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace DbfDataReader
 {
-    public class DbfValueCurrency : DbfValue<float?>
+    public class DbfValueCurrency : DbfValue<decimal?>
     {
         public DbfValueCurrency(int start, int length, int decimalCount) : base(start, length)
         {
@@ -14,14 +14,15 @@ namespace DbfDataReader
 
         public override void Read(ReadOnlySpan<byte> bytes)
         {
+            // currency is stored as a 64-bit integer scaled by 10,000
             var value = BitConverter.ToInt64(bytes);
-            Value = value / 10000.0f;
+            Value = value / 10000m;
         }
 
         public override string ToString()
         {
             var format = DecimalCount != 0
-                ? $"0.{new string('0', DecimalCount)}"
+                ? $"F{DecimalCount}"
                 : null;
 
             return Value?.ToString(format, NumberFormatInfo.CurrentInfo) ?? string.Empty;

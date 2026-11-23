@@ -28,7 +28,7 @@ namespace DbfDataReader
             {
                 rawName = rawName.Substring(0, nullIdx);   // trim off everything past & including the first NUL byte
             }
-			ColumnName = rawName;
+            ColumnName = rawName;
 
             ColumnType = (DbfColumnType) bytes[11];
 
@@ -38,6 +38,11 @@ namespace DbfDataReader
             var decimalCount = bytes[17];
 
             if (ColumnType == DbfColumnType.Character)
+            {
+                Length =  BitConverter.ToInt16(bytes.Slice(16, 2));
+                DecimalCount = 0;
+            }
+            else if (ColumnType == DbfColumnType.WideCharacter)
             {
                 Length =  BitConverter.ToInt16(bytes.Slice(16, 2));
                 DecimalCount = 0;
@@ -66,7 +71,17 @@ namespace DbfDataReader
             switch (columnType)
             {
                 case DbfColumnType.Number:
-                    return DecimalCount == 0 ? typeof(int) : typeof(decimal);
+                    if (DecimalCount == 0) {
+                        if (Length < 10) {
+                            return typeof(int);
+                        }
+                        else {
+                            return typeof(long);
+                        }
+                    }
+                    else {
+                        return typeof(decimal);
+                    }
                 case DbfColumnType.SignedLong:
                     return typeof(long);
                 case DbfColumnType.Float:
@@ -85,6 +100,7 @@ namespace DbfDataReader
                     return typeof(double);
                 case DbfColumnType.General:
                 case DbfColumnType.Character:
+                case DbfColumnType.WideCharacter:
                     return typeof(string);
                 default:
                     return typeof(object);

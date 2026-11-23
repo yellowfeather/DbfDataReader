@@ -12,6 +12,7 @@
         Memo = 'M',
         Double = 'B',
         General = 'G',
-        Character = 'C'
+        Character = 'C',
+        WideCharacter = 'W'
     }
 }
