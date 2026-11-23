@@ -213,10 +213,13 @@ namespace DbfDataReader
         {
             var span = new ReadOnlySpan<byte>(_buffer);
 
-            foreach (var dbfValue in Values)
+            // indexed access: enumerating the IList would allocate an enumerator per row
+            var values = Values;
+            var count = values.Count;
+            for (var ordinal = 0; ordinal < count; ordinal++)
             {
-                var slice = span.Slice(dbfValue.Start, dbfValue.Length);
-                dbfValue.Read(slice);
+                var dbfValue = values[ordinal];
+                dbfValue.Read(span.Slice(dbfValue.Start, dbfValue.Length));
             }
 
             MarkAllParsed();
