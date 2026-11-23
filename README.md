@@ -3,7 +3,6 @@
 [![CI](https://github.com/yellowfeather/DbfDataReader/actions/workflows/ci.yml/badge.svg)](https://github.com/yellowfeather/DbfDataReader/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/dt/DbfDataReader.svg)](https://www.nuget.org/packages/DbfDataReader)
 [![NuGet](https://img.shields.io/nuget/vpre/DbfDataReader.svg)](https://www.nuget.org/packages/DbfDataReader)
-[![MyGet Build Status](https://www.myget.org/BuildSource/Badge/dbfdatareader?identifier=54ae0096-55d5-418c-8eb9-54a35df720fb)](https://www.myget.org/)
 
 DbfDataReader is a small, fast .NET library for reading dBase, xBase, Clipper and FoxPro
 database files (`.dbf`), with support for memo files, Visual FoxPro compound indexes
