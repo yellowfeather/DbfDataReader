@@ -455,28 +455,7 @@ namespace DbfDataReader
                 throw new InvalidOperationException(
                     $"DbfQuery requires a class with settable properties; '{typeof(T).Name}' is not supported.");
 
-            var columns = _table.Columns;
-            var mappedOrdinals = new List<int>();
-            var mappedNames = new List<string>();
-            var ordinalsByProperty = new Dictionary<string, int>(StringComparer.Ordinal);
-
-            var columnNames = columns.Select(column => column.ColumnName).ToArray();
-
-            foreach (var entry in ModelMap.For(typeof(T)))
-            {
-                var propertyName = entry.Property.Name;
-
-                var ordinal = RowMaterializer.FindSourceOrdinal(entry.ColumnName, columnNames);
-                if (ordinal < 0)
-                    throw new InvalidOperationException(entry.IsExplicit
-                        ? $"No column in '{_table.Path}' matches '{entry.ColumnName}' " +
-                          $"(property '{typeof(T).Name}.{propertyName}')."
-                        : $"No column in '{_table.Path}' matches property '{typeof(T).Name}.{propertyName}'.");
-
-                ordinalsByProperty[propertyName] = ordinal;
-                mappedOrdinals.Add(ordinal);
-                mappedNames.Add(columnNames[ordinal]);
-            }
+            var (mappedOrdinals, mappedNames, ordinalsByProperty) = MapProperties();
 
             int ResolveOrdinal(string propertyName)
             {
@@ -515,12 +494,7 @@ namespace DbfDataReader
 
             var needed = new HashSet<int>(mappedOrdinals);
             if (sortKeys.Count > 0 && !accessPlan.SortSatisfied)
-            {
-                foreach (var (ordinal, _) in sortKeys)
-                {
-                    needed.Add(ordinal);
-                }
-            }
+                needed.UnionWith(sortKeys.Select(key => key.Ordinal));
 
             needed.ExceptWith(filterOrdinals);
 
@@ -535,6 +509,36 @@ namespace DbfDataReader
                 FilterOrdinals = SqlColumnCollector.ToSortedOrdinals(filterOrdinals),
                 PostFilterOrdinals = SqlColumnCollector.ToSortedOrdinals(needed)
             };
+        }
+
+        // resolves each mapped property of T to a table column: the ordinals and column
+        // names in mapping order, plus the ordinal by property name for the lambdas
+        private (List<int> Ordinals, List<string> Names, Dictionary<string, int> ByProperty) MapProperties()
+        {
+            var columnNames = _table.Columns.Select(column => column.ColumnName).ToArray();
+            var ordinals = new List<int>();
+            var names = new List<string>();
+            var byProperty = new Dictionary<string, int>(StringComparer.Ordinal);
+
+            foreach (var entry in ModelMap.For(typeof(T)))
+            {
+                var ordinal = RowMaterializer.FindSourceOrdinal(entry.ColumnName, columnNames);
+                if (ordinal < 0) throw new InvalidOperationException(NoColumnMessage(entry));
+
+                byProperty[entry.Property.Name] = ordinal;
+                ordinals.Add(ordinal);
+                names.Add(columnNames[ordinal]);
+            }
+
+            return (ordinals, names, byProperty);
+        }
+
+        private string NoColumnMessage(ModelMapEntry entry)
+        {
+            return entry.IsExplicit
+                ? $"No column in '{_table.Path}' matches '{entry.ColumnName}' " +
+                  $"(property '{typeof(T).Name}.{entry.Property.Name}')."
+                : $"No column in '{_table.Path}' matches property '{typeof(T).Name}.{entry.Property.Name}'.";
         }
 
         private sealed class QueryPlan
