@@ -62,7 +62,7 @@ namespace DbfDataReader.Tests
             var dbfRecord = new DbfRecord(DbfTable);
 
             using (var textReader = File.OpenText(path))
-            using (var csvParser = new CsvParser(textReader, CultureInfo.InvariantCulture))
+            using (var csvParser = CsvReader.Create(textReader, new CsvReaderOptions { HasHeader = false }))
             {
                 csvParser.Read();
 
@@ -75,7 +75,7 @@ namespace DbfDataReader.Tests
                     foreach (var dbfValue in dbfRecord.Values)
                     {
                         var value = dbfValue.ToString();
-                        var csvValue = csvParser[index];
+                        var csvValue = csvParser[index].ToString();
                         value.ShouldBe(csvValue, $"Row: {row}, column: {index} ({DbfTable.Columns[index].ColumnName})", StringCompareShould.IgnoreLineEndings);
 
                         index++;
