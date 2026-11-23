@@ -236,3 +236,54 @@ BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
 |                 |                              |              |       |             |             |
 | 'scan + sort'   | top 10 order by desc         | 31,459.54 us |  1.00 | 53467.49 KB |        1.00 |
 | index           | top 10 order by desc         |  3,242.89 us |  0.10 |  5659.73 KB |        0.11 |
+
+# v2.3.2
+
+Same comparison against DbfDataReader 2.3.2. The benchmark opens the fixture by relative
+path, and up to 2.3.1 the library resolved the current directory six times per open
+(the existence check, the file open and four memo-file checks), at roughly 10 us each on
+macOS; 2.3.2 resolves the path once (#342). It also suppresses the table's finalizer on
+close, which is why the Gen1 count falls and the Gen2 column disappears.
+
+This is a fixed cost per open, so it shows on this 587-row file and not on the 50,000-row
+table below. Opened by absolute path, 2.3.1 already measured level with Sylvan (about
+255 us each).
+
+BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
+
+| Method  | Mean     | Error    | StdDev  | Ratio | Gen0    | Gen1   | Allocated | Alloc Ratio |
+|-------- |---------:|---------:|--------:|------:|--------:|-------:|----------:|------------:|
+| Sylvan  | 278.1 us | 91.86 us | 5.04 us |  0.69 | 41.0156 | 0.9766 | 336.81 KB |        0.94 |
+| NDbf    | 404.8 us | 73.67 us | 4.04 us |  1.00 | 43.4570 | 0.9766 | 358.47 KB |        1.00 |
+| DbfData | 283.5 us | 14.11 us | 0.77 us |  0.70 | 40.0391 | 1.4648 | 328.65 KB |        0.92 |
+
+# v2.3.2 — automatic index use
+
+Same generated 50,000-row table and query pairs as the v2.3.1 run above. Nothing on the
+scan or index paths changed in 2.3.2; the differences from the v2.3.1 table are within
+the noise of a short job.
+
+Reproduce with:
+`dotnet run -c Release --project test/DbfDataReader.Benchmarks -- --filter "*IndexQueryBenchmarks*" --job short`
+
+BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
+
+| Method          | Categories                   | Mean         | Ratio | Allocated   | Alloc Ratio |
+|---------------- |----------------------------- |-------------:|------:|------------:|------------:|
+| 'full scan'     | character seek (100 rows)    |  2,759.70 us |  1.00 |  1976.63 KB |        1.00 |
+| index           | character seek (100 rows)    |    123.72 us |  0.04 |    58.54 KB |        0.03 |
+|                 |                              |              |       |             |             |
+| 'read all rows' | count(*) all rows            |  4,667.76 us |  1.00 |  5085.57 KB |       1.000 |
+| 'status scan'   | count(*) all rows            |  1,055.88 us |  0.23 |    10.50 KB |       0.002 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | count(*) filtered (10k rows) |  2,971.36 us |  1.00 |  1183.77 KB |        1.00 |
+| 'index only'    | count(*) filtered (10k rows) |    955.95 us |  0.32 |  1201.15 KB |        1.01 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | equality seek (1 row)        |  2,603.60 us |  1.00 |  1184.45 KB |        1.00 |
+| index           | equality seek (1 row)        |     50.67 us |  0.02 |    32.45 KB |        0.03 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | range scan (100 rows)        |  2,748.09 us |  1.00 |  1193.17 KB |        1.00 |
+| index           | range scan (100 rows)        |     68.28 us |  0.02 |    54.39 KB |        0.05 |
+|                 |                              |              |       |             |             |
+| 'scan + sort'   | top 10 order by desc         | 30,951.67 us |  1.00 | 53467.49 KB |        1.00 |
+| index           | top 10 order by desc         |  3,174.68 us |  0.10 |  5659.73 KB |        0.11 |
