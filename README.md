@@ -23,6 +23,7 @@ Dapper.
 - [Random access with Seek](#random-access-with-seek)
 - [Compound index (.cdx) support](#compound-index-cdx-support)
 - [Typed queries with Query&lt;T&gt;](#typed-queries-with-queryt)
+  - [Mapping properties to column names](#mapping-properties-to-column-names)
 - [SQL queries with DbfDbConnection](#sql-queries-with-dbfdbconnection)
   - [Supported SQL](#supported-sql)
   - [Dapper-style typed queries](#dapper-style-typed-queries)
@@ -251,6 +252,35 @@ Supported inside `Where`: comparisons, `&&`/`||`/`!`, `== null`/`!= null` (trans
 `.IncludeDeleted()` is called. Anything that cannot be translated throws
 `NotSupportedException` — nothing falls back to silent in-memory evaluation.
 
+### Mapping properties to column names
+
+When a column name is not a valid C# identifier (or you simply want a different property
+name), use the standard `[Column]` and `[NotMapped]` attributes from
+`System.ComponentModel.DataAnnotations.Schema`, as in EF Core:
+
+```csharp
+public class CoverageRow
+{
+    [Column("Coverage %")]
+    public int Coverage { get; set; }
+
+    public string Name { get; set; }      // no attribute: matched by property name
+
+    [NotMapped]
+    public string Display { get; set; }   // never read from the table
+}
+
+var rows = dbfTable.Query<CoverageRow>()
+    .Where(r => r.Coverage >= 40)         // lambdas use the property; indexes still apply
+    .OrderBy(r => r.Coverage)
+    .ToList();
+```
+
+The attribute name is matched like a property name (exact first, then
+case-insensitively); `[Column]` without a name, and its `Order`/`TypeName`, are ignored.
+Every mapped property must match a column, so mark the ones that should not be read with
+`[NotMapped]`.
+
 ## SQL queries with DbfDbConnection
 
 There is also an implementation of `DbConnection` so you can query a folder of files:
@@ -317,6 +347,17 @@ var points = dbConnection.Query<GpsPoint>(
     new { id = "A1" });
 var ids = dbConnection.Query<string>("select Point_ID from dbase_03.dbf"); // scalar rows
 // also QueryAsync<T> and QueryFirstOrDefault<T>
+```
+
+`[Column]` and `[NotMapped]` are honoured here too (see
+[Mapping properties to column names](#mapping-properties-to-column-names)). Result
+columns are matched against the attribute name first and then the property name, so both
+of these fill `CoverageRow.Coverage`; quote column names that are not identifiers with
+`[...]` or `"..."`:
+
+```csharp
+dbConnection.Query<CoverageRow>("select * from coverage.dbf");
+dbConnection.Query<CoverageRow>("select [Coverage %] as Coverage, Name from coverage.dbf");
 ```
 
 ### Automatic index usage

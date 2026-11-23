@@ -134,6 +134,100 @@ public class DbfDbConnectionQueryTests
             .Message.ShouldContain("Max_PDOP");
     }
 
+    // a folder holding coverage.dbf, whose column names are not valid identifiers
+    private sealed class CoverageFolder : IDisposable
+    {
+        public CoverageFolder()
+        {
+            Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+            System.IO.Directory.CreateDirectory(Path);
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Path, "coverage.dbf"),
+                DbfTableBuilder.Build(DbfTableBuilder.CoverageColumns, DbfTableBuilder.CoverageRows));
+        }
+
+        public string Path { get; }
+
+        public DbfDbConnection Open()
+        {
+            var connection = new DbfDbConnection();
+            connection.ConnectionString = $"Folder={Path}";
+            connection.Open();
+            return connection;
+        }
+
+        public void Dispose() => System.IO.Directory.Delete(Path, true);
+    }
+
+    [Fact]
+    public void Should_map_select_star_through_column_attributes()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open();
+
+        var rows = connection.Query<CoverageRow>("select * from coverage.dbf");
+
+        rows.Select(r => r.Coverage).ShouldBe(new[] { 10, 75, 40, 100 });
+        rows.Select(r => r.Name).ShouldBe(new[] { "alpha", "bravo", "charlie", "delta" });
+    }
+
+    [Fact]
+    public void Should_map_quoted_columns_through_column_attributes()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open();
+
+        var rows = connection.Query<CoverageRow>(
+            "select [Coverage %], \"Name (x)\" from coverage.dbf where [Coverage %] >= @min order by [Coverage %]",
+            new { min = 40 });
+
+        rows.Select(r => r.Coverage).ShouldBe(new[] { 40, 75, 100 });
+        rows.Select(r => r.Name).ShouldBe(new[] { "charlie", "bravo", "delta" });
+
+        var first = connection.QueryFirstOrDefault<CoverageRow>(
+            "select [Coverage %], [Name (x)] from coverage.dbf where [Name (x)] = 'delta'");
+        first.Coverage.ShouldBe(100);
+    }
+
+    [Fact]
+    public void Should_fall_back_to_the_property_name_for_aliased_columns()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open();
+
+        var rows = connection.Query<CoverageRow>(
+            "select [Coverage %] as Coverage, [Name (x)] as Name from coverage.dbf");
+
+        rows.Select(r => r.Coverage).ShouldBe(new[] { 10, 75, 40, 100 });
+        rows.Select(r => r.Name).ShouldBe(new[] { "alpha", "bravo", "charlie", "delta" });
+    }
+
+    [Fact]
+    public async Task Should_map_column_attributes_asynchronously()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open();
+
+        var rows = await connection.QueryAsync<CoverageRow>("select * from coverage.dbf");
+        rows.Select(r => r.Coverage).ShouldBe(new[] { 10, 75, 40, 100 });
+
+        var aliased = await connection.QueryAsync<CoverageRow>(
+            "select [Coverage %] as Coverage, [Name (x)] as Name from coverage.dbf");
+        aliased.Select(r => r.Name).ShouldBe(new[] { "alpha", "bravo", "charlie", "delta" });
+    }
+
+    [Fact]
+    public void Should_name_the_column_and_property_when_an_attribute_column_is_missing()
+    {
+        using var folder = new CoverageFolder();
+        using var connection = folder.Open();
+
+        var message = Should.Throw<InvalidOperationException>(() =>
+            connection.Query<CoverageRow>("select [Name (x)] from coverage.dbf")).Message;
+
+        message.ShouldContain("'Coverage %'");
+        message.ShouldContain("CoverageRow.Coverage");
+    }
+
     private class AliasedPoint
     {
         public string Id { get; set; }

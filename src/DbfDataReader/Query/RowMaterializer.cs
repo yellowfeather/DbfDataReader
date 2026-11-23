@@ -8,8 +8,8 @@ using System.Reflection;
 namespace DbfDataReader.Query
 {
     // Builds cached, compiled delegates that turn a row of values into a T. Class types
-    // are populated through their public settable properties, matched to source columns
-    // by name (exact first, then case-insensitively); every settable property must have
+    // are populated through the properties in their ModelMap, matched to source columns
+    // by name (exact first, then case-insensitively); every mapped property must have
     // a matching column. Scalar types (string, primitives, decimal, DateTime and their
     // nullable forms) map the first column.
     internal static class RowMaterializer
@@ -48,12 +48,19 @@ namespace DbfDataReader.Query
             var row = Expression.Parameter(typeof(object[]), "row");
             var bindings = new List<MemberBinding>();
 
-            foreach (var property in GetSettableProperties(typeof(T)))
+            foreach (var entry in ModelMap.For(typeof(T)))
             {
-                var ordinal = FindSourceOrdinal(property.Name, sourceNames);
+                var property = entry.Property;
+
+                // an attribute name that is absent falls back to the property name, so
+                // "select [Coverage %] as Coverage" still maps
+                var ordinal = FindSourceOrdinal(entry.ColumnName, sourceNames);
+                if (ordinal < 0 && entry.IsExplicit) ordinal = FindSourceOrdinal(property.Name, sourceNames);
+
                 if (ordinal < 0)
-                    throw new InvalidOperationException(
-                        $"No column matches property '{typeof(T).Name}.{property.Name}'.");
+                    throw new InvalidOperationException(entry.IsExplicit
+                        ? $"No column matches '{entry.ColumnName}' (property '{typeof(T).Name}.{property.Name}')."
+                        : $"No column matches property '{typeof(T).Name}.{property.Name}'.");
 
                 var value = Expression.Call(ConvertValueMethod,
                     Expression.ArrayIndex(row, Expression.Constant(ordinal)),
@@ -71,24 +78,16 @@ namespace DbfDataReader.Query
             return Expression.Lambda<Func<object[], T>>(body, row).Compile();
         }
 
-        internal static IEnumerable<PropertyInfo> GetSettableProperties(Type type)
-        {
-            foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            {
-                if (property.CanWrite && property.GetSetMethod() != null) yield return property;
-            }
-        }
-
-        internal static int FindSourceOrdinal(string propertyName, IReadOnlyList<string> sourceNames)
+        internal static int FindSourceOrdinal(string name, IReadOnlyList<string> sourceNames)
         {
             for (var ordinal = 0; ordinal < sourceNames.Count; ordinal++)
             {
-                if (sourceNames[ordinal] == propertyName) return ordinal;
+                if (sourceNames[ordinal] == name) return ordinal;
             }
 
             for (var ordinal = 0; ordinal < sourceNames.Count; ordinal++)
             {
-                if (string.Equals(sourceNames[ordinal], propertyName, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(sourceNames[ordinal], name, StringComparison.OrdinalIgnoreCase))
                     return ordinal;
             }
 
