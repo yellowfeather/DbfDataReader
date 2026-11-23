@@ -13,33 +13,49 @@ namespace DbfDataReader
         public static bool TryParse(ReadOnlySpan<byte> bytes, NumberStyles styles, NumberFormatInfo format,
             out decimal value)
         {
+#if NET8_0_OR_GREATER
+            return decimal.TryParse(bytes, styles, format, out value);
+#else
             Span<char> chars = stackalloc char[bytes.Length];
             Decode(bytes, chars);
             return decimal.TryParse(chars, styles, format, out value);
+#endif
         }
 
         public static bool TryParse(ReadOnlySpan<byte> bytes, NumberStyles styles, NumberFormatInfo format,
             out int value)
         {
+#if NET8_0_OR_GREATER
+            return int.TryParse(bytes, styles, format, out value);
+#else
             Span<char> chars = stackalloc char[bytes.Length];
             Decode(bytes, chars);
             return int.TryParse(chars, styles, format, out value);
+#endif
         }
 
         public static bool TryParse(ReadOnlySpan<byte> bytes, NumberStyles styles, NumberFormatInfo format,
             out long value)
         {
+#if NET8_0_OR_GREATER
+            return long.TryParse(bytes, styles, format, out value);
+#else
             Span<char> chars = stackalloc char[bytes.Length];
             Decode(bytes, chars);
             return long.TryParse(chars, styles, format, out value);
+#endif
         }
 
         public static bool TryParse(ReadOnlySpan<byte> bytes, NumberStyles styles, NumberFormatInfo format,
             out float value)
         {
+#if NET8_0_OR_GREATER
+            return float.TryParse(bytes, styles, format, out value);
+#else
             Span<char> chars = stackalloc char[bytes.Length];
             Decode(bytes, chars);
             return float.TryParse(chars, styles, format, out value);
+#endif
         }
 
         public static bool TryParseDate(ReadOnlySpan<byte> bytes, string dateFormat, out DateTime value)
