@@ -6,14 +6,21 @@ using DbfDataReader.Query;
 
 namespace DbfDataReader
 {
-    // Fluent configuration of how T's properties map to columns, in the style of EF Core:
-    //
-    //     map.Property(r => r.Coverage).HasColumnName("Coverage %");
-    //     map.Ignore(r => r.Display);
-    //
-    // Fluent configuration takes precedence over [Column] / [NotMapped], which take
-    // precedence over matching by property name. When a property is configured more than
-    // once, the last call wins.
+    /// <summary>
+    /// Fluent configuration of how <typeparamref name="T"/>'s properties map to columns,
+    /// in the style of EF Core.
+    /// </summary>
+    /// <remarks>
+    /// Fluent configuration takes precedence over [Column] / [NotMapped], which take
+    /// precedence over matching by property name. When a property is configured more than
+    /// once, the last call wins.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// map.Property(r => r.Coverage).HasColumnName("Coverage %");
+    /// map.Ignore(r => r.Display);
+    /// </code>
+    /// </example>
     public sealed class DbfModelBuilder<T>
     {
         private readonly Dictionary<string, ModelMapOverride> _overrides =

@@ -102,13 +102,19 @@ namespace DbfDataReader
             };
         }
 
-        // Registers how T's properties map to columns for the typed queries on this
-        // connection, e.g.
-        //
-        //     connection.Map<Row>(map => map.Property(r => r.Coverage).HasColumnName("Coverage %"));
-        //
-        // The mapping takes precedence over [Column] / [NotMapped]. Registering T again
-        // replaces its mapping for subsequent queries.
+        /// <summary>
+        /// Registers how <typeparamref name="T"/>'s properties map to columns for the typed
+        /// queries on this connection.
+        /// </summary>
+        /// <remarks>
+        /// The mapping takes precedence over [Column] / [NotMapped]. Registering
+        /// <typeparamref name="T"/> again replaces its mapping for subsequent queries.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// connection.Map&lt;Row&gt;(map => map.Property(r => r.Coverage).HasColumnName("Coverage %"));
+        /// </code>
+        /// </example>
         public DbfDbConnection Map<T>(Action<DbfModelBuilder<T>> configure) where T : class
         {
             if (configure == null) throw new ArgumentNullException(nameof(configure));
