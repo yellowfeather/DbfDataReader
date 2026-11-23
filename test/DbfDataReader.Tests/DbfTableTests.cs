@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using Shouldly;
 using Xunit;
@@ -34,6 +35,28 @@ namespace DbfDataReader.Tests
             dbfTable.Dispose();
 
             dbfTable.Memo.ShouldBeNull();
+        }
+
+        [Fact]
+        public void Should_reject_a_null_path()
+        {
+            Should.Throw<ArgumentNullException>(() => new DbfTable((string) null))
+                .ParamName.ShouldBe("path");
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("missing\0file.dbf")]
+        public void Should_reject_a_malformed_path(string path)
+        {
+            var exception = Should.Throw<ArgumentException>(() => new DbfTable(path));
+            exception.ShouldNotBeOfType<ArgumentNullException>();
+        }
+
+        [Fact]
+        public void Should_report_a_missing_file()
+        {
+            Should.Throw<FileNotFoundException>(() => new DbfTable("../../../../fixtures/does_not_exist.dbf"));
         }
 
         [Fact]
