@@ -14,6 +14,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      id-token: write # lets the job request the OIDC token that NuGet trusted publishing exchanges for a key
+
     steps:
     - uses: actions/checkout@v7
       with:
@@ -37,12 +41,19 @@ jobs:
       env:
         NUGET_URL: ${{ secrets.MYGET_URL }}
         NUGET_API_KEY: ${{ secrets.MYGET_API_KEY }}
-      run: dotnet nuget push ./artifacts/**.nupkg --source $NUGET_URL --api-key $NUGET_API_KEY
+      run: dotnet nuget push ./artifacts/**.nupkg --source $NUGET_URL --api-key $NUGET_API_KEY --skip-duplicate
+
+    # trusted publishing: exchange the job's OIDC token for a short-lived NuGet API key
+    - name: NuGet login
+      uses: NuGet/login@v1
+      id: nuget-login
+      with:
+        user: ${{ secrets.NUGET_USER }}
 
     - name: Push to NuGet
       env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: dotnet nuget push ./artifacts/**.nupkg --source nuget.org --api-key $NUGET_API_KEY
+        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+      run: dotnet nuget push ./artifacts/**.nupkg --source nuget.org --api-key $NUGET_API_KEY --skip-duplicate
 
     - name: Artifacts
       uses: actions/upload-artifact@v7
