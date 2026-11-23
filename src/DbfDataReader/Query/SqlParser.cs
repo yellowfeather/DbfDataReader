@@ -39,7 +39,7 @@ namespace DbfDataReader.Query
                 Expect(SqlTokenType.FromKeyword, "FROM");
                 var tableName = ParseName("a table name");
 
-                SqlExpression where = null;
+                SqlExpression? where = null;
                 if (Match(SqlTokenType.WhereKeyword)) where = ParseOrExpression();
 
                 var orderBy = new List<OrderByItem>();
@@ -117,7 +117,7 @@ namespace DbfDataReader.Query
                 var position = Current.Position;
                 var columnName = ParseName("a column name");
 
-                string alias = null;
+                string? alias = null;
                 if (Match(SqlTokenType.AsKeyword))
                 {
                     alias = ParseName("an alias");

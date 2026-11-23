@@ -19,8 +19,8 @@ namespace DbfDataReader.Query
         private readonly IReadOnlyList<DbfColumn> _columns; // underlying columns, in projected order
         private readonly IReadOnlyList<int> _ordinals; // projected ordinal -> underlying ordinal
         private readonly IReadOnlyList<string> _names; // output names (aliases applied)
-        private readonly SqlExpressionEvaluator _filter; // null when there is no WHERE clause
-        private readonly Func<int, object> _readerValueAccessor;
+        private readonly SqlExpressionEvaluator? _filter; // null when there is no WHERE clause
+        private readonly Func<int, object?> _readerValueAccessor;
         private readonly IReadOnlyList<OrderByItem> _orderBy;
         private readonly QueryAccessPlan _plan;
         private readonly bool _skipDeletedRecords;
@@ -31,11 +31,11 @@ namespace DbfDataReader.Query
         private int _rowsReturned;
         private int _planPosition; // cursor into the plan's record indexes
 
-        private List<object[]> _sortedRows; // built on first read when sorting
+        private List<object?[]>? _sortedRows; // built on first read when sorting
         private int _sortedRowIndex;
-        private object[] _currentRow; // non-null when the current row comes from the sort buffer
+        private object?[]? _currentRow; // non-null when the current row comes from the sort buffer
 
-        public DbfQueryDataReader(DbfDataReader reader, SelectStatement statement, SqlExpressionEvaluator filter,
+        public DbfQueryDataReader(DbfDataReader reader, SelectStatement statement, SqlExpressionEvaluator? filter,
             QueryAccessPlan plan, bool skipDeletedRecords)
         {
             _reader = reader;
@@ -212,17 +212,19 @@ namespace DbfDataReader.Query
 
         private bool AdvanceSorted()
         {
-            if (LimitReached() || _sortedRowIndex >= _sortedRows.Count) return false;
+            // the caller populates _sortedRows before invoking AdvanceSorted
+            var rows = _sortedRows!;
+            if (LimitReached() || _sortedRowIndex >= rows.Count) return false;
 
-            _currentRow = _sortedRows[_sortedRowIndex];
+            _currentRow = rows[_sortedRowIndex];
             _sortedRowIndex++;
             _rowsReturned++;
             return true;
         }
 
-        private List<object[]> BuildSortedRows()
+        private List<object?[]> BuildSortedRows()
         {
-            var rows = new List<object[]>();
+            var rows = new List<object?[]>();
             while (ReadNextRow())
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
@@ -235,9 +237,9 @@ namespace DbfDataReader.Query
             return rows;
         }
 
-        private async Task<List<object[]>> BuildSortedRowsAsync(CancellationToken cancellationToken)
+        private async Task<List<object?[]>> BuildSortedRowsAsync(CancellationToken cancellationToken)
         {
-            var rows = new List<object[]>();
+            var rows = new List<object?[]>();
             while (await ReadNextRowAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (_filter != null && !_filter.Matches(_readerValueAccessor)) continue;
@@ -252,9 +254,9 @@ namespace DbfDataReader.Query
 
         // full-width so underlying ordinals index it directly; only the projected and
         // ORDER BY positions are populated (and only those are ever read back)
-        private object[] SnapshotCurrentRow()
+        private object?[] SnapshotCurrentRow()
         {
-            var row = new object[_reader.FieldCount];
+            var row = new object?[_reader.FieldCount];
             foreach (var ordinal in _snapshotOrdinals)
             {
                 row[ordinal] = _reader.GetValue(ordinal);
@@ -263,7 +265,7 @@ namespace DbfDataReader.Query
             return row;
         }
 
-        private void SortRows(List<object[]> rows)
+        private void SortRows(List<object?[]> rows)
         {
             if (rows.Count < 2) return;
 
@@ -277,13 +279,13 @@ namespace DbfDataReader.Query
                 return cmp != 0 ? cmp : x.CompareTo(y);
             });
 
-            var sorted = new object[rows.Count][];
+            var sorted = new object?[rows.Count][];
             for (var i = 0; i < indices.Length; i++) sorted[i] = rows[indices[i]];
 
             for (var i = 0; i < sorted.Length; i++) rows[i] = sorted[i];
         }
 
-        private int CompareRows(object[] x, object[] y)
+        private int CompareRows(object?[] x, object?[] y)
         {
             foreach (var item in _orderBy)
             {
@@ -296,7 +298,7 @@ namespace DbfDataReader.Query
         }
 
         // nulls sort before every value ascending (and therefore last descending)
-        private static int CompareRowValues(object x, object y, int position)
+        private static int CompareRowValues(object? x, object? y, int position)
         {
             if (x == null && y == null) return 0;
             if (x == null) return -1;
@@ -351,7 +353,9 @@ namespace DbfDataReader.Query
 
         public override object GetValue(int ordinal)
         {
-            return GetUnderlyingValue(_ordinals[ordinal]);
+            // DbDataReader declares a non-null return, but this reader surfaces a null
+            // field value as null rather than DBNull; preserve that.
+            return GetUnderlyingValue(_ordinals[ordinal])!;
         }
 
         public override int GetValues(object[] values)
@@ -382,7 +386,7 @@ namespace DbfDataReader.Query
             return GetFieldValue<byte>(ordinal);
         }
 
-        public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
+        public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
         {
             throw new NotImplementedException();
         }
@@ -392,7 +396,7 @@ namespace DbfDataReader.Query
             return GetFieldValue<char>(ordinal);
         }
 
-        public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
+        public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
         {
             throw new NotImplementedException();
         }
@@ -440,7 +444,9 @@ namespace DbfDataReader.Query
         public override string GetString(int ordinal)
         {
             var value = GetValue(ordinal);
-            if (value == null || value is string) return (string)value;
+            // preserves this reader's long-standing behaviour of surfacing a null field
+            // value as null even though the base contract declares a non-null return
+            if (value == null || value is string) return (string)value!;
 
             throw new InvalidCastException(
                 $"Unable to cast object of type '{value.GetType().FullName}' to type 'System.String' " +
@@ -461,7 +467,7 @@ namespace DbfDataReader.Query
                 $"at ordinal '{ordinal}'.");
         }
 
-        private object GetUnderlyingValue(int underlyingOrdinal)
+        private object? GetUnderlyingValue(int underlyingOrdinal)
         {
             return _currentRow != null ? _currentRow[underlyingOrdinal] : _reader.GetValue(underlyingOrdinal);
         }

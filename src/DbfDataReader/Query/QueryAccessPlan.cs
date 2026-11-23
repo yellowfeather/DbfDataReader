@@ -6,7 +6,7 @@ namespace DbfDataReader.Query
     // record indexes obtained from an index search
     internal sealed class QueryAccessPlan
     {
-        private QueryAccessPlan(IReadOnlyList<int> recordIndexes, bool sortSatisfied, bool coversWhereExactly,
+        private QueryAccessPlan(IReadOnlyList<int>? recordIndexes, bool sortSatisfied, bool coversWhereExactly,
             string description)
         {
             RecordIndexes = recordIndexes;
@@ -16,7 +16,7 @@ namespace DbfDataReader.Query
         }
 
         // null for a sequential full scan
-        public IReadOnlyList<int> RecordIndexes { get; }
+        public IReadOnlyList<int>? RecordIndexes { get; }
 
         // true when the rows arrive already in ORDER BY order
         public bool SortSatisfied { get; }

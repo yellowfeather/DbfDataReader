@@ -40,7 +40,7 @@ namespace DbfDataReader
             foreach (var column in columnSchema)
             {
                 var row = table.NewRow();
-                row[0] = column.ColumnName;
+                row[0] = column.ColumnName ?? dbNull;
                 row[1] = column.ColumnOrdinal ?? dbNull;
                 row[2] = column.ColumnSize ?? dbNull;
                 row[3] = column.NumericPrecision ?? dbNull;

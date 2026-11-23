@@ -14,7 +14,7 @@ namespace DbfDataReader
         }
 
         public bool SkipDeletedRecords { get; set; }
-        public Encoding Encoding { get; set; }
+        public Encoding? Encoding { get; set; }
         public StringTrimmingOption StringTrimming { get; set; }
         public bool ReadFloatsAsDecimals { get; set; }
 

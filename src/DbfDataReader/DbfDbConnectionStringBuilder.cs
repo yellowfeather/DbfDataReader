@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DbfDataReader
 {
@@ -25,7 +26,7 @@ namespace DbfDataReader
         private static readonly string[] ValidKeywords = BuildValidKeywords();
         private static readonly Dictionary<string,Keywords> KeywordsHash = BuildKeywordsHash();
         
-        private string _encoding;
+        private string? _encoding;
         private string _folder = string.Empty;
         private bool _readFloatsAsDecimals;
         private bool _skipDeletedRecords = true;
@@ -36,7 +37,7 @@ namespace DbfDataReader
         {
         }
 
-        public DbfDbConnectionStringBuilder(string connectionString)
+        public DbfDbConnectionStringBuilder(string? connectionString)
         {
             if (!string.IsNullOrWhiteSpace(connectionString))
             {
@@ -44,6 +45,7 @@ namespace DbfDataReader
             }
         }
 
+        [AllowNull]
         public override object this[string keyword]
         {
             get
@@ -76,7 +78,7 @@ namespace DbfDataReader
             }
         }
         
-        public string Encoding
+        public string? Encoding
         {
             get => _encoding;
             set
@@ -154,7 +156,7 @@ namespace DbfDataReader
             return true;
         }
         
-        public override bool TryGetValue(string keyword, out object value)
+        public override bool TryGetValue(string keyword, [NotNullWhen(true)] out object? value)
         {
             if (KeywordsHash.TryGetValue(keyword, out var index))
             {
@@ -171,7 +173,7 @@ namespace DbfDataReader
             base[keyword] = value.ToString();
         }
         
-        private void SetValue(string keyword, string value)
+        private void SetValue(string keyword, string? value)
         {
             DbfDbConnectionStringBuilderUtil.CheckArgumentNull(value, keyword);
             base[keyword] = value;
@@ -187,7 +189,9 @@ namespace DbfDataReader
         {
             switch(index)
             {
-                case Keywords.Encoding:				return Encoding;
+                // Encoding is null until set; the base indexer getter is declared non-null,
+                // so surface the stored value as-is (matching prior behaviour)
+                case Keywords.Encoding:				return Encoding!;
                 case Keywords.Folder:				return Folder;
                 case Keywords.ReadFloatsAsDecimals:	return ReadFloatsAsDecimals;
                 case Keywords.SkipDeletedRecords:	return SkipDeletedRecords;

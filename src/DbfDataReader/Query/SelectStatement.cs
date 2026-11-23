@@ -5,7 +5,7 @@ namespace DbfDataReader.Query
     internal sealed class SelectStatement
     {
         public SelectStatement(bool isSelectAll, bool isCountAll, IReadOnlyList<SelectColumn> columns,
-            string tableName, SqlExpression where, IReadOnlyList<OrderByItem> orderBy, int? top)
+            string tableName, SqlExpression? where, IReadOnlyList<OrderByItem> orderBy, int? top)
         {
             IsSelectAll = isSelectAll;
             IsCountAll = isCountAll;
@@ -27,7 +27,7 @@ namespace DbfDataReader.Query
         public string TableName { get; }
 
         // null when there is no WHERE clause
-        public SqlExpression Where { get; }
+        public SqlExpression? Where { get; }
 
         // empty when there is no ORDER BY clause
         public IReadOnlyList<OrderByItem> OrderBy { get; }
@@ -38,7 +38,7 @@ namespace DbfDataReader.Query
 
     internal sealed class SelectColumn
     {
-        public SelectColumn(string columnName, string alias, int position)
+        public SelectColumn(string columnName, string? alias, int position)
         {
             ColumnName = columnName;
             Alias = alias;
@@ -47,7 +47,7 @@ namespace DbfDataReader.Query
 
         public string ColumnName { get; }
 
-        public string Alias { get; }
+        public string? Alias { get; }
 
         public string OutputName => Alias ?? ColumnName;
 

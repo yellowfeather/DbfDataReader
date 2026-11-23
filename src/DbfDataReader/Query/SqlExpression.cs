@@ -137,19 +137,19 @@ namespace DbfDataReader.Query
 
     internal sealed class SqlLiteralExpression : SqlExpression
     {
-        public SqlLiteralExpression(object value, int position)
+        public SqlLiteralExpression(object? value, int position)
             : base(position)
         {
             Value = value;
         }
 
         // string, decimal, bool, or null
-        public object Value { get; }
+        public object? Value { get; }
     }
 
     internal sealed class SqlParameterExpression : SqlExpression
     {
-        public SqlParameterExpression(string name, int index, int position)
+        public SqlParameterExpression(string? name, int index, int position)
             : base(position)
         {
             Name = name;
@@ -157,7 +157,7 @@ namespace DbfDataReader.Query
         }
 
         // null for positional parameters
-        public string Name { get; }
+        public string? Name { get; }
 
         // zero-based ordinal among positional parameters; -1 for named parameters
         public int Index { get; }

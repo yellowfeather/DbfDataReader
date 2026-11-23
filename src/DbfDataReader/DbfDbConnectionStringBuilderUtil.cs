@@ -219,7 +219,7 @@ namespace DbfDataReader
 
         #endregion
 
-        internal static void CheckArgumentNull<T>(T argumentValue, string argumentName) where T : class
+        internal static void CheckArgumentNull<T>(T? argumentValue, string argumentName) where T : class
         {
             if (null == argumentValue)
             {
@@ -227,7 +227,7 @@ namespace DbfDataReader
             }
         }
         
-        private static Exception ConvertFailed(Type getType, Type type, Exception innerException)
+        private static Exception ConvertFailed(Type getType, Type type, Exception? innerException)
         {
             return new ArgumentException($"Cannot convert object of type '{getType}' to object of type '{type}'", innerException);
         }

@@ -50,7 +50,7 @@ namespace DbfDataReader
                 }
             value = value.TrimEnd(' ');
             }
-            return value;
+            return value ?? string.Empty;
         }
     }
 }

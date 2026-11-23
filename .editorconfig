@@ -1,0 +1,30 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+end_of_line = lf
+
+[*.{csproj,props,targets,json,yml,yaml}]
+indent_size = 2
+
+[*.cs]
+# --- Analyzer rule severities ---------------------------------------------
+# GenerateDocumentationFile turns on CS1591 for every undocumented public
+# member. Documenting the whole public surface is a gradual effort, so keep it
+# quiet for now and re-enable when the API is fully documented. The XML doc file
+# is still produced for the docs that DO exist (e.g. /// <exception> comments).
+dotnet_diagnostic.CS1591.severity = none
+
+# Analyzers should highlight real problems without failing local builds while
+# the backlog is triaged; promote individual rules (or set
+# TreatWarningsAsErrors) once each is clean.
+dotnet_analyzer_diagnostic.category-Style.severity = suggestion
+
+# Test method names deliberately use underscores (Should_do_x); that's a
+# readability convention here, not a naming-guideline violation.
+[test/**.cs]
+dotnet_diagnostic.CA1707.severity = none

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -100,7 +101,8 @@ namespace DbfDataReader.Query
             if (TryGetContainsParts(call, parameter, out var collection, out var item))
             {
                 var values = new List<SqlExpression>();
-                foreach (var element in (IEnumerable)Evaluate(collection))
+                // a Contains collection is a captured, row-independent value; it is never null
+                foreach (var element in (IEnumerable)Evaluate(collection)!)
                 {
                     values.Add(new SqlLiteralExpression(NormalizeLiteral(element), 0));
                 }
@@ -140,7 +142,7 @@ namespace DbfDataReader.Query
         }
 
         private static bool TryGetContainsParts(MethodCallExpression call, ParameterExpression parameter,
-            out Expression collection, out MemberExpression item)
+            [NotNullWhen(true)] out Expression? collection, [NotNullWhen(true)] out MemberExpression? item)
         {
             collection = null;
             item = null;
@@ -215,7 +217,8 @@ namespace DbfDataReader.Query
             return Unwrap(member.Expression) == parameter;
         }
 
-        private static Expression Unwrap(Expression expression)
+        [return: NotNullIfNotNull(nameof(expression))]
+        private static Expression? Unwrap(Expression? expression)
         {
             while (expression is UnaryExpression unary &&
                    (unary.NodeType == ExpressionType.Convert || unary.NodeType == ExpressionType.ConvertChecked))
@@ -259,7 +262,7 @@ namespace DbfDataReader.Query
             return expression is SqlLiteralExpression literal && literal.Value == null;
         }
 
-        private static object Evaluate(Expression expression)
+        private static object? Evaluate(Expression expression)
         {
             if (expression is ConstantExpression constant) return constant.Value;
 
@@ -267,7 +270,7 @@ namespace DbfDataReader.Query
             return lambda.Compile()();
         }
 
-        private static object NormalizeLiteral(object value)
+        private static object? NormalizeLiteral(object? value)
         {
             if (value is char character) return character.ToString(CultureInfo.InvariantCulture);
 

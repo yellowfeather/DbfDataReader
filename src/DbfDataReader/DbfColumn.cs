@@ -53,8 +53,9 @@ namespace DbfDataReader
                 DecimalCount = decimalCount;
             }
 
-            DataType = GetDataType(ColumnType);
-            DataTypeName = DataType.ToString();
+            var dataType = GetDataType(ColumnType);
+            DataType = dataType;
+            DataTypeName = dataType.ToString();
 
             // skip the reserved bytes:
             // - Int16: reserved1

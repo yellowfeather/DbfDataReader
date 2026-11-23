@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using DbfDataReader.Query;
@@ -10,14 +11,24 @@ namespace DbfDataReader
 {
     public class DbfDbCommand : DbCommand
     {
-        public override string CommandText { get; set; }
+        private string _commandText = string.Empty;
+
+        // the base declares [AllowNull] on the setter; store a non-null value so the
+        // getter never returns null
+        [AllowNull]
+        public override string CommandText
+        {
+            get => _commandText;
+            set => _commandText = value ?? string.Empty;
+        }
+
         public override int CommandTimeout { get; set; }
         public override CommandType CommandType { get; set; }
         public override bool DesignTimeVisible { get; set; }
         public override UpdateRowSource UpdatedRowSource { get; set; }
-        protected override DbConnection DbConnection { get; set; }
+        protected override DbConnection? DbConnection { get; set; }
         protected override DbParameterCollection DbParameterCollection { get; } = new DbfDbParameterCollection();
-        protected override DbTransaction DbTransaction { get; set; }
+        protected override DbTransaction? DbTransaction { get; set; }
 
         public new DbfDbParameterCollection Parameters => (DbfDbParameterCollection)DbParameterCollection;
 
@@ -31,7 +42,7 @@ namespace DbfDataReader
             throw new NotImplementedException();
         }
 
-        public override object ExecuteScalar()
+        public override object? ExecuteScalar()
         {
             using (var reader = ExecuteDbDataReader(CommandBehavior.Default))
             {
@@ -161,18 +172,18 @@ namespace DbfDataReader
         }
 
         private static QueryAccessPlan CreatePlan(SelectStatement statement, DbfTable table,
-            DbfDataReaderOptions options, IReadOnlyDictionary<string, object> namedParameters,
-            IReadOnlyList<object> positionalParameters)
+            DbfDataReaderOptions options, IReadOnlyDictionary<string, object?> namedParameters,
+            IReadOnlyList<object?> positionalParameters)
         {
             var orderKeys = statement.OrderBy.Select(item => (item.Ordinal, item.Descending)).ToList();
             return QueryPlanner.CreatePlan(statement.Where, orderKeys, table, options.UseIndexes, namedParameters,
                 positionalParameters);
         }
 
-        private (Dictionary<string, object> Named, List<object> Positional) CollectParameters()
+        private (Dictionary<string, object?> Named, List<object?> Positional) CollectParameters()
         {
-            var namedParameters = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-            var positionalParameters = new List<object>();
+            var namedParameters = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            var positionalParameters = new List<object?>();
 
             foreach (DbfDbParameter parameter in Parameters)
             {

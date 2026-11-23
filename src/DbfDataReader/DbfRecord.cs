@@ -22,7 +22,7 @@ namespace DbfDataReader
         // column-subset parsing (issue #296): when enabled, an ordinal's value is only
         // readable after it has been parsed for the current row; the stamps guard
         // against exposing the previous row's content through the reused value objects
-        private int[] _parsedVersions;
+        private int[]? _parsedVersions;
         private int _rowVersion;
 
         public DbfRecord(DbfTable dbfTable)
@@ -49,7 +49,7 @@ namespace DbfDataReader
 
         public IList<IDbfValue> Values { get; set; }
 
-        private IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo memo)
+        private IDbfValue CreateDbfValue(DbfColumn dbfColumn, DbfMemo? memo)
         {
             IDbfValue value;
 
@@ -277,7 +277,7 @@ namespace DbfDataReader
             }
         }
 
-        public object GetValue(int ordinal)
+        public object? GetValue(int ordinal)
         {
             EnsureParsed(ordinal);
             var dbfValue = Values[ordinal];
@@ -330,7 +330,7 @@ namespace DbfDataReader
             catch (InvalidCastException)
             {
                 throw new InvalidCastException(
-                    $"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
+                    $"Unable to cast object of type '{dbfValue.GetValue()?.GetType().FullName}' to type '{typeof(T).FullName}' at ordinal '{ordinal}'.");
             }
         }
 
@@ -340,22 +340,22 @@ namespace DbfDataReader
                 $"Data is Null. This method or property cannot be called on Null values. Ordinal {ordinal}");
         }
 
-        public string GetStringValue(int ordinal)
+        public string? GetStringValue(int ordinal)
         {
             EnsureParsed(ordinal);
             var dbfValue = Values[ordinal];
             try
             {
-                return (string) dbfValue.GetValue();
+                return (string?) dbfValue.GetValue();
             }
             catch (InvalidCastException)
             {
                 throw new InvalidCastException(
-                    $"Unable to cast object of type '{dbfValue.GetValue().GetType().FullName}' to type '{typeof(string).FullName}' at ordinal '{ordinal}'.");
+                    $"Unable to cast object of type '{dbfValue.GetValue()?.GetType().FullName}' to type '{typeof(string).FullName}' at ordinal '{ordinal}'.");
             }
         }
 
-        public Type GetFieldType(int ordinal)
+        public Type? GetFieldType(int ordinal)
         {
             var dbfValue = Values[ordinal];
             return dbfValue.GetFieldType();
