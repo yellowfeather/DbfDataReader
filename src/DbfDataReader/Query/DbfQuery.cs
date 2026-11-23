@@ -12,12 +12,14 @@ namespace DbfDataReader
     // A typed query over a DbfTable. Where/OrderBy lambdas are translated into the same
     // engine that executes SQL text; anything that cannot be translated throws
     // NotSupportedException. The type's public settable properties define which columns
-    // are read, matched by name (exact first, then case-insensitively). Each enumeration
+    // are read, matched by name (exact first, then case-insensitively); [Column] /
+    // [NotMapped] and DbfModelBuilder<T> change the name or exclude a property. Each enumeration
     // rewinds the table, so the underlying stream must be seekable; enumerations must
     // not overlap.
     public sealed class DbfQuery<T> : IEnumerable<T> where T : class
     {
         private readonly DbfTable _table;
+        private readonly ModelMap _map;
         private readonly List<LambdaExpression> _predicates = new List<LambdaExpression>();
         private readonly List<(LambdaExpression Key, bool Descending)> _orderBy =
             new List<(LambdaExpression, bool)>();
@@ -25,9 +27,10 @@ namespace DbfDataReader
         private bool _includeDeleted;
         private bool _useIndexes = true;
 
-        internal DbfQuery(DbfTable table)
+        internal DbfQuery(DbfTable table, ModelMap map)
         {
             _table = table;
+            _map = map;
         }
 
         // multiple Where calls are combined with AND
@@ -499,7 +502,7 @@ namespace DbfDataReader
             needed.ExceptWith(filterOrdinals);
 
             return new QueryPlan(
-                RowMaterializer.Create<T>(mappedNames),
+                RowMaterializer.Create<T>(mappedNames, _map),
                 mappedOrdinals,
                 new object[mappedOrdinals.Count],
                 filter,
@@ -520,7 +523,7 @@ namespace DbfDataReader
             var names = new List<string>();
             var byProperty = new Dictionary<string, int>(StringComparer.Ordinal);
 
-            foreach (var entry in ModelMap.For(typeof(T)))
+            foreach (var entry in _map.Entries)
             {
                 var ordinal = RowMaterializer.FindSourceOrdinal(entry.ColumnName, columnNames);
                 if (ordinal < 0) throw new InvalidOperationException(NoColumnMessage(entry));

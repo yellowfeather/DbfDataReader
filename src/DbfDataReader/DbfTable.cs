@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DbfDataReader.Query;
 
 namespace DbfDataReader
 {
@@ -231,7 +232,16 @@ namespace DbfDataReader
         // a typed query over this table; T's settable properties define the columns read
         public DbfQuery<T> Query<T>() where T : class
         {
-            return new DbfQuery<T>(this);
+            return new DbfQuery<T>(this, ModelMap.For(typeof(T)));
+        }
+
+        // as Query<T>(), with the property-to-column mapping configured fluently, e.g.
+        // map => map.Property(r => r.Coverage).HasColumnName("Coverage %")
+        public DbfQuery<T> Query<T>(Action<DbfModelBuilder<T>> configure) where T : class
+        {
+            if (configure == null) throw new ArgumentNullException(nameof(configure));
+
+            return new DbfQuery<T>(this, DbfModelBuilder<T>.BuildMap(configure));
         }
     }
 }
