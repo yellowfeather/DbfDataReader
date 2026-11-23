@@ -182,3 +182,57 @@ BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
 |                 |                              |              |       |             |             |
 | 'scan + sort'   | top 10 order by desc         | 46,140.03 us |  1.00 | 53467.47 KB |        1.00 |
 | index           | top 10 order by desc         |  3,138.54 us |  0.07 |  5659.74 KB |        0.11 |
+
+# v2.3.1
+
+Same comparison against DbfDataReader 2.3.1, which removes a system call the reader made
+before every row (`Stream.Length`, #337), stops allocating an enumerator per row (#339)
+and parses numeric fields straight from the record bytes (#340).
+
+The benchmark itself also changed for this run (#338): DbfDataReader's loop now reads
+fields through `GetValue`, as the Sylvan and NDbf loops always have, instead of
+dispatching to typed getters via `GetFieldType`. Measured against 2.2.0, that change
+alone took DbfDataReader from about 605 us to 557 us; the rest of the drop from the
+v2.3.0 table is the library.
+
+BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
+
+| Method  | Mean     | Error    | StdDev  | Ratio | Gen0    | Gen1   | Gen2   | Allocated | Alloc Ratio |
+|-------- |---------:|---------:|--------:|------:|--------:|-------:|-------:|----------:|------------:|
+| Sylvan  | 298.8 us | 92.95 us | 5.10 us |  0.74 | 41.0156 | 0.9766 |      - | 336.81 KB |        0.94 |
+| NDbf    | 403.7 us | 86.79 us | 4.76 us |  1.00 | 43.4570 | 0.9766 |      - | 358.47 KB |        1.00 |
+| DbfData | 356.3 us | 97.17 us | 5.33 us |  0.88 | 40.5273 | 9.7656 | 0.4883 | 332.89 KB |        0.93 |
+
+# v2.3.1 — automatic index use
+
+Same generated 50,000-row table and query pairs as the v2.3.0 run above. The index paths
+are unchanged, but every scan that reads the table sequentially is far cheaper: the
+per-row `Stream.Length` call (#337) was costing roughly 15 ms across 50,000 rows. Full
+scans drop from about 18 ms to 3 ms, and the `count(*)` status scan from 16 ms to 1 ms.
+The index ratios are therefore smaller than in earlier versions — the baselines moved,
+not the indexes.
+
+Reproduce with:
+`dotnet run -c Release --project test/DbfDataReader.Benchmarks -- --filter "*IndexQueryBenchmarks*" --job short`
+
+BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
+
+| Method          | Categories                   | Mean         | Ratio | Allocated   | Alloc Ratio |
+|---------------- |----------------------------- |-------------:|------:|------------:|------------:|
+| 'full scan'     | character seek (100 rows)    |  2,875.90 us |  1.00 |  1976.63 KB |        1.00 |
+| index           | character seek (100 rows)    |    128.68 us |  0.04 |    58.54 KB |        0.03 |
+|                 |                              |              |       |             |             |
+| 'read all rows' | count(*) all rows            |  4,992.02 us |  1.00 |  5085.57 KB |       1.000 |
+| 'status scan'   | count(*) all rows            |  1,110.56 us |  0.22 |    10.50 KB |       0.002 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | count(*) filtered (10k rows) |  3,061.83 us |  1.00 |  1183.77 KB |        1.00 |
+| 'index only'    | count(*) filtered (10k rows) |  1,053.38 us |  0.34 |  1201.17 KB |        1.01 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | equality seek (1 row)        |  2,535.60 us |  1.00 |  1184.45 KB |        1.00 |
+| index           | equality seek (1 row)        |     53.18 us |  0.02 |    32.45 KB |        0.03 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | range scan (100 rows)        |  2,904.14 us |  1.00 |  1193.17 KB |        1.00 |
+| index           | range scan (100 rows)        |     70.36 us |  0.02 |    54.39 KB |        0.05 |
+|                 |                              |              |       |             |             |
+| 'scan + sort'   | top 10 order by desc         | 31,459.54 us |  1.00 | 53467.49 KB |        1.00 |
+| index           | top 10 order by desc         |  3,242.89 us |  0.10 |  5659.73 KB |        0.11 |
