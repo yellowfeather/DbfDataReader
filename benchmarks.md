@@ -287,3 +287,49 @@ BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
 |                 |                              |              |       |             |             |
 | 'scan + sort'   | top 10 order by desc         | 30,951.67 us |  1.00 | 53467.49 KB |        1.00 |
 | index           | top 10 order by desc         |  3,174.68 us |  0.10 |  5659.73 KB |        0.11 |
+
+# v2.3.3
+
+Same comparison against DbfDataReader 2.3.3, a bug fix release: dBASE III memos are now
+read up to their end-of-memo marker (#349, #350). The fixture here has no memo file, so
+nothing on the measured path changed; the differences from the v2.3.2 table are within
+the noise of a short job.
+
+BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
+
+| Method  | Mean     | Error     | StdDev   | Ratio | Gen0    | Gen1   | Allocated | Alloc Ratio |
+|-------- |---------:|----------:|---------:|------:|--------:|-------:|----------:|------------:|
+| Sylvan  | 269.3 us |  43.43 us |  2.38 us |  0.67 | 41.0156 | 0.9766 | 336.81 KB |        0.94 |
+| NDbf    | 399.3 us | 207.66 us | 11.38 us |  1.00 | 43.4570 | 0.9766 | 358.47 KB |        1.00 |
+| DbfData | 274.6 us |  57.92 us |  3.17 us |  0.69 | 40.0391 | 1.4648 | 328.65 KB |        0.92 |
+
+# v2.3.3 — automatic index use
+
+Same generated 50,000-row table and query pairs as the v2.3.2 run above. The generated
+table has no memo file, so nothing on the scan or index paths changed in 2.3.3; the
+differences from the v2.3.2 table are within the noise of a short job.
+
+Reproduce with:
+`dotnet run -c Release --project test/DbfDataReader.Benchmarks -- --filter "*IndexQueryBenchmarks*" --job short`
+
+BenchmarkDotNet v0.15.8, macOS (Apple M3 Max), .NET 10.0.15, Job=ShortRun
+
+| Method          | Categories                   | Mean         | Ratio | Allocated   | Alloc Ratio |
+|---------------- |----------------------------- |-------------:|------:|------------:|------------:|
+| 'full scan'     | character seek (100 rows)    |  2,850.92 us |  1.00 |  1976.63 KB |        1.00 |
+| index           | character seek (100 rows)    |    119.03 us |  0.04 |    58.54 KB |        0.03 |
+|                 |                              |              |       |             |             |
+| 'read all rows' | count(*) all rows            |  4,651.21 us |  1.00 |  5085.57 KB |       1.000 |
+| 'status scan'   | count(*) all rows            |  1,067.32 us |  0.23 |    10.50 KB |       0.002 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | count(*) filtered (10k rows) |  2,992.90 us |  1.00 |  1183.77 KB |        1.00 |
+| 'index only'    | count(*) filtered (10k rows) |    911.20 us |  0.30 |  1201.14 KB |        1.01 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | equality seek (1 row)        |  2,510.09 us |  1.00 |  1184.45 KB |        1.00 |
+| index           | equality seek (1 row)        |     49.94 us |  0.02 |    32.45 KB |        0.03 |
+|                 |                              |              |       |             |             |
+| 'full scan'     | range scan (100 rows)        |  2,618.05 us |  1.00 |  1193.17 KB |        1.00 |
+| index           | range scan (100 rows)        |     67.08 us |  0.03 |    54.39 KB |        0.05 |
+|                 |                              |              |       |             |             |
+| 'scan + sort'   | top 10 order by desc         | 30,225.90 us |  1.00 | 53467.49 KB |        1.00 |
+| index           | top 10 order by desc         |  3,114.47 us |  0.10 |  5659.73 KB |        0.11 |
