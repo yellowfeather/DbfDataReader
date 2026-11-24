@@ -18,7 +18,7 @@
        environment variable (NOT -p:, which BenchmarkDotNet's generated child build
        does not inherit - see the README) -->
   <PropertyGroup>
-    <DbfDataReaderVersion Condition="'$(DbfDataReaderVersion)' == ''">2.3.2</DbfDataReaderVersion>
+    <DbfDataReaderVersion Condition="'$(DbfDataReaderVersion)' == ''">2.3.3</DbfDataReaderVersion>
   </PropertyGroup>
 
   <ItemGroup>
